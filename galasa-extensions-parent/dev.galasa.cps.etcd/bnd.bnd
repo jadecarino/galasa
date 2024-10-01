@@ -1,0 +1,50 @@
+-snapshot ${tstamp}
+Bundle-Name: dev.galasa.cps.etcd
+Bundle-Description: Provides the CPS, DSS and Credential stores from a etcd3 server
+Bundle-License: https://www.eclipse.org/legal/epl-2.0
+Export-Package: !dev.galasa.cps.etcd.internal,dev.galasa.cps.etcd*
+Import-Package: \
+    dev.galasa,\
+    dev.galasa.cps.etcd,\
+    dev.galasa.framework.spi,\
+    dev.galasa.framework.spi.creds,\
+    javax.net.ssl,\
+    javax.security.cert
+Embed-Transitive: true
+Embed-Dependency: *;scope=compile|runtime
+-includeresource: gson-2.10.1.jar; lib:=true,\
+    jetcd-core-0.5.9.jar; lib:=true,\
+    jetcd-common-0.5.9.jar; lib:=true,\
+    grpc-core-1.39.0.jar; lib:=true,\
+    grpc-api-1.39.0.jar; lib:=true,\
+    grpc-context-1.39.0.jar; lib:=true,\
+    error_prone_annotations-2.5.1.jar; lib:=true,\
+    jsr305-3.0.2.jar; lib:=true,\
+    animal-sniffer-annotations-1.19.jar; lib:=true,\
+    annotations-4.1.1.4.jar; lib:=true,\
+    perfmark-api-0.23.0.jar; lib:=true,\
+    grpc-netty-1.39.0.jar; lib:=true,\
+    netty-codec-http2-4.1.86.Final.jar; lib:=true,\
+    netty-common-4.1.86.Final.jar; lib:=true,\
+    netty-buffer-4.1.86.Final.jar; lib:=true,\
+    netty-transport-4.1.86.Final.jar; lib:=true,\
+    netty-resolver-4.1.86.Final.jar; lib:=true,\
+    netty-codec-4.1.86.Final.jar; lib:=true,\
+    netty-handler-4.1.86.Final.jar; lib:=true,\
+    netty-codec-http-4.1.86.Final.jar; lib:=true,\
+    netty-handler-proxy-4.1.86.Final.jar; lib:=true,\
+    netty-codec-socks-4.1.86.Final.jar; lib:=true,\
+    grpc-protobuf-1.39.0.jar; lib:=true,\
+    protobuf-java-3.17.2.jar; lib:=true,\
+    guava-30.1.1-jre.jar; lib:=true,\
+    failureaccess-1.0.1.jar; lib:=true,\
+    checker-qual-3.8.0.jar; lib:=true,\
+    j2objc-annotations-1.3.jar; lib:=true,\
+    proto-google-common-protos-2.0.1.jar; lib:=true,\
+    grpc-protobuf-lite-1.39.0.jar; lib:=true,\
+    grpc-stub-1.39.0.jar; lib:=true,\
+    grpc-grpclb-1.39.0.jar; lib:=true,\
+    protobuf-java-util-3.17.2.jar; lib:=true,\
+    slf4j-api-1.7.32.jar; lib:=true,\
+    failsafe-2.4.1.jar; lib:=true
+-fixupmessages "Classes found in the wrong directory"; restrict:=error; is:=warning
