@@ -68,6 +68,7 @@ jobs:
 
       # The githash is added to the development Maven registry to show what commit level it contains
       - name: Print githash
+        working-directory: modules/gradle
         run: |
           echo $GITHUB_SHA > ./gradle.githash
 
@@ -78,6 +79,7 @@ jobs:
           cache-disabled: true
 
       - name: Build Gradle source code
+        working-directory: modules/gradle
         # if: github.event_name == 'push'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,7 +92,7 @@ jobs:
           --no-daemon --console plain \
           -PsourceMaven=https://repo.maven.apache.org/maven2/ \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/repo \
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/repo \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -116,7 +118,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gradle-build-log
-          path: build.log
+          path: modules/gradle/build.log
 
       # - name: Login to Github Container Registry
       #   uses: docker/login-action@v3
