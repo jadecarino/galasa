@@ -114,10 +114,10 @@ jobs:
       #     -PisMainOrRelease=${{ inputs.isMainOrRelease }} 2>&1 | tee build.log
 
       - name: Upload Gradle Build Log
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: gradle-build-log
+          name: gradle-gradle-build-log
           path: modules/gradle/build.log
 
       # - name: Login to Github Container Registry

@@ -116,7 +116,6 @@ jobs:
         run: |
           set -o pipefail
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
-          -Dgalasa.source.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
           -Dgalasa.jacocoEnabled=true \
@@ -139,17 +138,17 @@ jobs:
 
       
       - name: Upload Maven Build Log
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: maven-build-log
+          name: maven-maven-build-log
           path: modules/maven/build.log
             
       - name: Upload Junit Test report
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: Junit-test-report
+          name: junit-test-report
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
   
 
