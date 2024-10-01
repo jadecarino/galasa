@@ -20,16 +20,16 @@ jobs:
   build-gradle:
     name: Build the 'gradle' module of Galasa
     uses: ./.github/workflows/gradle.yaml
-    with:
-      jacocoEnabled: true
-      isMainOrRelease: true
+    # with:
+    #   jacocoEnabled: true
+    #   isMainOrRelease: true
     secrets: inherit
 
   build-maven:
     name: Build the 'maven' module of Galasa
     needs: [build-gradle]
     uses: ./.github/workflows/maven.yaml
-    with:
-      jacocoEnabled: true
-      isMainOrRelease: true
+    # with:
+    #   jacocoEnabled: true
+    #   isMainOrRelease: true
     secrets: inherit
