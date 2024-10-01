@@ -53,75 +53,75 @@ jobs:
         run: |
           echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
 
-  # build-maven:
-  #   name: Build Maven source code and Docker image for development Maven registry
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
+  build-maven:
+    name: Build Maven source code and Docker image for development Maven registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
-  #     - name: Set up JDK
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '17'
-  #         distribution: 'semeru'
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
 
-  #     - name: Print githash
-  #       run: |
-  #         echo $GITHUB_SHA > ./maven.githash
+      - name: Print githash
+        run: |
+          echo $GITHUB_SHA > ./maven.githash
 
-  #     # Copy secrets into files to use in workflow
-  #     - name: Make secrets directory
-  #       run : |
-  #         mkdir /home/runner/work/secrets
+      # Copy secrets into files to use in workflow
+      - name: Make secrets directory
+        run : |
+          mkdir /home/runner/work/secrets
 
-  #     - name: Copy settings.xml
-  #       env:
-  #         MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
-  #       run : |
-  #         echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+      - name: Copy settings.xml
+        env:
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+        run : |
+          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
 
-  #     - name: Copy GPG passphrase
-  #       env:
-  #         GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-  #       run : |
-  #         echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
+      - name: Copy GPG passphrase
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run : |
+          echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
 
-  #     - name: Copy GPG key
-  #       env:
-  #         GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
-  #       run : |
-  #         echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
+      - name: Copy GPG key
+        env:
+          GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
+        run : |
+          echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
           
-  #     # Set up Maven GPG directory
-  #     - name: Make GPG home directory
-  #       run: |
-  #         mkdir /home/runner/work/gpg
+      # Set up Maven GPG directory
+      - name: Make GPG home directory
+        run: |
+          mkdir /home/runner/work/gpg
       
-  #     - name: Change directory permissions
-  #       run: |
-  #         chmod '700' /home/runner/work/gpg
+      - name: Change directory permissions
+        run: |
+          chmod '700' /home/runner/work/gpg
 
-  #     - name: Import GPG
-  #       run: |
-  #         gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
+      - name: Import GPG
+        run: |
+          gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
       
-  #     - name: Copy custom settings.xml
-  #       run: |
-  #         cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
+      - name: Copy custom settings.xml
+        run: |
+          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-  #     - name: Build Maven source code
-  #       if: github.event_name == 'push'
-  #       run: |
-  #         set -o pipefail
-  #         mvn -f galasa-maven-plugin/pom.xml deploy -X \
-  #         -Dgalasa.source.repo=https://development.galasa.dev/${{ env.BRANCH }}/maven-repo/gradle \
-  #         -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-  #         -Dgalasa.release.repo=file:${{ github.workspace }}/repo \
-  #         -Dgalasa.jacocoEnabled=true \
-  #         -Dgalasa.isRelease=true \
-  #         --batch-mode --errors --fail-at-end \
-  #         --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
+      - name: Build Maven source code
+        # if: github.event_name == 'push'
+        run: |
+          set -o pipefail
+          mvn -f galasa-maven-plugin/pom.xml deploy -X \
+          -Dgalasa.source.repo=https://development.galasa.dev/${{ env.BRANCH }}/maven-repo/gradle \
+          -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/repo \
+          -Dgalasa.jacocoEnabled=true \
+          -Dgalasa.isRelease=true \
+          --batch-mode --errors --fail-at-end \
+          --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
 
   #     - name: Build Maven source code
   #       if: github.event_name == 'workflow_dispatch' # Use the input values provided by the workflow dispatch.
@@ -137,19 +137,19 @@ jobs:
   #         --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
 
       
-  #     - name: Upload Maven Build Log
-  #       if: always()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: maven-build-log
-  #         path: build.log
+      - name: Upload Maven Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-build-log
+          path: build.log
             
-  #     - name: Upload Junit Test report
-  #       if: always()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: Junit-test-report
-  #         path: ${{github.workspace}}/galasa-maven-plugin/target/surefire-reports
+      - name: Upload Junit Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Junit-test-report
+          path: ${{github.workspace}}/galasa-maven-plugin/target/surefire-reports
   
 
   #     - name: Login to Github Container Registry
