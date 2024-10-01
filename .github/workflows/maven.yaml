@@ -111,6 +111,7 @@ jobs:
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
       - name: Build Maven source code
+        working-directory: modules/maven
         # if: github.event_name == 'push'
         run: |
           set -o pipefail
@@ -118,7 +119,7 @@ jobs:
           -Dgpg.skip=true \
           -Dgalasa.source.repo=https://development.galasa.dev/${{ env.BRANCH }}/maven-repo/gradle \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
           -Dgalasa.jacocoEnabled=true \
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
@@ -143,14 +144,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maven-build-log
-          path: build.log
+          path: modules/maven/build.log
             
       - name: Upload Junit Test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Junit-test-report
-          path: ${{github.workspace}}/galasa-maven-plugin/target/surefire-reports
+          path: modules/maven/galasa-maven-plugin/target/surefire-reports
   
 
   #     - name: Login to Github Container Registry
