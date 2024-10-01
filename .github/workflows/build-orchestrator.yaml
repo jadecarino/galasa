@@ -19,9 +19,9 @@ jobs:
 
   build-gradle:
     name: Build the 'gradle' module of Galasa
-    uses: ./modules/gradle/.github/workflows/build.yaml@main
+    uses: ./modules/gradle/.github/workflows/build.yaml
 
   build-maven:
     name: Build the 'maven' module of Galasa
     needs: [build-gradle]
-    uses: ./modules/maven/.github/workflows/build.yaml@mains
+    uses: ./modules/maven/.github/workflows/build.yaml
