@@ -115,6 +115,7 @@ jobs:
         run: |
           set -o pipefail
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
+          -Dgpg.skip=true \
           -Dgalasa.source.repo=https://development.galasa.dev/${{ env.BRANCH }}/maven-repo/gradle \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/repo \

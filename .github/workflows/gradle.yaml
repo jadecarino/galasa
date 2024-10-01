@@ -92,7 +92,7 @@ jobs:
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/repo \
           -PjacocoEnabled=true \
-          -PisMainOrRelease=true 2>&1 | tee build.log
+          -PisMainOrRelease=false 2>&1 | tee build.log
 
       # - name: Build Gradle source code
       #   if: github.event_name == 'workflow_dispatch' # Use the input values provided by the workflow dispatch.
