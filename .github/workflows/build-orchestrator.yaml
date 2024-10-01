@@ -1,0 +1,27 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Main build orchestrator
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: galasa-dev
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+
+  build-gradle:
+    name: Build the 'gradle' module of Galasa
+    uses: jadecarino/galasa/modules/gradle/.github/workflows/build.yaml@${{ env.BRANCH }}
+
+  build-maven:
+    name: Build the 'maven' module of Galasa
+    needs: [build-gradle]
+    uses: jadecarino/galasa/modules/maven/.github/workflows/build.yaml@${{ env.BRANCH }}
