@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: PR build
+name: Framework pull request build
 
 on:
   pull_request:

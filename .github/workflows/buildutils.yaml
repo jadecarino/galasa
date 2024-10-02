@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Buildutils build
+name: Buildutils main build
 
 on:
   workflow_call:

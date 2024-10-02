@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Maven build
+name: Maven main build
 
 on:
   workflow_call:

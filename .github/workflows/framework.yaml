@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Framework build
+name: Framework main build
 
 on:
   workflow_call:

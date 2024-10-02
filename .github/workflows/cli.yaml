@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: CLI build
+name: CLI main build
 
 on:
   workflow_call:
