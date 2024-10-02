@@ -65,6 +65,11 @@ jobs:
         with:
           gradle-version: 8.9
           cache-disabled: false
+
+      - name: Output contents of local Maven repository 1
+        working-directory: /home/runner/.m2/repository/dev/galasa
+        run: |
+          ls
       
       - name: Build servlet beans with openapi2beans
         env:
@@ -118,6 +123,11 @@ jobs:
         with:
           name: framework-gradle-build-log
           path: modules/framework/build.log
+
+      - name: Output contents of local Maven repository 2
+        working-directory: /home/runner/.m2/repository/dev/galasa
+        run: |
+          ls
         
       # - name: Login to Github Container Registry
       #   uses: docker/login-action@v3
