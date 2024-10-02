@@ -7,8 +7,10 @@ name: PR build
 
 on:
   pull_request:
-    branches: ['main']
-    paths: ['./modules/framework/**']
+    branches: 
+      - main
+    paths: 
+      - './modules/framework/**'
 
 # env:
   # REGISTRY: ghcr.io
