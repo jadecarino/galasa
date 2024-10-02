@@ -71,6 +71,11 @@ jobs:
       #   run: |
       #     ls
 
+      - name: Output contents of target Maven repository
+        working-directory: ${{ github.workspace }}/modules/framework/repo
+        run: |
+          ls
+
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
         # if: github.event_name == 'push'
@@ -84,6 +89,7 @@ jobs:
           set -o pipefail
           gradle -b galasa-extensions-parent/build.gradle check publish publishToMavenLocal --info \
           --no-daemon --console plain \
+          -PsourceMaven=${{ github.workspace }}/modules/framework/repo \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/extensions/repo \
           -PjacocoEnabled=true \
