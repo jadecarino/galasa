@@ -8,7 +8,7 @@ name: CLI pull request build
 on:
   pull_request:
     branches: ['main']
-    paths: ['./modules/cli']
+    paths: ['./modules/cli/**']
 
 # env:
 #   IMAGE_TAG: ${{ github.event.number }}
