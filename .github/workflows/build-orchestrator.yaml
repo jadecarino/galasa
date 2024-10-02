@@ -22,21 +22,21 @@ jobs:
   #   uses: ./.github/workflows/buildutils.yaml
   #   secrets: inherit
 
-  # build-wrapping:
-  #   name: Build the 'wrapping' module of Galasa
-  #   uses: ./.github/workflows/wrapping.yaml
-  #   secrets: inherit
+  build-wrapping:
+    name: Build the 'wrapping' module of Galasa
+    uses: ./.github/workflows/wrapping.yaml
+    secrets: inherit
 
-  # build-gradle:
-  #   name: Build the 'gradle' module of Galasa
-  #   uses: ./.github/workflows/gradle.yaml
-  #   secrets: inherit
+  build-gradle:
+    name: Build the 'gradle' module of Galasa
+    uses: ./.github/workflows/gradle.yaml
+    secrets: inherit
 
-  # build-maven:
-  #   name: Build the 'maven' module of Galasa
-  #   needs: [build-gradle]
-  #   uses: ./.github/workflows/maven.yaml
-  #   secrets: inherit
+  build-maven:
+    name: Build the 'maven' module of Galasa
+    needs: [build-gradle]
+    uses: ./.github/workflows/maven.yaml
+    secrets: inherit
 
   build-framework:
     name: Build the 'framework' module of Galasa

@@ -7,41 +7,8 @@ name: Maven main build
 
 on:
   workflow_call:
-    # inputs:
-    #   jacocoEnabled:
-    #     description: 'Enable Jacoco code coverage (set to "false" for release builds)'
-    #     required: true
-    #     default: 'true'
-    #     type: boolean
-    #   isMainOrRelease:
-    #     description: 'This build is for the main branch or a release (set to "false" for development branch builds)'
-    #     required: true
-    #     default: 'true'
-    #     type: boolean
-  # workflow_dispatch:
-  #   inputs:
-  #     jacocoEnabled:
-  #       description: 'Enable Jacoco code coverage (set to "false" for release builds)'
-  #       required: true
-  #       default: 'true'
-  #       type: choice
-  #       options:
-  #       - 'true'
-  #       - 'false'
-  #     isMainOrRelease:
-  #       description: 'This build is for the main branch or a release (set to "false" for development branch builds)'
-  #       required: true
-  #       default: 'true'
-  #       type: choice
-  #       options:
-  #       - 'true'
-  #       - 'false'
-  # push:
-  #   branches: [main]
 
 env:
-  REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
   BRANCH: ${{ github.ref_name }}
 
 jobs:
@@ -111,6 +78,12 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
+
       - name: Build Maven source code
         working-directory: modules/maven
         # if: github.event_name == 'push'
@@ -123,20 +96,6 @@ jobs:
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
-
-  #     - name: Build Maven source code
-  #       if: github.event_name == 'workflow_dispatch' # Use the input values provided by the workflow dispatch.
-  #       run: |
-  #         set -o pipefail
-  #         mvn -f galasa-maven-plugin/pom.xml deploy -X \
-  #         -Dgalasa.source.repo=https://development.galasa.dev/${{ env.BRANCH }}/maven-repo/gradle \
-  #         -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-  #         -Dgalasa.release.repo=file:${{ github.workspace }}/repo \
-  #         -Dgalasa.jacocoEnabled=${{ inputs.jacocoEnabled }} \
-  #         -Dgalasa.isRelease=${{ inputs.isMainOrRelease }} \
-  #         --batch-mode --errors --fail-at-end \
-  #         --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
-
       
       - name: Upload Maven Build Log
         if: failure()
@@ -151,78 +110,9 @@ jobs:
         with:
           name: junit-test-report
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
-  
 
-  #     - name: Login to Github Container Registry
-  #       uses: docker/login-action@v3
-  #       with:
-  #         registry: ${{ env.REGISTRY }}
-  #         username: galasa-team
-  #         password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
-
-  #     - name: Extract metadata for Maven image
-  #       id: metadata
-  #       uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-  #       with:
-  #         images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/maven-maven-artefacts
-
-  #     - name: Build Maven image for development Maven registry
-  #       id: build
-  #       uses: docker/build-push-action@v5
-  #       with:
-  #         context: .
-  #         file: dockerfiles/dockerfile
-  #         push: true
-  #         tags: ${{ steps.metadata.outputs.tags }}
-  #         labels: ${{ steps.metadata.outputs.labels }}
-  #         build-args: |
-  #           dockerRepository=ghcr.io
-  #           tag=${{ env.BRANCH }}
-
-  #     # Recycle the development Maven registry app in ArgoCD
-  #     # Authenticate using a token passed in as an environment variable
-  #     - name: Recycle application in ArgoCD
-  #       env: 
-  #         ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-  #       run: |
-  #         docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name maven-${{ env.BRANCH }} --server argocd.galasa.dev
-      
-  #     # Wait for the application to show as healthy in ArgoCD
-  #     - name: Wait for app health in ArgoCD
-  #       env: 
-  #         ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-  #       run: |
-  #         docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:maven-${{ env.BRANCH }} --health --server argocd.galasa.dev
-
-  # trigger-framework-workflow:
-  #   name: Trigger Framework workflow
-  #   runs-on: ubuntu-latest
-  #   needs: build-maven 
-
-  #   steps:
-  #     - name: Trigger Framework workflow dispatch event with GitHub CLI
-  #       if: github.event_name == 'push'
-  #       env:
-  #         GH_TOKEN: ${{ secrets.GALASA_TEAM_GITHUB_TOKEN }}
-  #       run: |
-  #         gh workflow run build.yaml --repo https://github.com/galasa-dev/framework
-
-  #     - name: Trigger Framework workflow dispatch event with GitHub CLI
-  #       if: github.event_name == 'workflow_dispatch'
-  #       env:
-  #         GH_TOKEN: ${{ secrets.GALASA_TEAM_GITHUB_TOKEN }}
-  #       run: |
-  #         gh workflow run build.yaml --repo https://github.com/galasa-dev/framework --ref ${{ env.BRANCH }} -f jacocoEnabled=${{ inputs.jacocoEnabled }} -f isMainOrRelease=${{ inputs.isMainOrRelease }}
-
-  # report-failure:
-  #   name: Report failure in workflow
-  #   runs-on: ubuntu-latest
-  #   needs: [log-github-ref, build-maven, trigger-framework-workflow]
-  #   if: failure()
-
-  #   steps:
-  #     - name: Report failure in workflow to Slack
-  #       env: 
-  #         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-  #       run : |
-  #         docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/galasabld-ibm:main slackpost workflows --repo "maven" --workflowName "${{ github.workflow }}" --workflowRunNum "${{ github.run_id }}" --ref "${{ env.BRANCH }}" --hook "${{ env.SLACK_WEBHOOK }}"
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
