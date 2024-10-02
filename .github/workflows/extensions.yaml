@@ -44,11 +44,6 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
-      - name: Output contents of target Maven repository
-        working-directory: ${{ github.workspace }}/modules/framework/repo
-        run: |
-          ls
-
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
         env:
