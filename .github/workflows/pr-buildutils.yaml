@@ -7,8 +7,10 @@ name: Buildutils pull request build
 
 on:
   pull_request:
-    branches: ['main']
-    paths: ['./modules/buildutils']
+    branches: 
+      - main
+    paths: 
+      - 'modules/buildutils/**'
 
 env:
   IMAGE_TAG: ${{ github.event.number }}

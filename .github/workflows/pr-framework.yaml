@@ -3,16 +3,14 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: PR build
+name: Framework pull request build
 
 on:
   pull_request:
-    branches: ['main']
-    paths: ['./modules/framework']
-
-# env:
-  # REGISTRY: ghcr.io
-  # NAMESPACE: galasa-dev
+    branches: 
+      - main
+    paths: 
+      - 'modules/framework/**'
   
 jobs:
   build-framework:
@@ -55,8 +53,6 @@ jobs:
           -Dorg.gradle.jvmargs=-Xmx5120M \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/framework/repo
-
-      # -PsourceMaven=https://development.galasa.dev/main/maven-repo/maven/ \
       
       - name: Upload Jacoco Reports as artifact
         if: failure()
@@ -66,17 +62,6 @@ jobs:
           path: modules/framework/galasa-parent/**/build/reports/**/*.html
           retention-days: 7
           if-no-files-found: ignore
-          
-      # - name: Build Framework image for testing
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     file: dockerfiles/dockerfile.framework
-      #     load: true
-      #     tags: framework:test
-      #     build-args: |
-      #       dockerRepository=ghcr.io
-      #       tag=main
 
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
@@ -93,6 +78,7 @@ jobs:
           distribution: 'semeru'
       
       - name: Install Swagger CLI
+        working-directory: modules/framework
         run: |
           wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.41/swagger-codegen-cli-3.0.41.jar -O swagger-codegen-cli.jar
       
@@ -100,11 +86,3 @@ jobs:
         working-directory: modules/framework
         run: |
           java -jar swagger-codegen-cli.jar generate -i galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml -l html2 -o docs/generated/galasaapi
-                
-      # - name: Build Restapidoc image for testing
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     file: dockerfiles/dockerfile.restapidocsite
-      #     load: true
-      #     tags: restapidoc-site:test
