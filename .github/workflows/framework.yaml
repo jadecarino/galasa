@@ -52,12 +52,6 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Cache local Maven repository for next workflow
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.m2/repository
-          key: mykey
-
       - name: Build Framework source code
         working-directory: modules/framework
         env:
@@ -82,6 +76,13 @@ jobs:
         with:
           name: framework-gradle-build-log
           path: modules/framework/build.log
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
+  
                       
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
