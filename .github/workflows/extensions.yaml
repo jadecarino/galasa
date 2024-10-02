@@ -66,10 +66,10 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
-      - name: Output contents of local Maven repository 1
-        working-directory: /home/runner/.m2/repository/dev/galasa
-        run: |
-          ls
+      # - name: Output contents of local Maven repository 1
+      #   working-directory: /home/runner/.m2/repository/dev/galasa
+      #   run: |
+      #     ls
 
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
