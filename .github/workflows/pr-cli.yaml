@@ -12,9 +12,6 @@ on:
     paths: 
       - 'modules/cli/**'
 
-# env:
-#   IMAGE_TAG: ${{ github.event.number }}
-
 jobs:
   build-cli:
     name: Build the Galasa CLI
@@ -39,8 +36,6 @@ jobs:
           --no-daemon --console plain \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/cli/repo 2>&1 | tee build.log
-
-        # -PsourceMaven=https://development.galasa.dev/main/maven-repo/maven \
 
       - name: Upload Gradle installJarsIntoTemplates log
         if: failure()
@@ -101,42 +96,3 @@ jobs:
         working-directory: modules/cli
         run : |
           ./test-galasactl-local.sh --buildTool gradle
-
-      # Commenting out for now as we cannot reach the prod1 ecosystem from GitHub Actions.
-      # - name: Chmod ecosystem test script
-      #   run : |
-      #     chmod +x test-galasactl-ecosystem.sh
-
-      # - name: Run ecosystem test script
-      #   run : |
-      #     ./test-galasactl-ecosystem.sh --bootstrap https://prod1-galasa-dev.cicsk8s.hursley.ibm.com/api/bootstrap
-
-    #   - name: Build Docker image with galasactl executable
-    #     uses: docker/build-push-action@v5
-    #     with:
-    #       context: .
-    #       file: dockerfiles/dockerfile.galasactl
-    #       load: true
-    #       tags: galasactl-x86_64:test
-    #       build-args: |
-    #         platform=linux-x86_64
-
-    #   - name: Build Docker image with galasactl executable and IBM certificates
-    #     uses: docker/build-push-action@v5
-    #     with:
-    #       context: dockerfiles/certs
-    #       file: dockerfiles/dockerfile.galasactl-ibm
-    #       load: true
-    #       tags: galasactl-ibm-x86_64:test
-    #       build-args: |
-    #         dockerRepository=ghcr.io
-    #         tag=main
-
-    #   - name: Build Docker image for development download site
-    #     uses: docker/build-push-action@v5
-    #     with:
-    #       context: .
-    #       file: dockerfiles/dockerfile.galasactl-executables
-    #       load: true
-    #       tags: galasactl-executables:test
-        
