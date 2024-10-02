@@ -51,7 +51,13 @@ jobs:
           PACKAGE: "dev.galasa.framework.api.beans.generated"
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
-      
+
+      - name: Cache local Maven repository for next workflow
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
+
       - name: Build Framework source code
         working-directory: modules/framework
         env:
@@ -76,12 +82,6 @@ jobs:
         with:
           name: framework-gradle-build-log
           path: modules/framework/build.log
-
-      - name: Cache local Maven repository for next workflow
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: mykey
                       
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
@@ -107,12 +107,12 @@ jobs:
         run: |
           java -jar swagger-codegen-cli.jar generate -i galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml -l html2 -o docs/generated/galasaapi
 
-      - name: Login to Github Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: galasa-team
-          password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      # - name: Login to Github Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: galasa-team
+      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
         
       - name: Extract metadata for restapidoc-site image
         id: metadata
