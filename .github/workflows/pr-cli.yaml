@@ -10,7 +10,7 @@ on:
     branches: 
       - main
     paths: 
-      - './modules/cli/**'
+      - 'modules/cli/**'
 
 # env:
 #   IMAGE_TAG: ${{ github.event.number }}

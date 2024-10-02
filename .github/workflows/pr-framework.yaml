@@ -10,7 +10,7 @@ on:
     branches: 
       - main
     paths: 
-      - './modules/framework/**'
+      - 'modules/framework/**'
 
 # env:
   # REGISTRY: ghcr.io
