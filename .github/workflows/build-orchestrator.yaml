@@ -50,17 +50,17 @@ jobs:
     uses: ./.github/workflows/extensions.yaml
     secrets: inherit
 
-  build-managers:
-    name: Build the 'managers' module of Galasa
-    needs: [build-framework]
-    uses: ./.github/workflows/managers.yaml
-    secrets: inherit
+  # build-managers:
+  #   name: Build the 'managers' module of Galasa
+  #   needs: [build-framework]
+  #   uses: ./.github/workflows/managers.yaml
+  #   secrets: inherit
   
-  build-cli:
-    name: Build the 'cli' module of Galasa
-    needs: [build-framework]
-    uses: ./.github/workflows/cli.yaml
-    secrets: inherit
+  # build-cli:
+  #   name: Build the 'cli' module of Galasa
+  #   needs: [build-framework]
+  #   uses: ./.github/workflows/cli.yaml
+  #   secrets: inherit
   
   # build-webui:
   #   name: Build the 'webui' module of Galasa
