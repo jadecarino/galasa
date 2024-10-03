@@ -7,9 +7,6 @@ name: CLI main build
 
 on:
   workflow_call:
-  # workflow_dispatch:
-  # push:
-  #   branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -39,6 +36,12 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
+
       # Pull down dependencies with Gradle and put them in the right places.
       - name: Gather dependencies using Gradle
         working-directory: modules/cli
@@ -56,6 +59,12 @@ jobs:
           name: cli-gradle-installJarsIntoTemplates-log
           path: modules/cli/build.log
           retention-days: 7 
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: mykey
 
       # Generate client code so galasactl can communicate with the API server.
       - name: Generate Go client code using openapi.yaml
@@ -178,18 +187,6 @@ jobs:
   #         tags: ${{ steps.metadata-galasactl-executables.outputs.tags }}
   #         labels: ${{ steps.metadata-galasactl-executables.outputs.labels }}
 
-  #     - name: Recycle application in ArgoCD
-  #       env: 
-  #           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-  #       run: |
-  #           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-cli restart --kind Deployment --resource-name cli-${{ env.BRANCH }} --server argocd.galasa.dev
-       
-  #     - name: Wait for application health in ArgoCD
-  #       env: 
-  #           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-  #       run: |
-  #           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-cli --resource apps:Deployment:cli-${{ env.BRANCH }} --health --server argocd.galasa.dev
-
   # build-galasactl-ibm-testing-image-and-trigger-tekton-pipeline:
   #   name: Build image containing galasactl, OpenJDK and Gradle for testing
   #   runs-on: ubuntu-latest
@@ -227,16 +224,3 @@ jobs:
   #     - name: Attempt to trigger test-cli-ecosystem-commands Tekton pipeline
   #       run: | 
   #         echo "The Tekton pipeline test-cli-ecosystem-commands should be triggered in the next 2-minutes - check the Tekton dashboard"
-
-  # report-failure:
-  #   name: Report failure in workflow
-  #   runs-on: ubuntu-latest
-  #   needs: [log-github-ref, build-cli, build-galasactl-ibm-testing-image-and-trigger-tekton-pipeline]
-  #   if: failure()
-
-  #   steps:
-  #     - name: Report failure in workflow to Slack
-  #       env: 
-  #         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-  #       run : |
-  #         docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/galasabld-ibm:main slackpost workflows --repo "cli" --workflowName "${{ github.workflow }}" --workflowRunNum "${{ github.run_id }}" --ref "${{ env.BRANCH }}" --hook "${{ env.SLACK_WEBHOOK }}"

@@ -17,10 +17,10 @@ env:
 
 jobs:
 
-  # build-buildutils:
-  #   name: Build the 'buildutils' module of Galasa
-  #   uses: ./.github/workflows/buildutils.yaml
-  #   secrets: inherit
+  build-buildutils:
+    name: Build the 'buildutils' module of Galasa
+    uses: ./.github/workflows/buildutils.yaml
+    secrets: inherit
 
   build-wrapping:
     name: Build the 'wrapping' module of Galasa
@@ -40,7 +40,7 @@ jobs:
 
   build-framework:
     name: Build the 'framework' module of Galasa
-    # needs: [build-buildutils, build-wrapping, build-maven]
+    needs: [build-buildutils, build-wrapping, build-maven]
     uses: ./.github/workflows/framework.yaml
     secrets: inherit
 
@@ -50,27 +50,21 @@ jobs:
     uses: ./.github/workflows/extensions.yaml
     secrets: inherit
 
-  # build-managers:
-  #   name: Build the 'managers' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/managers.yaml
-  #   secrets: inherit
+  build-managers:
+    name: Build the 'managers' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/managers.yaml
+    secrets: inherit
   
-  # build-cli:
-  #   name: Build the 'cli' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/cli.yaml
-  #   secrets: inherit
-  
-  # build-webui:
-  #   name: Build the 'webui' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/webui.yaml
-  #   secrets: inherit
+  build-cli:
+    name: Build the 'cli' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/cli.yaml
+    secrets: inherit
 
   # build-obr:
   #   name: Build the 'framework' module of Galasa
-  #   needs: [build-extensions, build-managers, build-webui]
+  #   needs: [build-extensions, build-managers]
   #   uses: ./.github/workflows/framework.yaml
   #   secrets: inherit
 
