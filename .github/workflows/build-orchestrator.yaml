@@ -52,7 +52,7 @@ jobs:
 
   build-managers:
     name: Build the 'managers' module of Galasa
-    needs: [build-framework]
+    needs: [build-extensions]
     uses: ./.github/workflows/managers.yaml
     secrets: inherit
   
