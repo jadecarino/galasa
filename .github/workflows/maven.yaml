@@ -78,7 +78,7 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Cache local Maven repository
+      - name: Restore local Maven repository cache
         uses: actions/cache@v4
         with:
           path: /home/runner/.m2/repository

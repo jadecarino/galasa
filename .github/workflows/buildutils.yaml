@@ -67,7 +67,7 @@ jobs:
     #       context: .
     #       file: dockerfiles/galasabld/dockerfile.galasabld
     #       build-args: platform=linux-amd64
-    #       push: true
+    #       push: false
     #       tags: ${{ steps.metadata.outputs.tags }}
     #       labels: ${{ steps.metadata.outputs.labels }}
         
@@ -143,7 +143,7 @@ jobs:
 #         with:
 #           context: .
 #           file: dockerfiles/galasabld/dockerfile.galasabld-ibm
-#           push: true
+#           push: false
 #           tags: ${{ steps.metadata.outputs.tags }}
 #           labels: ${{ steps.metadata.outputs.labels }}
 #           build-args: |
@@ -199,7 +199,7 @@ jobs:
     #     with:
     #       context: .
     #       file: dockerfiles/openapi2beans/dockerfile.openapi2beans
-    #       push: true
+    #       push: false
     #       tags: ${{ steps.metadata.outputs.tags }}
     #       labels: ${{ steps.metadata.outputs.labels }}
     #       build-args: platform=linux-x86_64 
@@ -261,7 +261,7 @@ jobs:
 #         with:
 #           context: .
 #           file: dockerfiles/dockerfile.buildutils
-#           push: true
+#           push: false
 #           tags: ${{ steps.metadata.outputs.tags }}
 #           labels: ${{ steps.metadata.outputs.labels }}
 

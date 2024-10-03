@@ -36,10 +36,10 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
+      - name: Restore local Maven repository cache
+        uses: actions/cache@v3
         with:
-          path: /home/runner/.m2/repository
+          path: ~/.m2/repository
           key: mykey
 
       # Pull down dependencies with Gradle and put them in the right places.
@@ -146,7 +146,7 @@ jobs:
   #       with:
   #         context: .
   #         file: dockerfiles/dockerfile.galasactl
-  #         push: true
+  #         push: false
   #         tags: ${{ steps.metadata-galasactl.outputs.tags }}
   #         labels: ${{ steps.metadata-galasactl.outputs.labels }}
   #         build-args: |
@@ -164,7 +164,7 @@ jobs:
   #       with:
   #         context: dockerfiles/certs
   #         file: dockerfiles/dockerfile.galasactl-ibm
-  #         push: true
+  #         push: false
   #         tags: ${{ steps.metadata-galasactl-ibm.outputs.tags }}
   #         labels: ${{ steps.metadata-galasactl-ibm.outputs.labels }}
   #         build-args: |
@@ -183,7 +183,7 @@ jobs:
   #       with:
   #         context: .
   #         file: dockerfiles/dockerfile.galasactl-executables
-  #         push: true
+  #         push: false
   #         tags: ${{ steps.metadata-galasactl-executables.outputs.tags }}
   #         labels: ${{ steps.metadata-galasactl-executables.outputs.labels }}
 
@@ -215,7 +215,7 @@ jobs:
   #       with:
   #         context: .
   #         file: dockerfiles/dockerfile.galasactl-ibm-testing
-  #         push: true
+  #         push: false
   #         tags: ${{ steps.meta.outputs.tags }}
   #         labels: ${{ steps.meta.outputs.labels }}
   #         build-args: |

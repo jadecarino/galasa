@@ -62,20 +62,20 @@ jobs:
     uses: ./.github/workflows/cli.yaml
     secrets: inherit
 
-  # build-obr:
-  #   name: Build the 'framework' module of Galasa
-  #   needs: [build-extensions, build-managers]
-  #   uses: ./.github/workflows/framework.yaml
-  #   secrets: inherit
+  build-obr:
+    name: Build the 'obr' module of Galasa
+    needs: [build-extensions, build-managers]
+    uses: ./.github/workflows/obr.yaml
+    secrets: inherit
 
   # build-simplatform:
-  #   name: Build the 'framework' module of Galasa
+  #   name: Build the 'simplatform' module of Galasa
   #   needs: [build-obr]
-  #   uses: ./.github/workflows/framework.yaml
+  #   uses: ./.github/workflows/simplatform.yaml
   #   secrets: inherit
 
   # build-integratedtests:
   #   name: Build the 'integratedtests' module of Galasa
   #   needs: [build-obr]
-  #   uses: ./.github/workflows/framework.yaml
+  #   uses: ./.github/workflows/integratedtests.yaml
   #   secrets: inherit
