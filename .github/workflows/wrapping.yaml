@@ -78,13 +78,13 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/modules/artefacts
-          key: cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            cache-key-
+      # - name: Restore cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ${{ github.workspace }}/modules/artefacts
+      #     key: cache-key-${{ env.BRANCH }}
+      #     restore-keys: |
+      #       cache-key-
 
       - name: Build Wrapping source code
         working-directory: modules/wrapping
@@ -106,11 +106,11 @@ jobs:
           name: wrapping-maven-build-log
           path: modules/wrapping/build.log
 
-      - name: Save cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/modules/artefacts
-          key: cache-key-${{ env.BRANCH }}
+      # - name: Save cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ${{ github.workspace }}/modules/artefacts
+      #     key: cache-key-${{ env.BRANCH }}
 
       - name: Show contents of cache directory
         run : |

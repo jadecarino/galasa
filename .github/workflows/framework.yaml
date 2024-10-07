@@ -52,13 +52,13 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/modules/artefacts
-          key: cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            cache-key-
+      # - name: Restore cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ${{ github.workspace }}/modules/artefacts
+      #     key: cache-key-${{ env.BRANCH }}
+      #     restore-keys: |
+      #       cache-key-
 
       - name: Build Framework source code
         working-directory: modules/framework
@@ -86,11 +86,11 @@ jobs:
           name: framework-gradle-build-log
           path: modules/framework/build.log
 
-      - name: Save cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/modules/artefacts
-          key: cache-key-${{ env.BRANCH }}
+      # - name: Save cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ${{ github.workspace }}/modules/artefacts
+      #     key: cache-key-${{ env.BRANCH }}
 
       - name: Show contents of cache directory
         run : |
