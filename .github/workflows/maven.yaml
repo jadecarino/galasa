@@ -79,7 +79,7 @@ jobs:
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
       - name: Restore cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /home/runner/.m2/repository
           key: cache-key-${{ env.BRANCH }}
@@ -114,7 +114,7 @@ jobs:
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
 
       - name: Save cache
-        uses: actions/cache@v4
+        uses: actions/cache/save@v4
         with:
           path: /home/runner/.m2/repository
           key: cache-key-${{ env.BRANCH }}

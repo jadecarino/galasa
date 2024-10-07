@@ -54,7 +54,7 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
       - name: Restore cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /home/runner/.m2/repository
           key: cache-key-${{ env.BRANCH }}
@@ -88,7 +88,7 @@ jobs:
           path: modules/framework/build.log
 
       - name: Save cache
-        uses: actions/cache@v4
+        uses: actions/cache/save@v4
         with:
           path: /home/runner/.m2/repository
           key: cache-key-${{ env.BRANCH }}
