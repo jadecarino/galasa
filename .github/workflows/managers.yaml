@@ -49,9 +49,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: /home/runner/.m2/repository
-          key: cache-key-${{ env.BRANCH }}
+          key: github-cache-key-${{ env.BRANCH }}
           restore-keys: |
-            cache-key-
+            github-cache-key-
 
       - name: Build Managers source code
         working-directory: modules/managers
@@ -93,7 +93,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: /home/runner/.m2/repository
-          key: cache-key-${{ env.BRANCH }}
+          key: github-cache-key-${{ env.BRANCH }}
 
       - name: Show contents of cache directory
         run : |
