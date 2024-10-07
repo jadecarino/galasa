@@ -78,13 +78,13 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      # - name: Restore cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ github.workspace }}/modules/artefacts
-      #     key: cache-key-${{ env.BRANCH }}
-      #     restore-keys: |
-      #       cache-key-
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
 
       - name: Build Maven source code
         working-directory: modules/maven
@@ -113,12 +113,12 @@ jobs:
           name: junit-test-report
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
 
-      # - name: Save cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ github.workspace }}/modules/artefacts
-      #     key: cache-key-${{ env.BRANCH }}
+      - name: Save cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.m2/repository
+          key: cache-key-${{ env.BRANCH }}
 
       - name: Show contents of cache directory
         run : |
-          ls -R ${{ github.workspace }}/modules/artefacts || true
+          ls -R /home/runner/.m2/repository || true
