@@ -65,6 +65,7 @@ jobs:
           gradle -b galasa-managers-parent/build.gradle check publishToMavenLocal publish --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx4096M \
+          -PsourceMaven=${{ github.workspace }}/modules/artefacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/artefacts \
           -PjacocoEnabled=true \
@@ -92,3 +93,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/modules/artefacts
           key: cache-key-${{ env.BRANCH }}
+
+      - name: Show contents of cache directory
+        run : |
+          ls -R ${{ github.workspace }}/modules/artefacts || true

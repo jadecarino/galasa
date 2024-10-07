@@ -91,7 +91,7 @@ jobs:
         run : |
           set -o pipefail
           mvn deploy -X \
-          -Dgalasa.source.repo=https://repo.maven.apache.org/maven2/ \
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artefacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/artefacts \
           -Dgalasa.jacocoEnabled=true \
@@ -111,3 +111,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/modules/artefacts
           key: cache-key-${{ env.BRANCH }}
+
+      - name: Show contents of cache directory
+        run : |
+          ls -R ${{ github.workspace }}/modules/artefacts || true
