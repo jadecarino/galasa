@@ -32,6 +32,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
+          cache: 'maven'
 
       # The githash is added to the development Maven registry to show what commit level it contains
       - name: Print githash
@@ -43,7 +44,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.9
-          cache-disabled: false
 
       - name: Restore cache
         uses: actions/cache@v4
