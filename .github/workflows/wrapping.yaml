@@ -78,6 +78,14 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
+
       - name: Build Wrapping source code
         working-directory: modules/wrapping
         run : |
@@ -85,7 +93,7 @@ jobs:
           mvn deploy -X \
           -Dgalasa.source.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/wrapping/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/artefacts \
           -Dgalasa.jacocoEnabled=true \
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
@@ -97,3 +105,9 @@ jobs:
         with:
           name: wrapping-maven-build-log
           path: modules/wrapping/build.log
+
+      - name: Save cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}

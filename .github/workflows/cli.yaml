@@ -36,11 +36,13 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
-      - name: Restore local Maven repository cache
+      - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
 
       # Pull down dependencies with Gradle and put them in the right places.
       - name: Gather dependencies using Gradle
@@ -60,11 +62,11 @@ jobs:
           path: modules/cli/build.log
           retention-days: 7 
 
-      - name: Cache local Maven repository
+      - name: Save cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
 
       # Generate client code so galasactl can communicate with the API server.
       - name: Generate Go client code using openapi.yaml

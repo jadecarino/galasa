@@ -78,20 +78,21 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Restore local Maven repository cache
+      - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
 
       - name: Build Maven source code
         working-directory: modules/maven
-        # if: github.event_name == 'push'
         run: |
           set -o pipefail
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/artefacts \
           -Dgalasa.jacocoEnabled=true \
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
@@ -111,8 +112,8 @@ jobs:
           name: junit-test-report
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
 
-      - name: Cache local Maven repository
+      - name: Save cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}

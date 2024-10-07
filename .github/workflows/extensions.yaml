@@ -44,11 +44,13 @@ jobs:
           gradle-version: 8.9
           cache-disabled: false
 
-      - name: Restore local Maven repository cache
+      - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
 
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
@@ -60,10 +62,10 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
-          gradle -b galasa-extensions-parent/build.gradle check publishToMavenLocal --info \
+          gradle -b galasa-extensions-parent/build.gradle check publishToMavenLocal publish --info \
           --no-daemon --console plain \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/extensions/repo \
+          -PtargetMaven=${{ github.workspace }}/modules/artefacts \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -74,8 +76,8 @@ jobs:
           name: extensions-gradle-build-log
           path: modules/extensions/build.log
 
-      - name: Cache local Maven repository
+      - name: Save cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}

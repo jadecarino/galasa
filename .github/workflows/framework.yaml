@@ -52,11 +52,13 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Restore local Maven repository cache
+      - name: Restore cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
+          restore-keys: |
+            cache-key-
 
       - name: Build Framework source code
         working-directory: modules/framework
@@ -68,11 +70,11 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
-          gradle -b galasa-parent/build.gradle check publishToMavenLocal --info \
+          gradle -b galasa-parent/build.gradle check publishToMavenLocal publish --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx5120M \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/framework/repo \
+          -PtargetMaven=${{ github.workspace }}/modules/artefacts \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -83,12 +85,11 @@ jobs:
           name: framework-gradle-build-log
           path: modules/framework/build.log
 
-      - name: Cache local Maven repository
+      - name: Save cache
         uses: actions/cache@v4
         with:
-          path: /home/runner/.m2/repository
-          key: mykey2
-  
+          path: ${{ github.workspace }}/modules/artefacts
+          key: cache-key-${{ env.BRANCH }}
                       
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
