@@ -103,7 +103,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'maven'
+          # cache: 'maven'
 
       - name: Chmod local test script
         working-directory: modules/cli

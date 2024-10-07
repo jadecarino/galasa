@@ -33,7 +33,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'maven'
+          # cache: 'maven'
       
       - name: Print githash
         run: |
@@ -109,7 +109,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'maven'
+          # cache: 'maven'
       
       - name: Install Swagger CLI
         working-directory: modules/framework
