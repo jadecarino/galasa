@@ -68,7 +68,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
-          gradle -b galasa-parent/build.gradle check publish publishToMavenLocal --info \
+          gradle -b galasa-parent/build.gradle check publishToMavenLocal --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx5120M \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
