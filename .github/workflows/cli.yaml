@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.m2/repository
-          key: mykey
+          key: mykey2
 
       # Pull down dependencies with Gradle and put them in the right places.
       - name: Gather dependencies using Gradle
@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.m2/repository
-          key: mykey
+          key: mykey2
 
       # Generate client code so galasactl can communicate with the API server.
       - name: Generate Go client code using openapi.yaml

@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.m2/repository
-          key: mykey
+          key: mykey2
 
       - name: Build Maven source code
         working-directory: modules/maven
@@ -115,4 +115,4 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.m2/repository
-          key: mykey
+          key: mykey2
