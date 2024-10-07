@@ -45,9 +45,9 @@ jobs:
           cache-disabled: false
 
       - name: Restore local Maven repository cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
+          path: /home/runner/.m2/repository
           key: mykey
 
       - name: Build Extensions source code with gradle
