@@ -85,12 +85,25 @@ jobs:
       - name: Display Galasa BOM pom.xml
         run: |
           cat modules/obr/galasa-bom/pom.xml
+
+      - name: Download extensions artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: extensions
+          path: modules/artifacts
+
+      - name: Download managers artifacts
+        uses: actions/download-artifact@v4
+        with:
+            name: managers
+            path: modules/artifacts
         
       - name: Build Galasa BOM with maven
         working-directory: modules/obr
         run: |
           set -o pipefail
           mvn -f galasa-bom/pom.xml deploy -X \
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
           --batch-mode --errors --fail-at-end \
@@ -103,6 +116,13 @@ jobs:
           name: galasa-bom-build-log
           path: modules/obr/galasa-bom-build.log
           retention-days: 7
+
+      - name: Upload obr artifacts
+        uses: actions/upload-artifact@v4
+        with:
+            name: obr
+            path: modules/obr/artifacts
+            retention-days: 7
       
       - name:  Generate Galasa OBR
         run: |

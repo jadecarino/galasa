@@ -24,13 +24,11 @@ jobs:
 
   build-wrapping:
     name: Build the 'wrapping' module of Galasa
-    needs: [build-buildutils]
     uses: ./.github/workflows/wrapping.yaml
     secrets: inherit
 
   build-gradle:
     name: Build the 'gradle' module of Galasa
-    needs: [build-wrapping]
     uses: ./.github/workflows/gradle.yaml
     secrets: inherit
 
@@ -42,8 +40,7 @@ jobs:
 
   build-framework:
     name: Build the 'framework' module of Galasa
-    # needs: [build-buildutils, build-wrapping, build-maven]
-    needs: [build-maven]
+    needs: [build-buildutils, build-wrapping, build-maven]
     uses: ./.github/workflows/framework.yaml
     secrets: inherit
 
@@ -55,19 +52,18 @@ jobs:
 
   build-managers:
     name: Build the 'managers' module of Galasa
-    # needs: [build-framework]
-    needs: [build-extensions]
+    needs: [build-framework]
     uses: ./.github/workflows/managers.yaml
+    secrets: inherit
+
+  build-obr:
+    name: Build the 'obr' module of Galasa
+    needs: [build-extensions, build-managers]
+    uses: ./.github/workflows/obr.yaml
     secrets: inherit
   
   # build-cli:
   #   name: Build the 'cli' module of Galasa
   #   needs: [build-framework]
   #   uses: ./.github/workflows/cli.yaml
-  #   secrets: inherit
-
-  # build-obr:
-  #   name: Build the 'obr' module of Galasa
-  #   needs: [build-extensions, build-managers]
-  #   uses: ./.github/workflows/obr.yaml
   #   secrets: inherit

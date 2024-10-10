@@ -45,13 +45,11 @@ jobs:
           gradle-version: 8.9
           cache-disabled: true
 
-      - name: Restore cache
-        uses: actions/cache/restore@v4
+      - name: Download framework artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            github-cache-key-
+          name: framework
+          path: modules/artifacts
 
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
@@ -65,9 +63,9 @@ jobs:
           set -o pipefail
           gradle -b galasa-extensions-parent/build.gradle check publishToMavenLocal publish --info \
           --no-daemon --console plain \
-          -PsourceMaven=${{ github.workspace }}/modules/artefacts \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/artefacts \
+          -PtargetMaven=${{ github.workspace }}/modules/extensions/artifacts \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -78,12 +76,9 @@ jobs:
           name: extensions-gradle-build-log
           path: modules/extensions/build.log
 
-      - name: Save cache
-        uses: actions/cache/save@v4
+      - name: Upload extensions artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-
-      - name: Show contents of cache directory
-        run : |
-          ls -R /home/runner/.m2/repository || true
+          name: extensions
+          path: modules/extensions/artifacts
+          retention-days: 7

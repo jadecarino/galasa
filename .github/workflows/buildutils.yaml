@@ -16,7 +16,7 @@ env:
 
 jobs:
   build-push-galasabld:
-    name: Build and push galasabld artefacts
+    name: Build and push galasabld artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -149,7 +149,7 @@ jobs:
 #             branch=${{ env.BRANCH }}
 
   build-push-openapi2beans:
-    name: Build and push openapi2beans artefacts
+    name: Build and push openapi2beans artifacts
     runs-on: ubuntu-latest
     
     steps:

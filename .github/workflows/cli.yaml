@@ -36,14 +36,6 @@ jobs:
           gradle-version: 8.9
           cache-disabled: true
 
-      # - name: Restore cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ github.workspace }}/modules/artefacts
-      #     key: github-cache-key-${{ env.BRANCH }}
-      #     restore-keys: |
-      #       github-cache-key-
-
       # Pull down dependencies with Gradle and put them in the right places.
       - name: Gather dependencies using Gradle
         working-directory: modules/cli
@@ -61,12 +53,6 @@ jobs:
           name: cli-gradle-installJarsIntoTemplates-log
           path: modules/cli/build.log
           retention-days: 7 
-
-      # - name: Save cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ${{ github.workspace }}/modules/artefacts
-      #     key: github-cache-key-${{ env.BRANCH }}
 
       # Generate client code so galasactl can communicate with the API server.
       - name: Generate Go client code using openapi.yaml
