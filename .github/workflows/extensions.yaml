@@ -45,11 +45,29 @@ jobs:
           gradle-version: 8.9
           cache-disabled: true
 
+      - name: Download wrapping artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/wrapping/dev/galasa
+
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
       - name: Download framework artifacts
         uses: actions/download-artifact@v4
         with:
           name: framework
-          path: modules/artifacts
+          path: modules/artifacts/dev/galasa
 
       - name: Build Extensions source code with gradle
         working-directory: modules/extensions
@@ -80,5 +98,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: extensions
-          path: modules/extensions/artifacts
+          path: modules/extensions/artifacts/dev/galasa
           retention-days: 7

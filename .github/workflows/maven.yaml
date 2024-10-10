@@ -82,7 +82,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: gradle
-          path: modules/artifacts
+          path: modules/artifacts/dev/galasa
 
       - name: Build Maven source code
         working-directory: modules/maven
@@ -115,5 +115,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maven
-          path: modules/maven/artifacts
+          path: modules/maven/artifacts/dev/galasa
           retention-days: 7
