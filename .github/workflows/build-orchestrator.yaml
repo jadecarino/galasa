@@ -55,15 +55,15 @@ jobs:
     needs: [build-framework]
     uses: ./.github/workflows/managers.yaml
     secrets: inherit
-
+  
+  build-cli:
+    name: Build the 'cli' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/cli.yaml
+    secrets: inherit
+    
   build-obr:
     name: Build the 'obr' module of Galasa
     needs: [build-extensions, build-managers]
     uses: ./.github/workflows/obr.yaml
     secrets: inherit
-  
-  # build-cli:
-  #   name: Build the 'cli' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/cli.yaml
-  #   secrets: inherit

@@ -36,6 +36,12 @@ jobs:
           gradle-version: 8.9
           cache-disabled: true
 
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
       # Pull down dependencies with Gradle and put them in the right places.
       - name: Gather dependencies using Gradle
         working-directory: modules/cli
@@ -43,8 +49,9 @@ jobs:
           set -o pipefail
           gradle -b build.gradle installJarsIntoTemplates --info \
           --no-daemon --console plain \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/cli/repo 2>&1 | tee build.log
+          -PtargetMaven=${{ github.workspace }}/modules/cli/artifacts 2>&1 | tee build.log
 
       - name: Upload Gradle installJarsIntoTemplates log
         if: failure()
