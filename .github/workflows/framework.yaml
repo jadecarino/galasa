@@ -53,13 +53,11 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Restore cache
-        uses: actions/cache/restore@v4
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            github-cache-key-
+          name: maven
+          path: modules/artifacts
 
       - name: Build Framework source code
         working-directory: modules/framework
@@ -74,9 +72,9 @@ jobs:
           gradle -b galasa-parent/build.gradle check publishToMavenLocal publish --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx5120M \
-          -PsourceMaven=${{ github.workspace }}/modules/artefacts \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/artefacts \
+          -PtargetMaven=${{ github.workspace }}/modules/framework/artifacts \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -87,15 +85,12 @@ jobs:
           name: framework-gradle-build-log
           path: modules/framework/build.log
 
-      - name: Save cache
-        uses: actions/cache/save@v4
+      - name: Upload framework artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-
-      - name: Show contents of cache directory
-        run : |
-          ls -R /home/runner/.m2/repository || true
+          name: framework
+          path: modules/framework/artifacts
+          retention-days: 7
                       
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle

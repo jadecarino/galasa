@@ -7,8 +7,6 @@ name: Buildutils main build
 
 on:
   workflow_call:
-#   push:
-#     branches: [main]
 
 env:
   REGISTRY: ghcr.io

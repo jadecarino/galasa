@@ -78,22 +78,20 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Restore cache
-        uses: actions/cache/restore@v4
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            github-cache-key-
+          name: gradle
+          path: modules/artifacts
 
       - name: Build Maven source code
         working-directory: modules/maven
         run: |
           set -o pipefail
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
-          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artefacts \
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/artefacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/artifacts \
           -Dgalasa.jacocoEnabled=true \
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
@@ -113,12 +111,9 @@ jobs:
           name: junit-test-report
           path: modules/maven/galasa-maven-plugin/target/surefire-reports
 
-      - name: Save cache
-        uses: actions/cache/save@v4
+      - name: Upload maven artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-
-      - name: Show contents of cache directory
-        run : |
-          ls -R /home/runner/.m2/repository || true
+          name: maven
+          path: modules/maven/artifacts
+          retention-days: 7

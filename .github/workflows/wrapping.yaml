@@ -78,22 +78,14 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Restore cache
-        uses: actions/cache/restore@v4
-        with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-          restore-keys: |
-            github-cache-key-
-
       - name: Build Wrapping source code
         working-directory: modules/wrapping
         run : |
           set -o pipefail
           mvn deploy -X \
-          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artefacts \
+          -Dgalasa.source.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/artefacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/wrapping/artifacts \
           -Dgalasa.jacocoEnabled=true \
           -Dgalasa.isRelease=true \
           --batch-mode --errors --fail-at-end \
@@ -106,12 +98,9 @@ jobs:
           name: wrapping-maven-build-log
           path: modules/wrapping/build.log
 
-      - name: Save cache
-        uses: actions/cache/save@v4
+      - name: Upload wrapping artifacts
+        uses: actions/upload-artifact@v4
         with:
-          path: /home/runner/.m2/repository
-          key: github-cache-key-${{ env.BRANCH }}
-
-      - name: Show contents of cache directory
-        run : |
-          ls -R /home/runner/.m2/repository || true
+          name: wrapping
+          path: modules/wrapping/artifacts
+          retention-days: 7
