@@ -88,7 +88,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
             name: wrapping
-            path: modules/wrapping/dev/galasa
+            path: modules/artifacts/dev/galasa
 
       - name: Download gradle artifacts
         uses: actions/download-artifact@v4
@@ -234,7 +234,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
             name: wrapping
-            path: modules/wrapping/dev/galasa
+            path: modules/artifacts/dev/galasa
   
       - name: Download gradle artifacts
         uses: actions/download-artifact@v4
@@ -405,7 +405,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
             name: wrapping
-            path: modules/wrapping/dev/galasa
+            path: modules/artifacts/dev/galasa
     
       - name: Download gradle artifacts
         uses: actions/download-artifact@v4
