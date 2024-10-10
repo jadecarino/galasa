@@ -448,7 +448,7 @@ jobs:
         run: |
           set -o pipefail
           mvn -f pom.xml process-sources -X \
-          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           dev.galasa:galasa-maven-plugin:0.15.0:obrembedded \
           --batch-mode --errors --fail-at-end \
