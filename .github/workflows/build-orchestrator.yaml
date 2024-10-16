@@ -52,6 +52,18 @@ env:
 
 jobs:
 
+  echo-inputs:
+    name: echo inputs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: echo-inputs
+        run: |
+          echo ${{ inputs.pull_request_build }}
+          echo ${{ inputs.buildutils_changed }}
+          echo ${{ inputs.maven_changed }}
+    
+
   # If this is a Pull Request build...
 
   pr-build-buildutils:
