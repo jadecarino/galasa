@@ -40,7 +40,7 @@ jobs:
       pull_request_build: ${{ true }}
       buildutils_changed: ${{ false }}
       wrapping_changed: ${{ false }}
-      gradle_changed: ${{ false }}
+      gradle_changed: ${{ true }}
       maven_changed: ${{ true }}
       framework_changed: ${{ false }}
       extensions_changed: ${{ false }}
