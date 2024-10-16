@@ -6,11 +6,7 @@
 name: Maven pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/maven/**'
+  workflow_call:
 
 jobs:
   build-maven:

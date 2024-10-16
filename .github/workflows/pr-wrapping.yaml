@@ -6,11 +6,7 @@
 name: Wrapping pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/wrapping/**'
+  workflow_call:
 
 jobs:
   build-wrapping:

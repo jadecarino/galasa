@@ -6,11 +6,7 @@
 name: Gradle pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/gradle/**'
+  workflow_call:
 
 jobs:
   build-gradle:

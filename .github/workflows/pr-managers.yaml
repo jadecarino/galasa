@@ -6,11 +6,7 @@
 name: Managers pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/managers/**'
+  workflow_call:
 
 jobs:
   build-managers:

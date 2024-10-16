@@ -6,11 +6,7 @@
 name: Extensions pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/extensions/**'
+  workflow_call:
 
 jobs:
   build-extensions:

@@ -6,11 +6,7 @@
 name: Framework pull request build
 
 on:
-  pull_request:
-    branches: 
-      - main
-    paths: 
-      - 'modules/framework/**'
+  workflow_call:
   
 jobs:
   build-framework:
