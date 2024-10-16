@@ -3,12 +3,47 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Main build orchestrator
+name: Build Orchestrator
 
 on:
-  workflow_dispatch:
-  # push:
-  #   branches: [main]
+  workflow_call:
+    inputs:
+      pull_request_build:
+        description: 'True if this build is for a Pull Request'
+        required: true
+        type: boolean
+      buildutils_changed:
+        description: 'True if any files in the module `buildutils` were changed'
+        required: true
+        type: boolean
+      wrapping_changed:
+        description: 'True if any files in the module `wrapping` were changed'
+        required: true
+        type: boolean
+      gradle_changed:
+        description: 'True if any files in the module `gradle` were changed'
+        required: true
+        type: boolean
+      maven_changed:
+        description: 'True if any files in the module `maven` were changed'
+        required: true
+        type: boolean
+      framework_changed:
+        description: 'True if any files in the module `framework` were changed'
+        required: true
+        type: boolean
+      extensions_changed:
+        description: 'True if any files in the module `extensions` were changed'
+        required: true
+        type: boolean
+      managers_changed:
+        description: 'True if any files in the module `managers` were changed'
+        required: true
+        type: boolean
+      obr_changed:
+        description: 'True if any files in the module `obr` were changed'
+        required: true
+        type: boolean
 
 env:
   REGISTRY: ghcr.io
@@ -17,47 +52,92 @@ env:
 
 jobs:
 
-  # build-buildutils:
-  #   name: Build the 'buildutils' module of Galasa
-  #   uses: ./.github/workflows/buildutils.yaml
-  #   secrets: inherit
+  # If this is a Pull Request build...
 
-  build-wrapping:
+  pr-build-buildutils:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.buildutils_changed }}
+    name: Build the 'buildutils' module of Galasa
+    uses: ./.github/workflows/pr-buildutils.yaml
+    secrets: inherit
+
+  pr-build-wrapping:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.wrapping_changed }}
     name: Build the 'wrapping' module of Galasa
-    uses: ./.github/workflows/wrapping.yaml
+    uses: ./.github/workflows/pr-wrapping.yaml
     secrets: inherit
 
-  build-gradle:
+  pr-build-gradle:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.gradle_changed }}
     name: Build the 'gradle' module of Galasa
-    uses: ./.github/workflows/gradle.yaml
+    uses: ./.github/workflows/pr-gradle.yaml
     secrets: inherit
 
-  build-maven:
+  pr-build-maven:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.maven_changed }}
     name: Build the 'maven' module of Galasa
-    needs: [build-gradle]
-    uses: ./.github/workflows/maven.yaml
+    needs: [pr-build-gradle]
+    uses: ./.github/workflows/pr-maven.yaml
+    secrets: inherit
+
+  pr-build-framework:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.framework_changed }}
+    name: Build the 'framework' module of Galasa
+    needs: [pr-build-buildutils, pr-build-wrapping, pr-build-maven]
+    uses: ./.github/workflows/pr-framework.yaml
+    secrets: inherit
+
+  pr-build-extensions:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.extensions_changed }}
+    name: Build the 'extensions' module of Galasa
+    needs: [pr-build-framework]
+    uses: ./.github/workflows/pr-extensions.yaml
+    secrets: inherit
+
+  pr-build-managers:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.managers_changed }}
+    name: Build the 'managers' module of Galasa
+    needs: [pr-build-framework]
+    uses: ./.github/workflows/pr-managers.yaml
+    secrets: inherit
+
+  pr-build-obr:
+    if: ${{ inputs.pull_request_build }} && ${{ inputs.obr_changed }}
+    name: Build the 'obr' module of Galasa
+    needs: [pr-build-extensions, pr-build-managers]
+    uses: ./.github/workflows/pr-obr.yaml
+    secrets: inherit
+
+  # If this is not a Pull Request build...
+
+  build-buildutils:
+    if: ${{ !inputs.pull_request_build }} && ${{ inputs.buildutils_changed }}
+    name: Build the 'buildutils' module of Galasa
+    uses: ./.github/workflows/buildutils.yaml
     secrets: inherit
 
   build-framework:
+    if: ${{ !inputs.pull_request_build }} && ${{ inputs.framework_changed }}
     name: Build the 'framework' module of Galasa
-    # needs: [build-buildutils, build-wrapping, build-maven]
-    needs: [build-wrapping, build-maven]
+    needs: [build-buildutils]
     uses: ./.github/workflows/framework.yaml
     secrets: inherit
 
   build-extensions:
+    if: ${{ !inputs.pull_request_build }} && ${{ inputs.extensions_changed }}
     name: Build the 'extensions' module of Galasa
     needs: [build-framework]
     uses: ./.github/workflows/extensions.yaml
     secrets: inherit
 
   build-managers:
+    if: ${{ !inputs.pull_request_build }} && ${{ inputs.managers_changed }}
     name: Build the 'managers' module of Galasa
     needs: [build-framework]
     uses: ./.github/workflows/managers.yaml
     secrets: inherit
-    
+
   build-obr:
+    if: ${{ !inputs.pull_request_build }} && ${{ inputs.obr_changed }}
     name: Build the 'obr' module of Galasa
     needs: [build-extensions, build-managers]
     uses: ./.github/workflows/obr.yaml

@@ -1,0 +1,49 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Pull Requests
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  FIRST_CHANGED_MODULE: ""
+
+jobs:
+
+  get-first-module-changed:
+    name: Get the first module changed in the Pull Request
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get first module changed in the Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./tools/get-first-module-changed.sh --pr-number ${{ github.event.number }}
+
+      - name: Access the output from the script
+        run: |
+          echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
+
+  build-orchestrator:
+    name: Call the Build Orchestrator
+    uses: ./.github/workflows/build-orchestrator.yaml
+    secrets: inherit
+    with:
+      pull_request_build: true
+      buildutils_changed: false
+      wrapping_changed: false
+      gradle_changed: false
+      maven_changed: true
+      framework_changed: false
+      extensions_changed: false
+      managers_changed: true
+      obr_changed: false
+      
