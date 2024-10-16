@@ -1,0 +1,44 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Main Build Orchestrator
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+
+  get-first-module-changed:
+    name: Get the first module changed in the commit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "${{ github.event.commits }}"
+
+      - name: Get commits
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "${{ github.event.commits.modified }}"
+
+    #   - name: Get the first module changed in the commit
+    #     env:
+    #       GH_TOKEN: ${{ github.token }}
+    #     run: |
+    #       ./tools/get-first-module-changed.sh --pr-number ${{ github.event.number }}
+
+    #   - name: Access the output from the script
+    #     run: |
+    #       echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
+
+  
