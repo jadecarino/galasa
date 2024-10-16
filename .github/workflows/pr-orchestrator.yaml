@@ -21,7 +21,7 @@ jobs:
 
       - name: Get first module changed in the Pull Request
         run: |
-          ./.github/actions/get-first-module-changed.sh --pr-number ${{ github.event.number }}
+          ./tools/get-first-module-changed.sh --pr-number ${{ github.event.number }}
 
       - name: Access the output from the script
         run: |
