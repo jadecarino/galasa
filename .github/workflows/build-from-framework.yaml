@@ -27,11 +27,17 @@ jobs:
   build-extensions:
     name: Build the 'extensions' module of Galasa
     needs: [build-framework]
-    uses: ./.github/workflows/build-from-extensions.yaml
+    uses: ./.github/workflows/build-extensions.yaml
     secrets: inherit
 
   build-managers:
     name: Build the 'managers' module of Galasa
     needs: [build-framework]
-    uses: ./.github/workflows/build-from-managers.yaml
+    uses: ./.github/workflows/build-managers.yaml
+    secrets: inherit
+
+  build-obr:
+    name: Build the 'obr' module of Galasa
+    needs: [build-extensions, build-managers]
+    uses: ./.github/workflows/build-obr.yaml
     secrets: inherit
