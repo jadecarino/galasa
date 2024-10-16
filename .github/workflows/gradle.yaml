@@ -1,0 +1,78 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Gradle main build
+
+on:
+  workflow_call:
+
+env:
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+  log-github-ref:
+    name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log GitHub ref of workflow
+        run: |
+          echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
+
+  build-gradle:
+    name: Build 'gradle' source code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+          # cache: 'maven'
+
+      # The githash is added to the development Maven registry to show what commit level it contains
+      - name: Print githash
+        working-directory: modules/gradle
+        run: |
+          echo $GITHUB_SHA > ./gradle.githash
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.9
+          cache-disabled: true
+
+      - name: Build Gradle source code
+        working-directory: modules/gradle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_signingKeyId:  ${{ secrets.GPG_KEYID }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -o pipefail
+          gradle check publishToMavenLocal publish --info \
+          --no-daemon --console plain \
+          -PsourceMaven=https://repo.maven.apache.org/maven2/ \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/artifacts \
+          -PjacocoEnabled=true \
+          -PisMainOrRelease=true 2>&1 | tee build.log
+
+      - name: Upload Gradle Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-gradle-build-log
+          path: modules/gradle/build.log
+
+      - name: Upload gradle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle
+          path: modules/gradle/artifacts/dev/galasa
+          retention-days: 7

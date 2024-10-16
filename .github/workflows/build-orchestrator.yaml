@@ -1,0 +1,69 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Main build orchestrator
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: galasa-dev
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+
+  build-buildutils:
+    name: Build the 'buildutils' module of Galasa
+    uses: ./.github/workflows/buildutils.yaml
+    secrets: inherit
+
+  build-wrapping:
+    name: Build the 'wrapping' module of Galasa
+    uses: ./.github/workflows/wrapping.yaml
+    secrets: inherit
+
+  build-gradle:
+    name: Build the 'gradle' module of Galasa
+    uses: ./.github/workflows/gradle.yaml
+    secrets: inherit
+
+  build-maven:
+    name: Build the 'maven' module of Galasa
+    needs: [build-gradle]
+    uses: ./.github/workflows/maven.yaml
+    secrets: inherit
+
+  build-framework:
+    name: Build the 'framework' module of Galasa
+    needs: [build-buildutils, build-wrapping, build-maven]
+    uses: ./.github/workflows/framework.yaml
+    secrets: inherit
+
+  build-extensions:
+    name: Build the 'extensions' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/extensions.yaml
+    secrets: inherit
+
+  build-managers:
+    name: Build the 'managers' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/managers.yaml
+    secrets: inherit
+  
+  build-cli:
+    name: Build the 'cli' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/cli.yaml
+    secrets: inherit
+    
+  build-obr:
+    name: Build the 'obr' module of Galasa
+    needs: [build-extensions, build-managers]
+    uses: ./.github/workflows/obr.yaml
+    secrets: inherit

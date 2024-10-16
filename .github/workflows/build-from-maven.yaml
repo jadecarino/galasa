@@ -1,0 +1,31 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Build from Maven
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ['modules/maven/**']
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: galasa-dev
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+
+  build-maven:
+    name: Build the 'maven' module of Galasa
+    uses: ./.github/workflows/maven.yaml
+    secrets: inherit
+
+  build-framework:
+    name: Build the 'framework' module of Galasa
+    needs: [build-maven]
+    uses: ./.github/workflows/build-from-framework.yaml
+    secrets: inherit

@@ -1,0 +1,158 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Framework main build
+
+on:
+  workflow_call:
+
+env:
+  BRANCH: ${{ github.ref_name }}
+    
+jobs:
+  log-github-ref:
+    name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log GitHub ref of workflow
+        run: |
+          echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
+
+  build-framework:
+    name: Build Framework using openapi2beans and gradle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+          # cache: 'maven'
+      
+      - name: Print githash
+        run: |
+          echo $GITHUB_SHA > ./framework.githash
+        
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.9
+          cache-disabled: true
+      
+      - name: Build servlet beans with openapi2beans
+        env:
+          YAML_LOCATION: "modules/framework/galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml"
+          OUTPUT_LOCATION: "modules/framework/galasa-parent/dev.galasa.framework.api.beans/src/main/java"
+          PACKAGE: "dev.galasa.framework.api.beans.generated"
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
+
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
+      - name: Build Framework source code
+        working-directory: modules/framework
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_signingKeyId:  ${{ secrets.GPG_KEYID }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -o pipefail
+          gradle -b galasa-parent/build.gradle check publishToMavenLocal publish --info \
+          --no-daemon --console plain \
+          -Dorg.gradle.jvmargs=-Xmx5120M \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/framework/artifacts \
+          -PjacocoEnabled=true \
+          -PisMainOrRelease=true 2>&1 | tee build.log
+
+      - name: Upload Gradle Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-gradle-build-log
+          path: modules/framework/build.log
+
+      - name: Upload framework artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework
+          path: modules/framework/artifacts/dev/galasa
+          retention-days: 7
+                      
+  build-rest-api-documentation:
+    name: Build REST API documentation using openapi2beans and gradle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+          # cache: 'maven'
+      
+      - name: Install Swagger CLI
+        working-directory: modules/framework
+        run: |
+          wget https://repo1.maven.org/maven2/io/swagger/codegen/v3/swagger-codegen-cli/3.0.41/swagger-codegen-cli-3.0.41.jar -O swagger-codegen-cli.jar
+      
+      - name: Generate Swagger docs
+        working-directory: modules/framework
+        run: |
+          java -jar swagger-codegen-cli.jar generate -i galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml -l html2 -o docs/generated/galasaapi
+
+      # - name: Login to Github Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: galasa-team
+      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+        
+      - name: Extract metadata for restapidoc-site image
+        id: metadata
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ghcr.io/galasa-dev/restapidoc-site
+                
+      - name: Build and push restapidoc-site image
+        uses: docker/build-push-action@v5
+        with:
+          context: modules/framework
+          file: modules/framework/dockerfiles/dockerfile.restapidocsite
+          push: false
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}  
+      
+      # - name: Recycle application in ArgoCD
+      #   env: 
+      #       ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+      #   run: |
+      #     docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name restapidocsite-${{ env.BRANCH }} --server argocd.galasa.dev
+
+      # - name: Wait for app health in ArgoCD
+      #   env: 
+      #     ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+      #   run: |
+      #     docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm -v ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:restapidocsite-${{ env.BRANCH }} --health --server argocd.galasa.dev

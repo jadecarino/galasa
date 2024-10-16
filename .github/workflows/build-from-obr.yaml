@@ -1,0 +1,25 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Build from OBR
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ['modules/obr/**']
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: galasa-dev
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+    
+  build-obr:
+    name: Build the 'obr' module of Galasa
+    uses: ./.github/workflows/obr.yaml
+    secrets: inherit

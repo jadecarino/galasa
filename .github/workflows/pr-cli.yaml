@@ -1,0 +1,98 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: CLI pull request build
+
+on:
+  pull_request:
+    branches: 
+      - main
+    paths: 
+      - 'modules/cli/**'
+
+jobs:
+  build-cli:
+    name: Build the Galasa CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout CLI
+        uses: actions/checkout@v4
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.9
+          cache-disabled: true
+
+      # Pull down dependencies with Gradle and put them in the right places.
+      - name: Gather dependencies using Gradle
+        working-directory: modules/cli
+        run : |
+          set -o pipefail
+          gradle -b build.gradle installJarsIntoTemplates --info \
+          --no-daemon --console plain \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/cli/repo 2>&1 | tee build.log
+
+      - name: Upload Gradle installJarsIntoTemplates log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-installJarsIntoTemplates-log
+          path: build.log
+          retention-days: 7 
+
+      # Generate client code so galasactl can communicate with the API server.
+      - name: Generate Go client code using openapi.yaml
+        run : |
+          docker run --rm -v ${{ github.workspace }}/modules/cli:/var/workspace ghcr.io/galasa-dev/openapi:main java -jar /opt/openapi/openapi-generator-cli.jar generate -i /var/workspace/build/dependencies/openapi.yaml -g go -o /var/workspace/pkg/galasaapi --additional-properties=packageName=galasaapi --global-property=apiTests=false
+
+      # The go.mod and go.sum are out of date, as they do not include the generated code so they are deleted here. They get re-generated when we compile.
+      # Due to permissions, deleting the go.mod and go.sum must be done by the openapi image as the image generated those files.
+
+      - name: Clear go.mod
+        run : |
+          docker run --rm -v ${{ github.workspace }}/modules/cli:/var/workspace ghcr.io/galasa-dev/openapi:main rm /var/workspace/pkg/galasaapi/go.mod
+
+      - name: Clear go.sum
+        run : |
+          docker run --rm -v ${{ github.workspace }}/modules/cli:/var/workspace ghcr.io/galasa-dev/openapi:main rm /var/workspace/pkg/galasaapi/go.sum
+
+      # The go code needs to know which version of Galasa it is part of, so substitute an eye-catcher with the correct value.
+      - name: Update version 
+        working-directory: modules/cli
+        run : |
+          version=$(cat VERSION) &&
+          cat pkg/cmd/root.go | sed "s/unknowncliversion-unknowngithash/${version}/1" > temp.txt &&
+          mv -f temp.txt pkg/cmd/root.go &&
+          cat pkg/cmd/root.go
+
+      # Invoke the make command to build the go code, run unit tests and gather code coverage stats.
+      - name: Build Go code with the Makefile
+        working-directory: modules/cli
+        run : |
+          make all
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+
+      - name: Chmod local test script
+        working-directory: modules/cli
+        run: | 
+          chmod +x test-galasactl-local.sh
+
+      - name: Run local test script with Maven
+        working-directory: modules/cli
+        run : |
+          ./test-galasactl-local.sh --buildTool maven
+
+      - name: Run local test script with Gradle
+        working-directory: modules/cli
+        run : |
+          ./test-galasactl-local.sh --buildTool gradle

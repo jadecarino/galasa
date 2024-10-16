@@ -1,0 +1,48 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Gradle pull request build
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'modules/gradle/**'
+
+jobs:
+  build-gradle:
+    name: Build Gradle source code and Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+
+      # The githash is added to the development Maven registry to show what commit level it contains
+      - name: Print githash
+        run: |
+          echo $GITHUB_SHA > ./gradle.githash
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.9
+          cache-disabled: true
+
+      - name: Build Gradle source code
+        working-directory: modules/gradle
+        run: |
+          gradle check publish --info \
+          --no-daemon --console plain \
+          -PsourceMaven=https://repo.maven.apache.org/maven2/ \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/repo

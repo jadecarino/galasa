@@ -1,0 +1,102 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Extensions main build
+
+on:
+  workflow_call:
+
+env:
+  BRANCH: ${{ github.ref_name }}
+    
+jobs:
+  log-github-ref:
+    name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log GitHub ref of workflow
+        run: |
+          echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
+
+  build-extensions:
+    name: Build Extensions source code and Docker image for development Maven registry
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup JDK 
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+          # cache: 'maven'
+      
+      - name: Print githash
+        run: |
+          echo $GITHUB_SHA > ./extensions.githash
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.9
+          cache-disabled: true
+
+      - name: Download wrapping artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/wrapping/dev/galasa
+
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
+      - name: Download framework artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+
+      - name: Build Extensions source code with gradle
+        working-directory: modules/extensions
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_signingKeyId:  ${{ secrets.GPG_KEYID }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -o pipefail
+          gradle -b galasa-extensions-parent/build.gradle check publishToMavenLocal publish --info \
+          --no-daemon --console plain \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/extensions/artifacts \
+          -PjacocoEnabled=true \
+          -PisMainOrRelease=true 2>&1 | tee build.log
+
+      - name: Upload Gradle Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extensions-gradle-build-log
+          path: modules/extensions/build.log
+
+      - name: Upload extensions artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extensions
+          path: modules/extensions/artifacts/dev/galasa
+          retention-days: 7

@@ -1,0 +1,43 @@
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+name: Build from Framework
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ['modules/framework/**']
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: galasa-dev
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+
+  build-framework:
+    name: Build the 'framework' module of Galasa
+    uses: ./.github/workflows/framework.yaml
+    secrets: inherit
+
+  build-extensions:
+    name: Build the 'extensions' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/build-from-extensions.yaml
+    secrets: inherit
+
+  build-managers:
+    name: Build the 'managers' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/build-from-managers.yaml
+    secrets: inherit
+  
+  build-cli:
+    name: Build the 'cli' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/build-from-cli.yaml
+    secrets: inherit
