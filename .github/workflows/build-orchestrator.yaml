@@ -100,12 +100,12 @@ jobs:
     uses: ./.github/workflows/pr-managers.yaml
     secrets: inherit
 
-  pr-build-obr:
-    if: ${{ inputs.pull_request_build }} && ${{ inputs.obr_changed }}
-    name: Build the 'obr' module of Galasa
-    needs: [pr-build-extensions, pr-build-managers]
-    uses: ./.github/workflows/pr-obr.yaml
-    secrets: inherit
+  # pr-build-obr:
+  #   if: ${{ inputs.pull_request_build }} && ${{ inputs.obr_changed }}
+  #   name: Build the 'obr' module of Galasa
+  #   needs: [pr-build-extensions, pr-build-managers]
+  #   uses: ./.github/workflows/pr-obr.yaml
+  #   secrets: inherit
 
   # If this is not a Pull Request build...
 

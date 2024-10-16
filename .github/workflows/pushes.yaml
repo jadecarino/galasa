@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Main Build Orchestrator
+name: Main Builds / Pushes
 
 on:
   push:
