@@ -35,9 +35,3 @@ jobs:
     needs: [build-framework]
     uses: ./.github/workflows/build-from-managers.yaml
     secrets: inherit
-  
-  build-cli:
-    name: Build the 'cli' module of Galasa
-    needs: [build-framework]
-    uses: ./.github/workflows/build-from-cli.yaml
-    secrets: inherit
