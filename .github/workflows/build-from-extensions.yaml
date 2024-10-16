@@ -27,5 +27,5 @@ jobs:
   build-obr:
     name: Build the 'obr' module of Galasa
     needs: [build-extensions]
-    uses: ./.github/workflows/build-from-obr.yaml
+    uses: ./.github/workflows/obr.yaml
     secrets: inherit
