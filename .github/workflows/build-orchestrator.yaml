@@ -67,46 +67,46 @@ jobs:
   # If this is a Pull Request build...
 
   pr-build-buildutils:
-    if: ${{ inputs.pull_request_build && inputs.buildutils_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.buildutils_changed }}
     name: Build the 'buildutils' module of Galasa
     uses: ./.github/workflows/pr-buildutils.yaml
     secrets: inherit
 
   pr-build-wrapping:
-    if: ${{ inputs.pull_request_build && inputs.wrapping_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.wrapping_changed }}
     name: Build the 'wrapping' module of Galasa
     uses: ./.github/workflows/pr-wrapping.yaml
     secrets: inherit
 
   pr-build-gradle:
-    if: ${{ inputs.pull_request_build && inputs.gradle_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.gradle_changed }}
     name: Build the 'gradle' module of Galasa
     uses: ./.github/workflows/pr-gradle.yaml
     secrets: inherit
 
   pr-build-maven:
-    if: ${{ inputs.pull_request_build && inputs.maven_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.maven_changed }}
     name: Build the 'maven' module of Galasa
     needs: [pr-build-gradle]
     uses: ./.github/workflows/pr-maven.yaml
     secrets: inherit
 
   pr-build-framework:
-    if: ${{ inputs.pull_request_build && inputs.framework_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.framework_changed }}
     name: Build the 'framework' module of Galasa
     needs: [pr-build-buildutils, pr-build-wrapping, pr-build-maven]
     uses: ./.github/workflows/pr-framework.yaml
     secrets: inherit
 
   pr-build-extensions:
-    if: ${{ inputs.pull_request_build && inputs.extensions_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.extensions_changed }}
     name: Build the 'extensions' module of Galasa
     needs: [pr-build-framework]
     uses: ./.github/workflows/pr-extensions.yaml
     secrets: inherit
 
   pr-build-managers:
-    if: ${{ inputs.pull_request_build && inputs.managers_changed }}
+    # if: ${{ inputs.pull_request_build && inputs.managers_changed }}
     name: Build the 'managers' module of Galasa
     needs: [pr-build-framework]
     uses: ./.github/workflows/pr-managers.yaml
