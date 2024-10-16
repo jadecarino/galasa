@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+#
+# Copyright contributors to the Galasa project
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+
+#-----------------------------------------------------------------------------------------                   
+#
+# Objectives: Get the lowest repository in the chain that has been changed in a Pull Request.
+# 
+#-----------------------------------------------------------------------------------------                   
+
+# Where is this script executing from ?
+BASEDIR=$(dirname "$0");pushd $BASEDIR 2>&1 >> /dev/null ;BASEDIR=$(pwd);popd 2>&1 >> /dev/null
+# echo "Running from directory ${BASEDIR}"
+export ORIGINAL_DIR=$(pwd)
+# cd "${BASEDIR}"
+
+cd "${BASEDIR}/.."
+PROJECT_DIR=$(pwd)
+
+#-----------------------------------------------------------------------------------------                   
+#
+# Set Colors
+#
+#-----------------------------------------------------------------------------------------                   
+bold=$(tput bold)
+underline=$(tput sgr 0 1)
+reset=$(tput sgr0)
+red=$(tput setaf 1)
+green=$(tput setaf 76)
+white=$(tput setaf 7)
+tan=$(tput setaf 202)
+blue=$(tput setaf 25)
+
+#-----------------------------------------------------------------------------------------                   
+#
+# Headers and Logging
+#
+#-----------------------------------------------------------------------------------------                   
+underline() { printf "${underline}${bold}%s${reset}\n" "$@" ; }
+h1() { printf "\n${underline}${bold}${blue}%s${reset}\n" "$@" ; }
+h2() { printf "\n${underline}${bold}${white}%s${reset}\n" "$@" ; }
+debug() { printf "${white}[.] %s${reset}\n" "$@" ; }
+info()  { printf "${white}[➜] %s${reset}\n" "$@" ; }
+success() { printf "${white}[${green}✔${white}] ${green}%s${reset}\n" "$@" ; }
+error() { printf "${white}[${red}✖${white}] ${red}%s${reset}\n" "$@" ; }
+warn() { printf "${white}[${tan}➜${white}] ${tan}%s${reset}\n" "$@" ; }
+bold() { printf "${bold}%s${reset}\n" "$@" ; }
+note() { printf "\n${underline}${bold}${blue}Note:${reset} ${blue}%s${reset}\n" "$@" ; }
+
+#-----------------------------------------------------------------------------------------                   
+# Functions
+#-----------------------------------------------------------------------------------------                   
+function usage {
+    info "Syntax: get-first-module-changed.sh [OPTIONS]"
+    cat << EOF
+Options are:
+-h | --help : Display this help text
+--pr-number The number of the Pull Request
+EOF
+}
+
+module_names=(\
+    "buildutils" \
+    "wrapping" \
+    "gradle" \
+    "maven" \
+    "framework" \
+    "extensions" \
+    "managers" \
+    "obr" \
+)
+
+#-----------------------------------------------------------------------------------------                   
+# Process parameters
+#-----------------------------------------------------------------------------------------
+pr_number=""
+while [ "$1" != "" ]; do
+    case $1 in
+        -h | --help )       usage
+                            exit
+                            ;;
+
+        --pr-number )       pr_number="$2"
+                            shift
+                            ;;
+
+        * )                 error "Unexpected argument $1"
+                            usage
+                            exit 1
+    esac
+    shift
+done
+
+#-----------------------------------------------------------------------------------------                   
+# Functions
+#-----------------------------------------------------------------------------------------  
+
+function get_paths_changed_in_pr() {
+    h1 "Getting the file paths changed in Pull Request number ${pr_number}" 
+
+    # Extract changed module names from changed files from GitHub CLI output
+    mapfile -t changed_files_in_pr < <(gh pr diff --repo jadecarino/galasa ${pr_number} --name-only)
+
+    h2 "Files changed:"
+
+    modules_changed_in_pr=()
+    for changed_file in "${changed_files_in_pr[@]}"; do
+        echo "$changed_file"
+        module=$(echo "$changed_file" | cut -d'/' -f2)
+        modules_changed_in_pr+=("$module")
+    done
+
+    # Remove possible duplicates from array of changed modules
+    declare -A unique_module_map
+
+    unique_module_array=()
+    for module in "${modules_changed_in_pr[@]}"; do
+    if [[ -z "${unique_module_map[$module]}" ]]; then
+        unique_module_array+=("$module")
+        unique_module_map[$module]=1
+    fi
+    done
+
+    h2 "Modules changed:"
+    echo "${unique_module_array[@]}"
+}
+
+function get_lowest_level_module_changed() {
+
+    h1 "Finding the lowest level module changed..."
+
+    first_module=""
+
+    # Loop through modules and check which is the first that exists in the changed modules
+    for module in "${module_names[@]}"; do
+        for check_module in "${unique_module_array[@]}"; do
+            if [[ "$module" == "$check_module" ]]; then
+                first_module="$check_module"
+                break 2  # Break both loops
+            fi
+        done
+    done
+
+    echo "The first changed module is: $first_module"
+
+    # Make this module name accessible from the GitHub Actions workflow
+    echo "FIRST_CHANGED_MODULE=$first_module" >> $GITHUB_ENV
+}
+
+get_paths_changed_in_pr
+get_lowest_level_module_changed
