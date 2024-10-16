@@ -286,12 +286,12 @@ jobs:
           path: modules/obr/javadocs/build.log
           retention-days: 7
       
-      - name: Login to Github Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: galasa-team
-          password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      # - name: Login to Github Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: galasa-team
+      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
     
       - name: Extract metadata for Javadoc site image
         id: metadata-javadoc-site
