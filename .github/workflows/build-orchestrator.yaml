@@ -17,10 +17,10 @@ env:
 
 jobs:
 
-  build-buildutils:
-    name: Build the 'buildutils' module of Galasa
-    uses: ./.github/workflows/buildutils.yaml
-    secrets: inherit
+  # build-buildutils:
+  #   name: Build the 'buildutils' module of Galasa
+  #   uses: ./.github/workflows/buildutils.yaml
+  #   secrets: inherit
 
   build-wrapping:
     name: Build the 'wrapping' module of Galasa
@@ -40,7 +40,8 @@ jobs:
 
   build-framework:
     name: Build the 'framework' module of Galasa
-    needs: [build-buildutils, build-wrapping, build-maven]
+    # needs: [build-buildutils, build-wrapping, build-maven]
+    needs: [build-wrapping, build-maven]
     uses: ./.github/workflows/framework.yaml
     secrets: inherit
 
