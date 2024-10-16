@@ -33,7 +33,7 @@ jobs:
       - name: Build and test galasabld image
         working-directory: modules/buildutils
         run: |
-          docker build -t galasabld:${{ env.IMAGE_TAG }} --build-arg platform=linux-amd64 -f modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld .
+          docker build -t galasabld:${{ env.IMAGE_TAG }} --build-arg platform=linux-amd64 -f dockerfiles/galasabld/dockerfile.galasabld .
           docker run --rm galasabld:${{ env.IMAGE_TAG }}
         
       - name: Push galasabld-linux-amd64 executables
@@ -87,7 +87,7 @@ jobs:
       - name: Build and test openapi2beans image
         working-directory: modules/buildutils/openapi2beans
         run: |
-          docker build -t openapi2beans:${{ env.IMAGE_TAG }} --build-arg platform=linux-x86_64 -f modules/buildutils/dockerfiles/openapi2beans/dockerfile.openapi2beans .
+          docker build -t openapi2beans:${{ env.IMAGE_TAG }} --build-arg platform=linux-x86_64 -f dockerfiles/openapi2beans/dockerfile.openapi2beans .
           docker run --rm openapi2beans:${{ env.IMAGE_TAG }} 
       
       - name: Push openapi2beans-darwin-arm64 executables
