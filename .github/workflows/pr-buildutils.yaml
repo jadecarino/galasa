@@ -85,7 +85,7 @@ jobs:
           make all -C openapi2beans
               
       - name: Build and test openapi2beans image
-        working-directory: modules/buildutils
+        working-directory: modules/buildutils/openapi2beans
         run: |
           docker build -t openapi2beans:${{ env.IMAGE_TAG }} --build-arg platform=linux-x86_64 -f modules/buildutils/dockerfiles/openapi2beans/dockerfile.openapi2beans .
           docker run --rm openapi2beans:${{ env.IMAGE_TAG }} 
