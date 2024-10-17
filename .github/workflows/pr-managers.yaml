@@ -54,7 +54,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wrapping
-          path: modules/wrapping/dev/galasa
+          path: modules/artifacts/dev/galasa
           run-id: 11364581065
   
       - name: Download gradle artifacts
