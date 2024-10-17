@@ -141,7 +141,7 @@ jobs:
       # download artifacts from the last successful workflow.
 
       - name: Download wrapping artifacts
-        if: ${{ steps.download-wrapping.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: wrapping
@@ -150,7 +150,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download gradle artifacts
-        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: gradle
@@ -159,7 +159,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download maven artifacts
-        if: ${{ steps.download-maven.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: maven
@@ -168,7 +168,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download framework artifacts
-        if: ${{ steps.download-framework.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: framework
@@ -177,7 +177,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download extensions artifacts
-        if: ${{ steps.download-extensions.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: extensions
@@ -186,7 +186,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download managers artifacts
-        if: ${{ steps.download-managers.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: managers
@@ -367,7 +367,7 @@ jobs:
       # download artifacts from the last successful workflow.
 
       - name: Download wrapping artifacts
-        if: ${{ steps.download-wrapping.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: wrapping
@@ -376,7 +376,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download gradle artifacts
-        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: gradle
@@ -385,7 +385,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download maven artifacts
-        if: ${{ steps.download-maven.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: maven
@@ -394,7 +394,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download framework artifacts
-        if: ${{ steps.download-framework.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: framework
@@ -403,7 +403,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download extensions artifacts
-        if: ${{ steps.download-extensions.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: extensions
@@ -412,7 +412,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download managers artifacts
-        if: ${{ steps.download-managers.outcome == 'failure' }}
+        if: ${{ failure() && steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: managers
