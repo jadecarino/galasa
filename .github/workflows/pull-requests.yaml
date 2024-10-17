@@ -60,7 +60,7 @@ jobs:
   # Call the build orchestrator in Pull Request mode.
   build-orchestrator:
     name: Call the Build Orchestrator
-    # needs: [expose-environment-variables]
+    needs: [get-changed-modules]
     uses: ./.github/workflows/build-orchestrator.yaml
     secrets: inherit
     with:
