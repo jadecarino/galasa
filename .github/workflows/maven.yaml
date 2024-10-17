@@ -11,7 +11,7 @@ on:
       changed:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
-        type: boolean
+        type: string
 
 env:
   BRANCH: ${{ github.ref_name }}
@@ -20,7 +20,7 @@ jobs:
 
   log-unchanged:
     name: Maven is unchanged
-    if: ${{ !inputs.changed }}
+    if: ${{ inputs.changed == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
 
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Log GitHub ref of workflow
@@ -39,7 +39,7 @@ jobs:
 
   build-maven:
     name: Build Maven source code and Docker image for development Maven registry
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

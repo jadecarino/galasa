@@ -11,7 +11,7 @@ on:
       changed:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
-        type: boolean
+        type: string
 
 env:
   BRANCH: ${{ github.ref_name }}

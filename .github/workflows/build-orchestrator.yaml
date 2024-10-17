@@ -125,46 +125,46 @@ jobs:
 
   # If this is not a Pull Request build...
 
-  # build-buildutils:
-  #   if: ${{ !inputs.pull_request_build }}
-  #   name: Build the 'buildutils' module of Galasa
-  #   uses: ./.github/workflows/buildutils.yaml
-  #   secrets: inherit
-  #   with:
-  #     changed: ${{ inputs.buildutils_changed }}
+  build-buildutils:
+    if: ${{ !inputs.pull_request_build }}
+    name: Build the 'buildutils' module of Galasa
+    uses: ./.github/workflows/buildutils.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.buildutils_changed }}
 
-  # build-framework:
-  #   if: ${{ !inputs.pull_request_build }}
-  #   name: Build the 'framework' module of Galasa
-  #   needs: [build-buildutils]
-  #   uses: ./.github/workflows/framework.yaml
-  #   secrets: inherit
-  #   with:
-  #     changed: ${{ inputs.framework_changed }}
+  build-framework:
+    if: ${{ !inputs.pull_request_build }}
+    name: Build the 'framework' module of Galasa
+    needs: [build-buildutils]
+    uses: ./.github/workflows/framework.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.framework_changed }}
 
-  # build-extensions:
-  #   if: ${{ !inputs.pull_request_build }}
-  #   name: Build the 'extensions' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/extensions.yaml
-  #   secrets: inherit
-  #   with:
-  #     changed: ${{ inputs.extensions_changed }}
+  build-extensions:
+    if: ${{ !inputs.pull_request_build }}
+    name: Build the 'extensions' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/extensions.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.extensions_changed }}
 
-  # build-managers:
-  #   if: ${{ !inputs.pull_request_build }}
-  #   name: Build the 'managers' module of Galasa
-  #   needs: [build-framework]
-  #   uses: ./.github/workflows/managers.yaml
-  #   secrets: inherit
-  #   with:
-  #     changed: ${{ inputs.managers_changed }}
+  build-managers:
+    if: ${{ !inputs.pull_request_build }}
+    name: Build the 'managers' module of Galasa
+    needs: [build-framework]
+    uses: ./.github/workflows/managers.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.managers_changed }}
 
-  # build-obr:
-  #   if: ${{ !inputs.pull_request_build }}
-  #   name: Build the 'obr' module of Galasa
-  #   needs: [build-extensions, build-managers]
-  #   uses: ./.github/workflows/obr.yaml
-  #   secrets: inherit
-  #   with:
-  #     changed: ${{ inputs.obr_changed }}
+  build-obr:
+    if: ${{ !inputs.pull_request_build }}
+    name: Build the 'obr' module of Galasa
+    needs: [build-extensions, build-managers]
+    uses: ./.github/workflows/obr.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.obr_changed }}
