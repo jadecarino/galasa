@@ -41,7 +41,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./tools/get-changed-modules-push.sh --
+          ./tools/get-changed-modules-push.sh --base ${{ github.event.before }} --head ${{ github.sha }}
 
   # Call the build orchestrator in Push mode.
   build-orchestrator:
