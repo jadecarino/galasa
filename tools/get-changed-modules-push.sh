@@ -60,6 +60,7 @@ function usage {
     cat << EOF
 Options are:
 -h | --help : Display this help text
+--repo The repository for this GitHub Actions workflow
 --base The base commit level (the commit before the push)
 --head The head commit level (the commit that triggered the push)
 EOF
@@ -76,15 +77,20 @@ module_names=(\
     "obr" \
 )
 
-#-----------------------------------------------------------------------------------------                   
+#-----------------------------------------------------------------------------------------
 # Process parameters
 #-----------------------------------------------------------------------------------------
+repo=""
 base=""
 head=""
 while [ "$1" != "" ]; do
     case $1 in
         -h | --help )   usage
                         exit
+                        ;;
+
+        --repo )        repo="$2"
+                        shift
                         ;;
 
         --base )        base="$2"
@@ -111,10 +117,10 @@ function get_files_changed_in_push() {
     h1 "Getting the files changed in Push event triggered by commit ${head}" 
 
     h2 "Files changed:"
-    gh api repos/galasa-dev/extensions/compare/${base}...${head} --jq '.files[].filename'
+    gh api repos/${repo}/compare/${base}...${head} --jq '.files[].filename'
 
     # Extract changed module names from changed files from GitHub CLI output
-    mapfile -t changed_files_in_push < <(gh api repos/galasa-dev/extensions/compare/${base}...${head} --jq '.files[].filename')
+    mapfile -t changed_files_in_push < <(gh api repos/${repo}/compare/${base}...${head} --jq '.files[].filename')
 
     modules_changed_in_push=()
     for changed_file in "${changed_files_in_push[@]}"; do
