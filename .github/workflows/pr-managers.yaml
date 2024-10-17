@@ -6,15 +6,28 @@
 name: Managers pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/managers/**'
+  workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 jobs:
+
+  log-unchanged:
+    name: Managers is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The managers module is unchanged"
+
   build-managers:
     name: Build Managers source code and Docker image
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +49,80 @@ jobs:
         with:
           gradle-version: 8.9
           cache-disabled: true
+
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
+      - name: Download wrapping artifacts from this PR
+        id: download-wrapping
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+
+      - name: Download gradle artifacts from this PR
+        id: download-gradle
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts from this PR
+        id: download-maven
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
+      - name: Download framework artifacts from this PR
+        id: download-framework
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
+      - name: Download wrapping artifacts
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+  
+      - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download maven artifacts
+        if: ${{ steps.download-maven.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download framework artifacts
+        if: ${{ steps.download-framework.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
       
       - name: Build Managers source code
         working-directory: modules/managers
@@ -44,8 +131,9 @@ jobs:
           gradle -b galasa-managers-parent/build.gradle check publish --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx4096M \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/repo 2>&1 | tee build.log
+          -PtargetMaven=${{ github.workspace }}/modules/managers/repo 2>&1 | tee build.log
 
       - name: Upload Gradle Build Log
         if: failure()
@@ -63,3 +151,10 @@ jobs:
           path: modules/managers/galasa-managers-parent/**/**/build/reports/**/*.html
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Upload managers artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: managers
+          path: modules/managers/repo/dev/galasa
+          retention-days: 7

@@ -7,13 +7,30 @@ name: Gradle main build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 env:
   BRANCH: ${{ github.ref_name }}
 
 jobs:
+
+  log-unchanged:
+    name: Gradle is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The gradle module is unchanged"
+
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Log GitHub ref of workflow
@@ -22,6 +39,7 @@ jobs:
 
   build-gradle:
     name: Build 'gradle' source code
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -59,7 +77,7 @@ jobs:
           --no-daemon --console plain \
           -PsourceMaven=https://repo.maven.apache.org/maven2/ \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/gradle/artifacts \
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/repo \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -74,5 +92,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gradle
-          path: modules/gradle/artifacts/dev/galasa
+          path: modules/gradle/repo/dev/galasa
           retention-days: 7

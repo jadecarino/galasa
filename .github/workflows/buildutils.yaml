@@ -7,16 +7,32 @@ name: Buildutils main build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
-  IMAGE_TAG: main
-  BRANCH: main
+  NAMESPACE: ${{ github.repository_owner }}
+  BRANCH: ${{ github.ref_name }}
 
 jobs:
+
+  log-unchanged:
+    name: Buildutils is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The buildutils module is unchanged"
+
   build-push-galasabld:
     name: Build and push galasabld artifacts
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -52,12 +68,12 @@ jobs:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld
           load: true
-          tags: galasabld-amd64:${{ env.IMAGE_TAG }}
+          tags: galasabld-amd64:${{ env.BRANCH }}
           build-args: platform=linux-amd64
         
       - name: Test galasabld image
         run: |
-          docker run --rm galasabld-amd64:${{ env.IMAGE_TAG }}        
+          docker run --rm galasabld-amd64:${{ env.BRANCH }}        
         
       - name: Build and push galasabld image
         uses: docker/build-push-action@v5
@@ -101,6 +117,7 @@ jobs:
 
   build-push-galasabld-ibm:
     name: Build and push galasabld-ibm artefact
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     needs: build-push-galasabld
 
@@ -127,14 +144,14 @@ jobs:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld-ibm
           load: true
-          tags: galasabld-ibm:${{ env.IMAGE_TAG }}
+          tags: galasabld-ibm:${{ env.BRANCH }}
           build-args: |
             dockerRepository=ghcr.io
             branch=${{ env.BRANCH }}
         
       - name: Test galasabld-ibm image
         run: |
-          docker run --rm galasabld-ibm:${{ env.IMAGE_TAG }}        
+          docker run --rm galasabld-ibm:${{ env.BRANCH }}        
         
       - name: Build and push galasabld-ibm image
         uses: docker/build-push-action@v5
@@ -150,6 +167,7 @@ jobs:
 
   build-push-openapi2beans:
     name: Build and push openapi2beans artifacts
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     
     steps:
@@ -185,12 +203,12 @@ jobs:
           context: modules/buildutils/openapi2beans
           file: modules/buildutils/dockerfiles/openapi2beans/dockerfile.openapi2beans
           load: true
-          tags: openapi2beans:${{ env.IMAGE_TAG }}
+          tags: openapi2beans:${{ env.BRANCH }}
           build-args: platform=linux-x86_64
         
       - name: Test openapi2beans image
         run: |
-          docker run --rm openapi2beans:${{ env.IMAGE_TAG }}         
+          docker run --rm openapi2beans:${{ env.BRANCH }}         
         
       - name: Build and push openapi2beans image
         uses: docker/build-push-action@v5
@@ -222,6 +240,7 @@ jobs:
 
   build-push-buildutils-executables:
     name: Build and push buildutils repository executables
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

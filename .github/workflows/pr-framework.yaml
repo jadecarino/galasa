@@ -6,15 +6,28 @@
 name: Framework pull request build
 
 on:
-  pull_request:
-    branches: 
-      - main
-    paths: 
-      - 'modules/framework/**'
+  workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
   
 jobs:
+
+  log-unchanged:
+    name: Framework is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The framework module is unchanged"
+
   build-framework:
     name: Build Framework using openapi2beans and gradle
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -45,27 +58,73 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Get last successful workflow run ID for Main builds
-        id: get-workflow-id
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run : |
-          WORKFLOW_ID=$(gh run list --repo jadecarino/galasa --workflow "Main build orchestrator" --status success --limit 1 | grep -v STATUS | cut -d' ' -f6)
-          echo "::set-output name=workflow_id::${WORKFLOW_ID}"
+      # - name: Get last successful workflow run ID for Main builds
+      #   id: get-workflow-id
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #   run : |
+      #     WORKFLOW_ID=$(gh run list --repo jadecarino/galasa --workflow "Main build orchestrator" --status success --limit 1 | grep -v STATUS | cut -d' ' -f6)
+      #     echo "::set-output name=workflow_id::${WORKFLOW_ID}"
 
-      - name: Download gradle artifacts
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
+      - name: Download wrapping artifacts from this PR
+        id: download-wrapping
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+
+      - name: Download gradle artifacts from this PR
+        id: download-gradle
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
-          run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}"
 
-      - name: Download maven artifacts
+      - name: Download maven artifacts from this PR
+        id: download-maven
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: maven
           path: modules/artifacts/dev/galasa
-          run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}"
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
+      - name: Download wrapping artifacts
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download maven artifacts
+        if: ${{ steps.download-maven.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
+          run-id: 11364581065
 
       - name: Build Framework source code
         working-directory: modules/framework
@@ -75,7 +134,7 @@ jobs:
           -Dorg.gradle.jvmargs=-Xmx5120M \
           -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/framework/artifacts
+          -PtargetMaven=${{ github.workspace }}/modules/framework/repo
       
       # - name: Upload Jacoco Reports as artifact
       #   if: failure()
@@ -86,8 +145,16 @@ jobs:
       #     retention-days: 7
       #     if-no-files-found: ignore
 
+      - name: Upload framework artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework
+          path: modules/framework/repo/dev/galasa
+          retention-days: 7
+
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

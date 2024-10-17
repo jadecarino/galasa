@@ -3,18 +3,18 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Pull Requests
+name: Main Builds / Pushes
 
 on:
-  pull_request:
+  push:
     branches: [main]
 
 jobs:
 
-  # Get modules that were changed as part of this Pull Request,
+  # Get modules that were changed as part of this Push,
   # set that as an output of this job to be passed to the next job. 
   get-changed-modules:
-    name: Get the modules changed in this Pull Request
+    name: Get the modules changed in this Push
     runs-on: ubuntu-latest
 
     outputs:
@@ -31,21 +31,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Get the modules changed in this Pull Request
+      - name: Log base and head commits of this Push event
+        run : |
+          echo "Base commit: ${{ github.event.before }}"
+          echo "Head commit: ${{ github.sha }}"
+
+      - name: Get the modules changed in this Push
         id: get-changed-modules
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./tools/get-changed-modules-pull-request.sh --pr-number ${{ github.event.number }}
+          ./tools/get-changed-modules-push.sh --base ${{ github.event.before }} --head ${{ github.sha }}
 
-  # Call the build orchestrator in Pull Request mode.
+  # Call the build orchestrator in Push mode.
   build-orchestrator:
     name: Call the Build Orchestrator
     needs: [get-changed-modules]
     uses: ./.github/workflows/build-orchestrator.yaml
     secrets: inherit
     with:
-      pull_request_build: ${{ true }}
+      pull_request_build: ${{ false }}
       buildutils_changed: ${{ needs.get-changed-modules.outputs.buildutils_changed }}
       wrapping_changed: ${{ needs.get-changed-modules.outputs.wrapping_changed }}
       gradle_changed: ${{ needs.get-changed-modules.outputs.gradle_changed }}
@@ -54,3 +59,5 @@ jobs:
       extensions_changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
       managers_changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
       obr_changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
+      
+  

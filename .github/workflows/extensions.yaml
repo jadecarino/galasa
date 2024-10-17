@@ -7,13 +7,30 @@ name: Extensions main build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 env:
   BRANCH: ${{ github.ref_name }}
     
 jobs:
+
+  log-unchanged:
+    name: Extensions is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The extensions module is unchanged"
+
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Log GitHub ref of workflow
@@ -22,6 +39,7 @@ jobs:
 
   build-extensions:
     name: Build Extensions source code and Docker image for development Maven registry
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -83,7 +101,7 @@ jobs:
           --no-daemon --console plain \
           -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/extensions/artifacts \
+          -PtargetMaven=${{ github.workspace }}/modules/extensions/repo \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -98,5 +116,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: extensions
-          path: modules/extensions/artifacts/dev/galasa
+          path: modules/extensions/repo/dev/galasa
           retention-days: 7

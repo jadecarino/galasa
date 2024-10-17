@@ -7,16 +7,33 @@ name: OBR main build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
+  NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
   ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
 jobs:
+
+  log-unchanged:
+    name: OBR is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The obr module is unchanged"
+
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Log GitHub ref of workflow
@@ -25,6 +42,7 @@ jobs:
           
   build-obr:
     name: Build OBR using galasabld image and maven
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -127,7 +145,7 @@ jobs:
           mvn -f galasa-bom/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/artifacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-bom-build.log
         
@@ -154,7 +172,7 @@ jobs:
           mvn -f dev.galasa.uber.obr/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/artifacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-obr-build.log
     
@@ -170,11 +188,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: obr
-            path: modules/obr/artifacts/dev/galasa
+            path: modules/obr/repo/dev/galasa
             retention-days: 7
 
   build-obr-javadocs:
     name: Build OBR javadocs using galasabld image and maven
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -346,6 +365,7 @@ jobs:
 
   build-obr-generic:
     name: Build OBR embedded and boot images using galasabld and maven
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     needs: [build-obr, build-obr-javadocs]
 

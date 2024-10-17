@@ -6,15 +6,28 @@
 name: Maven pull request build
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'modules/maven/**'
+  workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: string
 
 jobs:
+
+  log-unchanged:
+    name: Maven is unchanged
+    if: ${{ inputs.changed == 'false' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "The maven module is unchanged"
+
   build-maven:
     name: Build Maven source code and Docker image
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -67,13 +80,44 @@ jobs:
       - name: Copy custom settings.xml
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
+
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
+      - name: Download gradle artifacts
+        id: download-gradle
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
+      - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
       
       - name: Building Maven source code
         working-directory: modules/maven
         run: |
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
           -Dgpg.skip=true \
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml
+
+      - name: Upload maven artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven
+          path: modules/maven/repo/dev/galasa
+          retention-days: 7
