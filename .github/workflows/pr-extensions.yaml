@@ -55,6 +55,7 @@ jobs:
 
       - name: Download wrapping artifacts from this PR
         id: download-wrapping
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: wrapping
@@ -62,6 +63,7 @@ jobs:
 
       - name: Download gradle artifacts from this PR
         id: download-gradle
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: gradle
@@ -69,6 +71,7 @@ jobs:
 
       - name: Download maven artifacts from this PR
         id: download-maven
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: maven
@@ -76,6 +79,7 @@ jobs:
 
       - name: Download framework artifacts from this PR
         id: download-framework
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: framework
@@ -85,7 +89,7 @@ jobs:
       # download artifacts from the last successful workflow.
 
       - name: Download wrapping artifacts
-        if: ${{ failure() && steps.download-wrapping.outcome == 'failure' }}
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: wrapping
@@ -94,7 +98,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download gradle artifacts
-        if: ${{ failure() && steps.download-gradle.outcome == 'failure' }}
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: gradle
@@ -103,7 +107,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download maven artifacts
-        if: ${{ failure() && steps.download-maven.outcome == 'failure' }}
+        if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: maven
@@ -112,7 +116,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download framework artifacts
-        if: ${{ failure() && steps.download-framework.outcome == 'failure' }}
+        if: ${{ steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: framework
