@@ -11,7 +11,7 @@ on:
       changed:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
-        type: boolean
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -22,7 +22,7 @@ jobs:
 
   log-unchanged:
     name: OBR is unchanged
-    if: ${{ !inputs.changed }}
+    if: ${{ inputs.changed == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +32,7 @@ jobs:
 
   build-obr:
     name: Build OBR using galasabld image and maven
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -202,7 +202,7 @@ jobs:
 
   build-obr-javadocs:
     name: Build OBR javadocs using galasabld image and maven
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

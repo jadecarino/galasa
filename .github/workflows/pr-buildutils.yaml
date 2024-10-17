@@ -11,7 +11,7 @@ on:
       changed:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
-        type: boolean
+        type: string
 
 env:
   IMAGE_TAG: ${{ github.event.number }}
@@ -20,7 +20,7 @@ jobs:
 
   log-unchanged:
     name: Buildutils is unchanged
-    if: ${{ !inputs.changed }}
+    if: ${{ inputs.changed == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
 
   build-upload-galasabld:
     name: Build galasabld
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -85,7 +85,7 @@ jobs:
   
   build-upload-openapi2beans:
     name: Build openapi2beans
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

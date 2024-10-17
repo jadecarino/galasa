@@ -10,30 +10,31 @@ on:
     branches: [main]
 
 env:
-  BUILDUTILS_CHANGED: false
-  WRAPPING_CHANGED: false
-  GRADLE_CHANGED: false
-  MAVEN_CHANGED: true
-  FRAMEWORK_CHANGED: false
-  EXTENSIONS_CHANGED: false
-  MANAGERS_CHANGED: true
-  OBR_CHANGED: false
+  # These environment variables are set to false as default, but updated by the first job below.
+  BUILDUTILS_CHANGED: 'false'
+  WRAPPING_CHANGED: 'false'
+  GRADLE_CHANGED: 'false'
+  MAVEN_CHANGED: 'true'
+  FRAMEWORK_CHANGED: 'false'
+  EXTENSIONS_CHANGED: 'false'
+  MANAGERS_CHANGED: 'true'
+  OBR_CHANGED: 'false'
 
 jobs:
 
-  # get-first-module-changed:
-  #   name: Get the first module changed in the Pull Request
+  # get-changed-modules:
+  #   name: Get the modules changed in this Pull Request
   #   runs-on: ubuntu-latest
 
   #   steps:
   #     - name: Checkout Code
   #       uses: actions/checkout@v4
 
-  #     - name: Get first module changed in the Pull Request
+  #     - name: Get the modules changed in this Pull Request
   #       env:
   #         GH_TOKEN: ${{ github.token }}
   #       run: |
-  #         ./tools/get-first-module-changed.sh --pr-number ${{ github.event.number }}
+  #         ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
 
   #     - name: Access the output from the script
   #       run: |

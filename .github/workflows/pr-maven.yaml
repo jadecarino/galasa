@@ -11,13 +11,13 @@ on:
       changed:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
-        type: boolean
+        type: string
 
 jobs:
 
   log-unchanged:
     name: Maven is unchanged
-    if: ${{ !inputs.changed }}
+    if: ${{ inputs.changed == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
 
   build-maven:
     name: Build Maven source code and Docker image
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:

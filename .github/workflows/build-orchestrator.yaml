@@ -15,35 +15,35 @@ on:
       buildutils_changed:
         description: 'True if any files in the module `buildutils` were changed'
         required: true
-        type: boolean
+        type: string
       wrapping_changed:
         description: 'True if any files in the module `wrapping` were changed'
         required: true
-        type: boolean
+        type: string
       gradle_changed:
         description: 'True if any files in the module `gradle` were changed'
         required: true
-        type: boolean
+        type: string
       maven_changed:
         description: 'True if any files in the module `maven` were changed'
         required: true
-        type: boolean
+        type: string
       framework_changed:
         description: 'True if any files in the module `framework` were changed'
         required: true
-        type: boolean
+        type: string
       extensions_changed:
         description: 'True if any files in the module `extensions` were changed'
         required: true
-        type: boolean
+        type: string
       managers_changed:
         description: 'True if any files in the module `managers` were changed'
         required: true
-        type: boolean
+        type: string
       obr_changed:
         description: 'True if any files in the module `obr` were changed'
         required: true
-        type: boolean
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -114,12 +114,14 @@ jobs:
     with:
       changed: ${{ inputs.managers_changed }}
 
-  # pr-build-obr:
-  #   if: ${{ inputs.pull_request_build && inputs.obr_changed }}
-  #   name: Build the 'obr' module of Galasa
-  #   needs: [pr-build-extensions, pr-build-managers]
-  #   uses: ./.github/workflows/pr-obr.yaml
-  #   secrets: inherit
+  pr-build-obr:
+    if: ${{ inputs.pull_request_build }}
+    name: Build the 'obr' module of Galasa
+    needs: [pr-build-extensions, pr-build-managers]
+    uses: ./.github/workflows/pr-obr.yaml
+    secrets: inherit
+    with:
+      changed: ${{ inputs.obr_changed }}
 
   # If this is not a Pull Request build...
 
