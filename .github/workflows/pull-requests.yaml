@@ -39,28 +39,28 @@ jobs:
 
   # Environment variables can't be passed directly to reusable workflows,
   # so they need to be exposed as outputs of this job to be used below.
-  expose-environment-variables:
-    name: Expose environment variables to pass to build orchestrator
-    needs: [get-changed-modules]
-    runs-on: ubuntu-latest
+  # expose-environment-variables:
+  #   name: Expose environment variables to pass to build orchestrator
+  #   needs: [get-changed-modules]
+  #   runs-on: ubuntu-latest
 
-    outputs:
-      buildutils_changed: "$BUILDUTILS_CHANGED"
-      wrapping_changed: "$WRAPPING_CHANGED"
-      gradle_changed: "$GRADLE_CHANGED"
-      maven_changed: "$MAVEN_CHANGED"
-      framework_changed: "$FRAMEWORK_CHANGED"
-      extensions_changed: "$EXTENSIONS_CHANGED"
-      managers_changed: "$MANAGERS_CHANGED"
-      obr_changed: "$OBR_CHANGED"
+  #   outputs:
+  #     buildutils_changed: "$BUILDUTILS_CHANGED"
+  #     wrapping_changed: "$WRAPPING_CHANGED"
+  #     gradle_changed: "$GRADLE_CHANGED"
+  #     maven_changed: "$MAVEN_CHANGED"
+  #     framework_changed: "$FRAMEWORK_CHANGED"
+  #     extensions_changed: "$EXTENSIONS_CHANGED"
+  #     managers_changed: "$MANAGERS_CHANGED"
+  #     obr_changed: "$OBR_CHANGED"
 
-    steps:
-      - run: echo "Exposing environment variables"
+  #   steps:
+  #     - run: echo "Exposing environment variables"
 
   # Call the build orchestrator in Pull Request mode.
   build-orchestrator:
     name: Call the Build Orchestrator
-    needs: [expose-environment-variables]
+    # needs: [expose-environment-variables]
     uses: ./.github/workflows/build-orchestrator.yaml
     secrets: inherit
     with:
@@ -73,11 +73,11 @@ jobs:
       # extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
       # managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
       # obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
-      buildutils_changed: "$BUILDUTILS_CHANGED"
-      wrapping_changed: "$WRAPPING_CHANGED"
-      gradle_changed: "$GRADLE_CHANGED"
-      maven_changed: "$MAVEN_CHANGED"
-      framework_changed: "$FRAMEWORK_CHANGED"
-      extensions_changed: "$EXTENSIONS_CHANGED"
-      managers_changed: "$MANAGERS_CHANGED"
-      obr_changed: "$OBR_CHANGED"
+      buildutils_changed: $BUILDUTILS_CHANGED
+      wrapping_changed: $WRAPPING_CHANGED
+      gradle_changed: $GRADLE_CHANGED
+      maven_changed: $MAVEN_CHANGED
+      framework_changed: $FRAMEWORK_CHANGED
+      extensions_changed: $EXTENSIONS_CHANGED
+      managers_changed: $MANAGERS_CHANGED
+      obr_changed: $OBR_CHANGED
