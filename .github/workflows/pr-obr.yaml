@@ -15,8 +15,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
-  IMAGE_TAG: main
+  NAMESPACE: ${{ github.repository_owner }}
 
 jobs:
 
@@ -264,7 +263,7 @@ jobs:
           tags: obr-maven-artefacts:test
           build-args: |
             dockerRepository=${{ env.REGISTRY }}
-            tag=${{ env.IMAGE_TAG }}
+            tag=main
 
   build-obr-javadocs:
     name: Build OBR javadocs using galasabld image and maven

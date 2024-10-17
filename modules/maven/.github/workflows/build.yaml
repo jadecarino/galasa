@@ -29,7 +29,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
+  NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
 
 jobs:

@@ -9,36 +9,75 @@ on:
   push:
     branches: [main]
 
+env:
+  # These environment variables are set to false as default,
+  # but are updated by the first job below.
+  BUILDUTILS_CHANGED: 'false'
+  WRAPPING_CHANGED: 'false'
+  GRADLE_CHANGED: 'false'
+  MAVEN_CHANGED: 'false'
+  FRAMEWORK_CHANGED: 'false'
+  EXTENSIONS_CHANGED: 'false'
+  MANAGERS_CHANGED: 'false'
+  OBR_CHANGED: 'false'
+
 jobs:
 
-  get-first-module-changed:
-    name: Get the first module changed in the commit
-    runs-on: ubuntu-latest
+  # TODO: Script needs to output environment variables of 'true' or 'false' for modules changed
+  # get-changed-modules:
+  #   name: Get the modules changed in this Push
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    # steps:
+    #   - name: Checkout Code
+    #     uses: actions/checkout@v4
 
-      - name: Get commits
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "${{ github.event.commits }}"
-
-      - name: Get commits
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "${{ github.event.commits.modified }}"
-
-    #   - name: Get the first module changed in the commit
+    #   - name: Get commits
     #     env:
     #       GH_TOKEN: ${{ github.token }}
     #     run: |
-    #       ./tools/get-first-module-changed.sh --pr-number ${{ github.event.number }}
+    #       echo "${{ github.event.commits }}"
 
-    #   - name: Access the output from the script
+    #   - name: Get commits
+    #     env:
+    #       GH_TOKEN: ${{ github.token }}
     #     run: |
-    #       echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
+    #       echo "${{ github.event.commits.modified }}"
 
+  # Environment variables can't be passed directly to reusable workflows,
+  # so they need to be exposed as outputs of this job to be used below.
+  expose-environment-variables:
+    name: Expose environment variables to pass to build orchestrator
+    runs-on: ubuntu-latest
+
+    outputs:
+      buildutils_changed: ${{ env.BUILDUTILS_CHANGED }}
+      wrapping_changed: ${{ env.WRAPPING_CHANGED }}
+      gradle_changed: ${{ env.GRADLE_CHANGED }}
+      maven_changed: ${{ env.MAVEN_CHANGED }}
+      framework_changed: ${{ env.FRAMEWORK_CHANGED }}
+      extensions_changed: ${{ env.EXTENSIONS_CHANGED }}
+      managers_changed: ${{ env.MANAGERS_CHANGED }}
+      obr_changed: ${{ env.OBR_CHANGED }}
+
+    steps:
+      - run: echo "Exposing environment variables"
+
+  # Call the build orchestrator in Push mode.
+  build-orchestrator:
+    name: Call the Build Orchestrator
+    needs: [expose-environment-variables]
+    uses: ./.github/workflows/build-orchestrator.yaml
+    secrets: inherit
+    with:
+      pull_request_build: ${{ false }}
+      buildutils_changed: ${{ needs.expose-environment-variables.outputs.buildutils_changed }}
+      wrapping_changed: ${{ needs.expose-environment-variables.outputs.wrapping_changed }}
+      gradle_changed: ${{ needs.expose-environment-variables.outputs.gradle_changed }}
+      maven_changed: ${{ needs.expose-environment-variables.outputs.maven_changed }}
+      framework_changed: ${{ needs.expose-environment-variables.outputs.framework_changed }}
+      extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
+      managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
+      obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
+      
   

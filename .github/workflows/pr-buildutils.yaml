@@ -14,7 +14,7 @@ on:
         type: string
 
 env:
-  IMAGE_TAG: ${{ github.event.number }}
+  BRANCH: ${{ github.event.number }}
 
 jobs:
 
@@ -50,8 +50,8 @@ jobs:
       - name: Build and test galasabld image
         working-directory: modules/buildutils
         run: |
-          docker build -t galasabld:${{ env.IMAGE_TAG }} --build-arg platform=linux-amd64 -f dockerfiles/galasabld/dockerfile.galasabld .
-          docker run --rm galasabld:${{ env.IMAGE_TAG }}
+          docker build -t galasabld:${{ env.BRANCH }} --build-arg platform=linux-amd64 -f dockerfiles/galasabld/dockerfile.galasabld .
+          docker run --rm galasabld:${{ env.BRANCH }}
         
       - name: Push galasabld-linux-amd64 executables
         uses: actions/upload-artifact@v4
@@ -105,8 +105,8 @@ jobs:
       - name: Build and test openapi2beans image
         working-directory: modules/buildutils
         run: |
-          docker build -t openapi2beans:${{ env.IMAGE_TAG }} --build-arg platform=linux-x86_64 -f dockerfiles/openapi2beans/dockerfile.openapi2beans .
-          docker run --rm openapi2beans:${{ env.IMAGE_TAG }} 
+          docker build -t openapi2beans:${{ env.BRANCH }} --build-arg platform=linux-x86_64 -f dockerfiles/openapi2beans/dockerfile.openapi2beans .
+          docker run --rm openapi2beans:${{ env.BRANCH }} 
       
       - name: Push openapi2beans-darwin-arm64 executables
         uses: actions/upload-artifact@v4

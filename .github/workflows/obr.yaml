@@ -15,7 +15,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  NAMESPACE: galasa-dev
+  NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
   ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
