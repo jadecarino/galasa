@@ -58,27 +58,37 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
-      - name: Get last successful workflow run ID for Main builds
-        id: get-workflow-id
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run : |
-          WORKFLOW_ID=$(gh run list --repo jadecarino/galasa --workflow "Main build orchestrator" --status success --limit 1 | grep -v STATUS | cut -d' ' -f6)
-          echo "::set-output name=workflow_id::${WORKFLOW_ID}"
+      # - name: Get last successful workflow run ID for Main builds
+      #   id: get-workflow-id
+      #   env:
+      #     GH_TOKEN: ${{ github.token }}
+      #   run : |
+      #     WORKFLOW_ID=$(gh run list --repo jadecarino/galasa --workflow "Main build orchestrator" --status success --limit 1 | grep -v STATUS | cut -d' ' -f6)
+      #     echo "::set-output name=workflow_id::${WORKFLOW_ID}"
+
+      - name: Download wrapping artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          run-id: 11364581065
 
       - name: Download gradle artifacts
         uses: actions/download-artifact@v4
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
-          run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}"
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          run-id: 11364581065
 
       - name: Download maven artifacts
         uses: actions/download-artifact@v4
         with:
           name: maven
           path: modules/artifacts/dev/galasa
-          run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}"
+          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          run-id: 11364581065
 
       - name: Build Framework source code
         working-directory: modules/framework
@@ -98,6 +108,13 @@ jobs:
       #     path: modules/framework/galasa-parent/**/build/reports/**/*.html
       #     retention-days: 7
       #     if-no-files-found: ignore
+
+      - name: Upload framework artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework
+          path: modules/framework/artifacts/dev/galasa
+          retention-days: 7
 
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle

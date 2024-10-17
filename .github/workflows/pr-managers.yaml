@@ -49,6 +49,34 @@ jobs:
         with:
           gradle-version: 8.9
           cache-disabled: true
+
+      - name: Download wrapping artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/wrapping/dev/galasa
+          run-id: 11364581065
+  
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          run-id: 11364581065
+
+      - name: Download maven artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+          run-id: 11364581065
+
+      - name: Download framework artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+          run-id: 11364581065
       
       - name: Build Managers source code
         working-directory: modules/managers
@@ -57,8 +85,9 @@ jobs:
           gradle -b galasa-managers-parent/build.gradle check publish --info \
           --no-daemon --console plain \
           -Dorg.gradle.jvmargs=-Xmx4096M \
+          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/repo 2>&1 | tee build.log
+          -PtargetMaven=${{ github.workspace }}/modules/managers/artifacts 2>&1 | tee build.log
 
       - name: Upload Gradle Build Log
         if: failure()
@@ -76,3 +105,10 @@ jobs:
           path: modules/managers/galasa-managers-parent/**/**/build/reports/**/*.html
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Upload managers artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: managers
+          path: modules/managers/artifacts/dev/galasa
+          retention-days: 7

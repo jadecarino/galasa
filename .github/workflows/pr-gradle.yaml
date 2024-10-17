@@ -58,4 +58,11 @@ jobs:
           --no-daemon --console plain \
           -PsourceMaven=https://repo.maven.apache.org/maven2/ \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/gradle/repo
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/artifacts
+
+      - name: Upload gradle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle
+          path: modules/gradle/artifacts/dev/galasa
+          retention-days: 7

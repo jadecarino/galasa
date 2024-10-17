@@ -89,6 +89,13 @@ jobs:
           -Dgpg.skip=true \
           -Dgalasa.source.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/wrapping/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/wrapping/artifacts \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml
+
+      - name: Upload wrapping artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrapping
+          path: modules/wrapping/artifacts/dev/galasa
+          retention-days: 7

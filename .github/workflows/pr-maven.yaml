@@ -80,13 +80,28 @@ jobs:
       - name: Copy custom settings.xml
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
+
+      - name: Download gradle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          run-id: 11364581065
       
       - name: Building Maven source code
         working-directory: modules/maven
         run: |
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
           -Dgpg.skip=true \
+          -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/artifacts \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml
+
+      - name: Upload maven artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven
+          path: modules/maven/artifacts/dev/galasa
+          retention-days: 7
