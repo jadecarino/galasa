@@ -12,7 +12,7 @@ on:
 jobs:
 
   # Get modules that were changed as part of this Pull Request,
-  # add that as an output of this job to be passed to the next job. 
+  # set that as an output of this job to be passed to the next job. 
   get-changed-modules:
     name: Get the modules changed in this Pull Request
     runs-on: ubuntu-latest
@@ -36,7 +36,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
+          ./tools/get-changed-modules-pull-request.sh --pr-number ${{ github.event.number }}
 
   # Call the build orchestrator in Pull Request mode.
   build-orchestrator:

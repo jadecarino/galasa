@@ -45,6 +45,7 @@ jobs:
           distribution: 'semeru'
   
       - name: Print githash
+        working-directory: modules/obr
         run: |
           echo $GITHUB_SHA > ./obr.githash
 
