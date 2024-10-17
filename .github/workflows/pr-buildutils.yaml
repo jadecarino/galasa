@@ -50,7 +50,7 @@ jobs:
       - name: Build and test galasabld image
         working-directory: modules/buildutils
         run: |
-          docker build -t galasabld:${{ env.BRANCH }} --build-arg platform=linux-x86_64 -f dockerfiles/galasabld/dockerfile.galasabld .
+          docker build -t galasabld:${{ env.BRANCH }} --build-arg platform=linux-amd64 -f dockerfiles/galasabld/dockerfile.galasabld .
           docker run --rm galasabld:${{ env.BRANCH }}
         
       - name: Upload galasabld executables

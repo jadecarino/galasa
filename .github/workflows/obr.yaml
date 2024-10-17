@@ -96,7 +96,7 @@ jobs:
       
       - name:  Generate Galasa BOM
         run: |
-          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-x86_64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/galasa-bom/pom.template --output /var/root/obr/galasa-bom/pom.xml --bom
+          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/galasa-bom/pom.template --output /var/root/obr/galasa-bom/pom.xml --bom
           
       - name: Display Galasa BOM pom.xml
         run: |
@@ -159,7 +159,7 @@ jobs:
       
       - name:  Generate Galasa OBR
         run: |
-          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-x86_64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/dev.galasa.uber.obr/pom.template --output /var/root/obr/dev.galasa.uber.obr/pom.xml --obr
+          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/dev.galasa.uber.obr/pom.template --output /var/root/obr/dev.galasa.uber.obr/pom.xml --obr
           
       - name: Display Galasa OBR pom.xml
         run: |
@@ -243,7 +243,7 @@ jobs:
           
       - name: Build Galasa Javadoc
         run: |
-            docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-x86_64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/javadocs/pom.template --output /var/root/obr/javadocs/pom.xml --javadoc
+            docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/javadocs/pom.template --output /var/root/obr/javadocs/pom.xml --javadoc
             
       - name: Display Galasa Javadoc pom.xml 
         run: |
@@ -305,12 +305,14 @@ jobs:
           path: modules/obr/javadocs/build.log
           retention-days: 7
       
-      # - name: Login to Github Container Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: galasa-team
-      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
     
       - name: Extract metadata for Javadoc site image
         id: metadata-javadoc-site
@@ -324,7 +326,7 @@ jobs:
         with:
           context: modules/obr
           file: modules/obr/dockerfiles/dockerfile.javadocsite
-          push: false
+          push: true
           tags: ${{ steps.metadata-javadoc-site.outputs.tags }}
           labels: ${{ steps.metadata-javadoc-site.outputs.labels }}
       
@@ -348,7 +350,7 @@ jobs:
         with:
           context: modules/obr
           file: modules/obr/dockerfiles/dockerfile.javadocmavenrepo
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
@@ -416,7 +418,7 @@ jobs:
       
       - name:  Generate Galasa OBR generic pom.xml
         run: |
-          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-x86_64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/obr-generic/pom.template --output /var/root/obr/obr-generic/pom.xml --obr
+          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/obr-generic/pom.template --output /var/root/obr/obr-generic/pom.xml --obr
            
       - name: Display Galasa OBR generic pom.xml
         run: |
@@ -483,12 +485,14 @@ jobs:
           path: modules/obr/obr-generic/build.log
           retention-days: 7
 
-      # - name: Login to Github Container Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: galasa-team
-      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
     
       - name: Extract metadata for OBR generic image
         id: metadata-obr-generic
@@ -502,7 +506,7 @@ jobs:
         with:
           context: modules/obr
           file: modules/obr/dockerfiles/dockerfile.obrgeneric
-          push: false
+          push: true
           tags: ${{ steps.metadata-obr-generic.outputs.tags }}
           labels: ${{ steps.metadata-obr-generic.outputs.labels }}
 
@@ -525,7 +529,7 @@ jobs:
         with:
           context: modules/obr
           file: modules/obr/dockerfiles/dockerfile.bootembedded
-          push: false
+          push: true
           tags: ${{ steps.metadata-boot-embedded.outputs.tags }}
           labels: ${{ steps.metadata-boot-embedded.outputs.labels }}
           build-args: |
@@ -545,7 +549,7 @@ jobs:
         with:
           context: modules/obr
           file: modules/obr/dockerfiles/dockerfile.ibmbootembedded
-          push: false
+          push: true
           tags: ${{ steps.metadata-ibm-boot-embedded.outputs.tags }}
           labels: ${{ steps.metadata-ibm-boot-embedded.outputs.labels }}
           build-args: |
