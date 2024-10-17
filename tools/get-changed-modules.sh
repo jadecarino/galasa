@@ -137,34 +137,42 @@ function get_changed_modules_and_set_in_environment() {
 
     for module in "${unique_modules_found_in_pr[@]}"; do
         if [[ "$module" == "buildutils" ]]; then
+            echo "buildutils changed"
             echo "BUILDUTILS_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "wrapping" ]]; then
+            echo "wrapping changed"
             echo "WRAPPING_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "gradle" ]]; then
+            echo "gradle changed"
             echo "GRADLE_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "maven" ]]; then
+            echo "maven changed"
             echo "MAVEN_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "framework" ]]; then
+            echo "framework changed"
             echo "FRAMEWORK_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "extensions" ]]; then
+            echo "extensions changed"
             echo "EXTENSIONS_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "managers" ]]; then
+            echo "managers changed"
             echo "MANAGERS_CHANGED=true" >> $GITHUB_ENV
             continue
         fi
         if [[ "$module" == "obr" ]]; then
+            echo "obr changed"
             echo "OBR_CHANGED=true" >> $GITHUB_ENV
             continue
         fi

@@ -23,7 +23,6 @@ env:
 
 jobs:
 
-  # TODO: Script needs to output environment variables of 'true' or 'false' for modules changed
   # get-changed-modules:
   #   name: Get the modules changed in this Push
   #   runs-on: ubuntu-latest
