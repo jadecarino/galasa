@@ -72,6 +72,7 @@ jobs:
           name: wrapping
           path: modules/artifacts/dev/galasa
           # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Download gradle artifacts
@@ -80,6 +81,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
           # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Download maven artifacts
@@ -88,6 +90,7 @@ jobs:
           name: maven
           path: modules/artifacts/dev/galasa
           # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Build Framework source code

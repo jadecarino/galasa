@@ -97,6 +97,7 @@ jobs:
         with:
             name: wrapping
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
 
       - name: Download gradle artifacts
@@ -104,6 +105,7 @@ jobs:
         with:
             name: gradle
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
 
       - name: Download maven artifacts
@@ -111,6 +113,7 @@ jobs:
         with:
             name: maven
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
 
       - name: Download framework artifacts
@@ -118,6 +121,7 @@ jobs:
         with:
             name: framework
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
 
       - name: Download extensions artifacts
@@ -125,6 +129,7 @@ jobs:
         with:
           name: extensions
           path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Download managers artifacts
@@ -132,6 +137,7 @@ jobs:
         with:
             name: managers
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
         
       - name: Build Galasa BOM with maven
@@ -263,6 +269,7 @@ jobs:
         with:
             name: wrapping
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
   
       - name: Download gradle artifacts
@@ -270,6 +277,7 @@ jobs:
         with:
             name: gradle
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
   
       - name: Download maven artifacts
@@ -277,6 +285,7 @@ jobs:
         with:
             name: maven
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
   
       - name: Download framework artifacts
@@ -284,6 +293,7 @@ jobs:
         with:
             name: framework
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
   
       - name: Download extensions artifacts
@@ -291,6 +301,7 @@ jobs:
         with:
             name: extensions
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
   
       - name: Download managers artifacts
@@ -298,6 +309,7 @@ jobs:
         with:
             name: managers
             path: modules/artifacts/dev/galasa
+            github-token: ${{ github.token }}
             run-id: 11364581065
         
       - name: Build javadoc site using maven

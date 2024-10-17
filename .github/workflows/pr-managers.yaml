@@ -55,6 +55,7 @@ jobs:
         with:
           name: wrapping
           path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
           run-id: 11364581065
   
       - name: Download gradle artifacts
@@ -62,6 +63,7 @@ jobs:
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Download maven artifacts
@@ -69,6 +71,7 @@ jobs:
         with:
           name: maven
           path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
           run-id: 11364581065
 
       - name: Download framework artifacts
@@ -76,6 +79,7 @@ jobs:
         with:
           name: framework
           path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
           run-id: 11364581065
       
       - name: Build Managers source code

@@ -10,7 +10,7 @@ on:
     branches: [main]
 
 env:
-  # These environment variables are set to false as default, but updated by the first job below.
+  # These environment variables are set to false as default, but are updated by the first job below.
   BUILDUTILS_CHANGED: 'false'
   WRAPPING_CHANGED: 'false'
   GRADLE_CHANGED: 'false'
