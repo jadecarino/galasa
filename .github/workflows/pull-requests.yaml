@@ -42,6 +42,7 @@ jobs:
   # so they need to be exposed as outputs of this job to be used below.
   expose-environment-variables:
     name: Expose environment variables to pass to build orchestrator
+    needs: [get-changed-modules]
     runs-on: ubuntu-latest
 
     outputs:
