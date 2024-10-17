@@ -14,15 +14,16 @@ on:
         type: boolean
   
 jobs:
+
   log-unchanged:
-    name: This module is unchanged
+    name: Framework is unchanged
     if: ${{ !inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Log this module is unchanged
         run: |
-          echo "This module is unchanged"
+          echo "The framework module is unchanged"
 
   build-framework:
     name: Build Framework using openapi2beans and gradle

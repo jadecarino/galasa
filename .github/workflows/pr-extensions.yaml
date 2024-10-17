@@ -14,15 +14,16 @@ on:
         type: boolean
 
 jobs:
+
   log-unchanged:
-    name: This module is unchanged
+    name: Extensions is unchanged
     if: ${{ !inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Log this module is unchanged
         run: |
-          echo "This module is unchanged"
+          echo "The extensions module is unchanged"
 
   build-extensions:
     name: Build Extensions source code
