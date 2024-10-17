@@ -10,7 +10,6 @@ on:
     branches: [main]
 
 env:
-  # FIRST_CHANGED_MODULE: ""
   BUILDUTILS_CHANGED: false
   WRAPPING_CHANGED: false
   GRADLE_CHANGED: false
@@ -40,12 +39,11 @@ jobs:
   #       run: |
   #         echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
 
-  build-orchestrator:
-    name: Call the Build Orchestrator
-    uses: ./.github/workflows/build-orchestrator.yaml
-    secrets: inherit
-    with:
-      pull_request_build: ${{ true }}
+  expose-environment-variables:
+    name: Expose environment variables to pass to build orchestrator
+    runs-on: ubuntu-latest
+
+    outputs:
       buildutils_changed: ${{ env.BUILDUTILS_CHANGED }}
       wrapping_changed: ${{ env.WRAPPING_CHANGED }}
       gradle_changed: ${{ env.GRADLE_CHANGED }}
@@ -54,4 +52,23 @@ jobs:
       extensions_changed: ${{ env.EXTENSIONS_CHANGED }}
       managers_changed: ${{ env.MANAGERS_CHANGED }}
       obr_changed: ${{ env.OBR_CHANGED }}
+
+    steps:
+      - run: echo "Exposing environment variables"
+
+  build-orchestrator:
+    name: Call the Build Orchestrator
+    needs: [expose-environment-variables]
+    uses: ./.github/workflows/build-orchestrator.yaml
+    secrets: inherit
+    with:
+      pull_request_build: ${{ true }}
+      buildutils_changed: ${{ needs.expose-environment-variables.outputs.buildutils_changed }}
+      wrapping_changed: ${{ needs.expose-environment-variables.outputs.wrapping_changed }}
+      gradle_changed: ${{ needs.expose-environment-variables.outputs.gradle_changed }}
+      maven_changed: ${{ needs.expose-environment-variables.outputs.maven_changed }}
+      framework_changed: ${{ needs.expose-environment-variables.outputs.framework_changed }}
+      extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
+      managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
+      obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
       
