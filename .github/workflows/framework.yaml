@@ -164,7 +164,7 @@ jobs:
         with:
           context: modules/framework
           file: modules/framework/dockerfiles/dockerfile.restapidocsite
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}  
       
