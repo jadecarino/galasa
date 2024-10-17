@@ -7,13 +7,29 @@ name: Buildutils pull request build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: boolean
 
 env:
   IMAGE_TAG: ${{ github.event.number }}
 
 jobs:
+  log-unchanged:
+    name: This module is unchanged
+    if: ${{ !inputs.changed }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "This module is unchanged"
+
   build-upload-galasabld:
-    name: Build galasabld 
+    name: Build galasabld
+    if: ${{ inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:
@@ -68,6 +84,7 @@ jobs:
   
   build-upload-openapi2beans:
     name: Build openapi2beans
+    if: ${{ inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:

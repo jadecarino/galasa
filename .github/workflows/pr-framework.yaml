@@ -7,10 +7,26 @@ name: Framework pull request build
 
 on:
   workflow_call:
+    inputs:
+      changed:
+        description: 'True if this module has been changed and should be rebuilt'
+        required: true
+        type: boolean
   
 jobs:
+  log-unchanged:
+    name: This module is unchanged
+    if: ${{ !inputs.changed }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log this module is unchanged
+        run: |
+          echo "This module is unchanged"
+
   build-framework:
     name: Build Framework using openapi2beans and gradle
+    if: ${{ inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:
@@ -84,6 +100,7 @@ jobs:
 
   build-rest-api-documentation:
     name: Build REST API documentation using openapi2beans and gradle
+    if: ${{ inputs.changed }}
     runs-on: ubuntu-latest
 
     steps:
