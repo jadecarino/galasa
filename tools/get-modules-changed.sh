@@ -101,6 +101,7 @@ done
 #-----------------------------------------------------------------------------------------  
 
 function get_paths_changed_in_pr() {
+
     h1 "Getting the file paths changed in Pull Request number ${pr_number}" 
 
     # Extract changed module names from changed files from GitHub CLI output
@@ -118,39 +119,80 @@ function get_paths_changed_in_pr() {
     # Remove possible duplicates from array of changed modules
     declare -A unique_module_map
 
-    unique_module_array=()
+    unique_modules_found_in_pr=()
     for module in "${modules_changed_in_pr[@]}"; do
     if [[ -z "${unique_module_map[$module]}" ]]; then
-        unique_module_array+=("$module")
+        unique_modules_found_in_pr+=("$module")
         unique_module_map[$module]=1
     fi
     done
 
     h2 "Modules changed:"
-    echo "${unique_module_array[@]}"
+    echo "${unique_modules_found_in_pr[@]}"
 }
 
-function get_lowest_level_module_changed() {
+function get_changed_modules_and_set_in_environment() {
 
-    h1 "Finding the lowest level module changed..."
+    h1 "Finding changed modules and setting environment variables that can be used in the GitHub Actions workflows..."
 
-    first_module=""
-
-    # Loop through modules and check which is the first that exists in the changed modules
-    for module in "${module_names[@]}"; do
-        for check_module in "${unique_module_array[@]}"; do
-            if [[ "$module" == "$check_module" ]]; then
-                first_module="$check_module"
-                break 2  # Break both loops
-            fi
-        done
+    for module in "${unique_modules_found_in_pr[@]}"; do
+        if [[ "$module" == "buildutils" ]]; then
+            echo "BUILDUTILS_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "wrapping" ]]; then
+            echo "WRAPPING_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "gradle" ]]; then
+            echo "GRADLE_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "maven" ]]; then
+            echo "MAVEN_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "framework" ]]; then
+            echo "FRAMEWORK_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "extensions" ]]; then
+            echo "EXTENSIONS_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "managers" ]]; then
+            echo "MANAGERS_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
+        if [[ "$module" == "obr" ]]; then
+            echo "OBR_CHANGED='true'" >> $GITHUB_ENV
+            continue
+        fi
     done
-
-    echo "The first changed module is: $first_module"
-
-    # Make this module name accessible from the GitHub Actions workflow
-    echo "FIRST_CHANGED_MODULE=$first_module" >> $GITHUB_ENV
 }
+
+# function get_lowest_level_module_changed() {
+
+#     h1 "Finding the lowest level module changed..."
+
+#     first_module=""
+
+#     # Loop through modules and check which is the first that exists in the changed modules
+#     for module in "${module_names[@]}"; do
+#         for check_module in "${unique_modules_found_in_pr[@]}"; do
+#             if [[ "$module" == "$check_module" ]]; then
+#                 first_module="$check_module"
+#                 break 2  # Break both loops
+#             fi
+#         done
+#     done
+
+#     echo "The first changed module is: $first_module"
+
+#     # Make this module name accessible from the GitHub Actions workflow
+#     echo "FIRST_CHANGED_MODULE=$first_module" >> $GITHUB_ENV
+# }
 
 get_paths_changed_in_pr
-get_lowest_level_module_changed
+get_changed_modules_and_set_in_environment
+# get_lowest_level_module_changed

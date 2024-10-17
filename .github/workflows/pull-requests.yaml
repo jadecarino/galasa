@@ -15,32 +15,28 @@ env:
   BUILDUTILS_CHANGED: 'false'
   WRAPPING_CHANGED: 'false'
   GRADLE_CHANGED: 'false'
-  MAVEN_CHANGED: 'true'
+  MAVEN_CHANGED: 'false'
   FRAMEWORK_CHANGED: 'false'
   EXTENSIONS_CHANGED: 'false'
-  MANAGERS_CHANGED: 'true'
+  MANAGERS_CHANGED: 'false'
   OBR_CHANGED: 'false'
 
 jobs:
 
   # TODO: Script needs to output environment variables of 'true' or 'false' for modules changed
-  # get-changed-modules:
-  #   name: Get the modules changed in this Pull Request
-  #   runs-on: ubuntu-latest
+  get-changed-modules:
+    name: Get the modules changed in this Pull Request
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  #     - name: Get the modules changed in this Pull Request
-  #       env:
-  #         GH_TOKEN: ${{ github.token }}
-  #       run: |
-  #         ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
-
-  #     - name: Access the output from the script
-  #       run: |
-  #         echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
+      - name: Get the modules changed in this Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
 
   # Environment variables can't be passed directly to reusable workflows,
   # so they need to be exposed as outputs of this job to be used below.
