@@ -10,7 +10,8 @@ on:
     branches: [main]
 
 env:
-  # These environment variables are set to false as default, but are updated by the first job below.
+  # These environment variables are set to false as default,
+  # but are updated by the first job below.
   BUILDUTILS_CHANGED: 'false'
   WRAPPING_CHANGED: 'false'
   GRADLE_CHANGED: 'false'
@@ -22,6 +23,7 @@ env:
 
 jobs:
 
+  # TODO: Script needs to output environment variables of 'true' or 'false' for modules changed
   # get-changed-modules:
   #   name: Get the modules changed in this Pull Request
   #   runs-on: ubuntu-latest
@@ -40,6 +42,8 @@ jobs:
   #       run: |
   #         echo "The script output is: ${{ env.FIRST_CHANGED_MODULE }}"
 
+  # Environment variables can't be passed directly to reusable workflows,
+  # so they need to be exposed as outputs of this job to be used below.
   expose-environment-variables:
     name: Expose environment variables to pass to build orchestrator
     runs-on: ubuntu-latest
@@ -57,6 +61,7 @@ jobs:
     steps:
       - run: echo "Exposing environment variables"
 
+  # Call the build orchestrator in Pull Request mode.
   build-orchestrator:
     name: Call the Build Orchestrator
     needs: [expose-environment-variables]

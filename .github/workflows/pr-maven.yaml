@@ -81,7 +81,21 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
       - name: Download gradle artifacts
+        id: download-gradle
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
+      - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: gradle

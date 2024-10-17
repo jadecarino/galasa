@@ -92,7 +92,56 @@ jobs:
         run: |
           cat modules/obr/galasa-bom/pom.xml
 
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
+      - name: Download wrapping artifacts from this PR
+        id: download-wrapping
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+
+      - name: Download gradle artifacts from this PR
+        id: download-gradle
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts from this PR
+        id: download-maven
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
+      - name: Download framework artifacts from this PR
+        id: download-framework
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+
+      - name: Download extensions artifacts
+        id: download-extensions
+        uses: actions/download-artifact@v4
+        with:
+          name: extensions
+          path: modules/artifacts/dev/galasa
+
+      - name: Download managers artifacts
+        id: download-managers
+        uses: actions/download-artifact@v4
+        with:
+            name: managers
+            path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
       - name: Download wrapping artifacts
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: wrapping
@@ -101,6 +150,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: gradle
@@ -109,6 +159,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download maven artifacts
+        if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: maven
@@ -117,6 +168,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download framework artifacts
+        if: ${{ steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: framework
@@ -125,6 +177,7 @@ jobs:
             run-id: 11364581065
 
       - name: Download extensions artifacts
+        if: ${{ steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: extensions
@@ -133,6 +186,7 @@ jobs:
           run-id: 11364581065
 
       - name: Download managers artifacts
+        if: ${{ steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: managers
@@ -264,47 +318,101 @@ jobs:
         run: |
           cat modules/obr/javadocs/pom.xml
 
+      # For any modules that were changed in this PR,
+      # download their artifacts from this workflow run.
+
+      - name: Download wrapping artifacts from this PR
+        id: download-wrapping
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+
+      - name: Download gradle artifacts from this PR
+        id: download-gradle
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+
+      - name: Download maven artifacts from this PR
+        id: download-maven
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+
+      - name: Download framework artifacts from this PR
+        id: download-framework
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+
+      - name: Download extensions artifacts
+        id: download-extensions
+        uses: actions/download-artifact@v4
+        with:
+          name: extensions
+          path: modules/artifacts/dev/galasa
+
+      - name: Download managers artifacts
+        id: download-managers
+        uses: actions/download-artifact@v4
+        with:
+            name: managers
+            path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this PR,
+      # download artifacts from the last successful workflow.
+
       - name: Download wrapping artifacts
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: wrapping
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: 11364581065
-  
+
       - name: Download gradle artifacts
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: gradle
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: 11364581065
-  
+
       - name: Download maven artifacts
+        if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: maven
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: 11364581065
-  
+
       - name: Download framework artifacts
+        if: ${{ steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: framework
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: 11364581065
-  
+
       - name: Download extensions artifacts
+        if: ${{ steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
-            name: extensions
-            path: modules/artifacts/dev/galasa
-            github-token: ${{ github.token }}
-            run-id: 11364581065
-  
+          name: extensions
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
       - name: Download managers artifacts
+        if: ${{ steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
             name: managers
