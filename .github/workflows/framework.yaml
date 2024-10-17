@@ -14,6 +14,7 @@ on:
         type: string
 
 env:
+  REGISTRY: ghcr.io
   NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
     
@@ -143,12 +144,14 @@ jobs:
         run: |
           java -jar swagger-codegen-cli.jar generate -i galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml -l html2 -o docs/generated/galasaapi
 
-      # - name: Login to Github Container Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ghcr.io
-      #     username: galasa-team
-      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Extract metadata for restapidoc-site image
         id: metadata

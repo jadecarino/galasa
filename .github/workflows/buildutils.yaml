@@ -49,12 +49,14 @@ jobs:
         run: |
           make all 
 
-    #   - name: Login to GitHub Container Registry
-    #     uses: docker/login-action@v3
-    #     with:
-    #       registry: ${{ env.REGISTRY }}
-    #       username: galasa-team
-    #       password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata for galasabld image
         id: metadata
@@ -81,7 +83,7 @@ jobs:
         with:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
@@ -103,12 +105,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      # - name: Login to GitHub Container Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: galasa-team
-      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata for galasabld-ibm image
         id: metadata
@@ -136,7 +140,7 @@ jobs:
         with:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld-ibm
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
@@ -162,12 +166,14 @@ jobs:
         run: |
           make all -C openapi2beans
 
-    #   - name: Login to GitHub Container Registry
-    #     uses: docker/login-action@v3
-    #     with:
-    #       registry: ${{ env.REGISTRY }}
-    #       username: galasa-team
-    #       password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata for openapi2beans image
         id: metadata
@@ -194,7 +200,7 @@ jobs:
         with:
           context: modules/buildutils/openapi2beans
           file: modules/buildutils/dockerfiles/openapi2beans/dockerfile.openapi2beans
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           build-args: |
@@ -228,12 +234,14 @@ jobs:
         run: |
           make all -C openapi2beans
 
-      # - name: Login to GitHub Container Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: galasa-team
-      #     password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          # username: galasa-team
+          # password: ${{ secrets.GALASA_TEAM_WRITE_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract metadata for buildutils-executables image
         id: metadata
@@ -246,6 +254,6 @@ jobs:
         with:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/dockerfile.buildutils
-          push: false
+          push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
