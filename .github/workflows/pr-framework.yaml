@@ -12,6 +12,9 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+
+env:
+  NAMESPACE: ${{ github.repository_owner }}
   
 jobs:
 
@@ -56,7 +59,7 @@ jobs:
           OUTPUT_LOCATION: "modules/framework/galasa-parent/dev.galasa.framework.api.beans/src/main/java"
           PACKAGE: "dev.galasa.framework.api.beans.generated"
         run: |
-          docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/galasa-dev/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
+          docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/${{ env.NAMESPACE }}/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
 
       # - name: Get last successful workflow run ID for Main builds
       #   id: get-workflow-id

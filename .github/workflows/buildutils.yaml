@@ -60,7 +60,7 @@ jobs:
         id: metadata
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/galasabld-amd64
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/galasabld-x86_64
         
       - name: Build galasabld image for testing
         uses: docker/build-push-action@v5
@@ -68,12 +68,13 @@ jobs:
           context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld
           load: true
-          tags: galasabld-amd64:${{ env.BRANCH }}
-          build-args: platform=linux-amd64
+          tags: galasabld-x86_64:${{ env.BRANCH }}
+          build-args: |
+            platform=linux-x86_64
         
       - name: Test galasabld image
         run: |
-          docker run --rm galasabld-amd64:${{ env.BRANCH }}        
+          docker run --rm galasabld-x86_64:${{ env.BRANCH }}
         
       - name: Build and push galasabld image
         uses: docker/build-push-action@v5
@@ -83,43 +84,20 @@ jobs:
           push: false
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          build-args: platform=linux-amd64
+          build-args: |
+            platform=linux-x86_64
         
-      - name: Push galasabld-linux-amd64 executables
+      - name: Upload galasabld executables
         uses: actions/upload-artifact@v4
         with:
-          name: galasabld-linux-amd64
-          path: modules/buildutils/bin/galasabld-linux-amd64
-
-      - name: Push galasabld-windows-amd64 executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: galasabld-windows-amd64
-          path: modules/buildutils/bin/galasabld-windows-amd64
-
-      - name: Push galasabld-darwin-amd64 executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: galasabld-darwin-amd64
-          path: modules/buildutils/bin/galasabld-darwin-amd64
-
-      - name: Push galasabld-darwin-arm64 executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: galasabld-darwin-arm64
-          path: modules/buildutils/bin/galasabld-darwin-arm64
-
-      - name: Push galasabld-linux-s390x executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: galasabld-linux-s390x
-          path: modules/buildutils/bin/galasabld-linux-s390x
+          name: galasabld
+          path: modules/buildutils/bin
 
   build-push-galasabld-ibm:
     name: Build and push galasabld-ibm artefact
     if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
-    needs: build-push-galasabld
+    needs: [build-push-galasabld]
 
     steps:
       - name: Checkout code
@@ -151,12 +129,12 @@ jobs:
         
       - name: Test galasabld-ibm image
         run: |
-          docker run --rm galasabld-ibm:${{ env.BRANCH }}        
+          docker run --rm galasabld-ibm:${{ env.BRANCH }}
         
       - name: Build and push galasabld-ibm image
         uses: docker/build-push-action@v5
         with:
-          context: modules/buildutils/
+          context: modules/buildutils
           file: modules/buildutils/dockerfiles/galasabld/dockerfile.galasabld-ibm
           push: false
           tags: ${{ steps.metadata.outputs.tags }}
@@ -204,11 +182,12 @@ jobs:
           file: modules/buildutils/dockerfiles/openapi2beans/dockerfile.openapi2beans
           load: true
           tags: openapi2beans:${{ env.BRANCH }}
-          build-args: platform=linux-x86_64
+          build-args: |
+            platform=linux-x86_64
         
       - name: Test openapi2beans image
         run: |
-          docker run --rm openapi2beans:${{ env.BRANCH }}         
+          docker run --rm openapi2beans:${{ env.BRANCH }}
         
       - name: Build and push openapi2beans image
         uses: docker/build-push-action@v5
@@ -218,25 +197,14 @@ jobs:
           push: false
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          build-args: platform=linux-x86_64 
+          build-args: |
+            platform=linux-x86_64 
               
-      - name: Push openapi2beans-darwin-arm64 executables
+      - name: Upload openapi2beans executables
         uses: actions/upload-artifact@v4
         with:
-          name: openapi2beans-darwin-arm64
-          path: modules/buildutils/openapi2beans/bin/openapi2beans-darwin-arm64
-
-      - name: Push openapi2beans-darwin-x86_64 executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: openapi2beans-darwin-x86_64
-          path: modules/buildutils/openapi2beans/bin/openapi2beans-darwin-x86_64
-
-      - name: Push openapi2beans-linux-x86_64 executables
-        uses: actions/upload-artifact@v4
-        with:
-          name: openapi2beans-linux-x86_64
-          path: modules/buildutils/openapi2beans/bin/openapi2beans-linux-x86_64
+          name: openapi2beans
+          path: modules/buildutils/openapi2beans/bin
 
   build-push-buildutils-executables:
     name: Build and push buildutils repository executables
@@ -271,7 +239,7 @@ jobs:
         id: metadata
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/buildutils-executables      
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/buildutils-executables
         
       - name: Build and push buildutils-executables image
         uses: docker/build-push-action@v5
