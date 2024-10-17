@@ -9,17 +9,17 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  # These environment variables are set to false as default,
-  # but are updated by the first job below.
-  BUILDUTILS_CHANGED: 'false'
-  WRAPPING_CHANGED: 'false'
-  GRADLE_CHANGED: 'false'
-  MAVEN_CHANGED: 'false'
-  FRAMEWORK_CHANGED: 'false'
-  EXTENSIONS_CHANGED: 'false'
-  MANAGERS_CHANGED: 'false'
-  OBR_CHANGED: 'false'
+# env:
+#   # These environment variables are set to false as default,
+#   # but are updated by the first job below.
+#   BUILDUTILS_CHANGED: 'false'
+#   WRAPPING_CHANGED: 'false'
+#   GRADLE_CHANGED: 'false'
+#   MAVEN_CHANGED: 'false'
+#   FRAMEWORK_CHANGED: 'false'
+#   EXTENSIONS_CHANGED: 'false'
+#   MANAGERS_CHANGED: 'false'
+#   OBR_CHANGED: 'false'
 
 jobs:
 
@@ -37,11 +37,6 @@ jobs:
         run: |
           ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
 
-      - name: Log environment variables
-        run: |
-          echo "$BUILDUTILS_CHANGED"
-          echo "$WRAPPING_CHANGED"
-
   # Environment variables can't be passed directly to reusable workflows,
   # so they need to be exposed as outputs of this job to be used below.
   expose-environment-variables:
@@ -50,14 +45,14 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      buildutils_changed: ${{ env.BUILDUTILS_CHANGED }}
-      wrapping_changed: ${{ env.WRAPPING_CHANGED }}
-      gradle_changed: ${{ env.GRADLE_CHANGED }}
-      maven_changed: ${{ env.MAVEN_CHANGED }}
-      framework_changed: ${{ env.FRAMEWORK_CHANGED }}
-      extensions_changed: ${{ env.EXTENSIONS_CHANGED }}
-      managers_changed: ${{ env.MANAGERS_CHANGED }}
-      obr_changed: ${{ env.OBR_CHANGED }}
+      buildutils_changed: "$BUILDUTILS_CHANGED"
+      wrapping_changed: "$WRAPPING_CHANGED"
+      gradle_changed: "$GRADLE_CHANGED"
+      maven_changed: "$MAVEN_CHANGED"
+      framework_changed: "$FRAMEWORK_CHANGED"
+      extensions_changed: "$EXTENSIONS_CHANGED"
+      managers_changed: "$MANAGERS_CHANGED"
+      obr_changed: "$OBR_CHANGED"
 
     steps:
       - run: echo "Exposing environment variables"
