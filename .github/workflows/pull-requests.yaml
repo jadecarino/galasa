@@ -37,6 +37,16 @@ jobs:
         run: |
           ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
 
+    outputs:
+      buildutils_changed: "$BUILDUTILS_CHANGED"
+      wrapping_changed: "$WRAPPING_CHANGED"
+      gradle_changed: "$GRADLE_CHANGED"
+      maven_changed: "$MAVEN_CHANGED"
+      framework_changed: "$FRAMEWORK_CHANGED"
+      extensions_changed: "$EXTENSIONS_CHANGED"
+      managers_changed: "$MANAGERS_CHANGED"
+      obr_changed: "$OBR_CHANGED"
+
   # Environment variables can't be passed directly to reusable workflows,
   # so they need to be exposed as outputs of this job to be used below.
   # expose-environment-variables:
@@ -65,19 +75,11 @@ jobs:
     secrets: inherit
     with:
       pull_request_build: ${{ true }}
-      # buildutils_changed: ${{ needs.expose-environment-variables.outputs.buildutils_changed }}
-      # wrapping_changed: ${{ needs.expose-environment-variables.outputs.wrapping_changed }}
-      # gradle_changed: ${{ needs.expose-environment-variables.outputs.gradle_changed }}
-      # maven_changed: ${{ needs.expose-environment-variables.outputs.maven_changed }}
-      # framework_changed: ${{ needs.expose-environment-variables.outputs.framework_changed }}
-      # extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
-      # managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
-      # obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
-      buildutils_changed: $BUILDUTILS_CHANGED
-      wrapping_changed: $WRAPPING_CHANGED
-      gradle_changed: $GRADLE_CHANGED
-      maven_changed: $MAVEN_CHANGED
-      framework_changed: $FRAMEWORK_CHANGED
-      extensions_changed: $EXTENSIONS_CHANGED
-      managers_changed: $MANAGERS_CHANGED
-      obr_changed: $OBR_CHANGED
+      buildutils_changed: ${{ needs.get-changed-modules.outputs.buildutils_changed }}
+      wrapping_changed: ${{ needs.get-changed-modules.outputs.wrapping_changed }}
+      gradle_changed: ${{ needs.get-changed-modules.outputs.gradle_changed }}
+      maven_changed: ${{ needs.get-changed-modules.outputs.maven_changed }}
+      framework_changed: ${{ needs.get-changed-modules.outputs.framework_changed }}
+      extensions_changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
+      managers_changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
+      obr_changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
