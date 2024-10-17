@@ -137,39 +137,49 @@ function get_changed_modules_and_set_in_environment() {
 
     for module in "${unique_modules_found_in_pr[@]}"; do
         if [[ "$module" == "buildutils" ]]; then
-            echo "BUILDUTILS_CHANGED=true" >> $GITHUB_ENV
+            echo "BUILDUTILS_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "wrapping" ]]; then
-            echo "WRAPPING_CHANGED=true" >> $GITHUB_ENV
+            echo "WRAPPING_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "gradle" ]]; then
-            echo "GRADLE_CHANGED=true" >> $GITHUB_ENV
+            echo "GRADLE_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "maven" ]]; then
-            echo "MAVEN_CHANGED=true" >> $GITHUB_ENV
+            echo "MAVEN_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "framework" ]]; then
-            echo "FRAMEWORK_CHANGED=true" >> $GITHUB_ENV
+            echo "FRAMEWORK_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "extensions" ]]; then
-            echo "EXTENSIONS_CHANGED=true" >> $GITHUB_ENV
+            echo "EXTENSIONS_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "managers" ]]; then
-            echo "MANAGERS_CHANGED=true" >> $GITHUB_ENV
+            echo "MANAGERS_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
         if [[ "$module" == "obr" ]]; then
-            echo "OBR_CHANGED=true" >> $GITHUB_ENV
+            echo "OBR_CHANGED=true" >> $GITHUB_OUTPUT
             continue
         fi
     done
 }
+
+# Set outputs to false as default value.
+echo "BUILDUTILS_CHANGED=false" >> $GITHUB_OUTPUT
+echo "WRAPPING_CHANGED=false" >> $GITHUB_OUTPUT
+echo "GRADLE_CHANGED=false" >> $GITHUB_OUTPUT
+echo "MAVEN_CHANGED=false" >> $GITHUB_OUTPUT
+echo "FRAMEWORK_CHANGED=false" >> $GITHUB_OUTPUT
+echo "EXTENSIONS_CHANGED=false" >> $GITHUB_OUTPUT
+echo "MANAGERS_CHANGED=false" >> $GITHUB_OUTPUT
+echo "OBR_CHANGED=false" >> $GITHUB_OUTPUT
 
 get_paths_changed_in_pr
 get_changed_modules_and_set_in_environment

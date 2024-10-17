@@ -9,63 +9,34 @@ on:
   pull_request:
     branches: [main]
 
-# env:
-#   # These environment variables are set to false as default,
-#   # but are updated by the first job below.
-#   BUILDUTILS_CHANGED: 'false'
-#   WRAPPING_CHANGED: 'false'
-#   GRADLE_CHANGED: 'false'
-#   MAVEN_CHANGED: 'false'
-#   FRAMEWORK_CHANGED: 'false'
-#   EXTENSIONS_CHANGED: 'false'
-#   MANAGERS_CHANGED: 'false'
-#   OBR_CHANGED: 'false'
-
 jobs:
 
+  # Get modules that were changed as part of this Pull Request,
+  # add that as an output of this job to be passed to the next job. 
   get-changed-modules:
     name: Get the modules changed in this Pull Request
     runs-on: ubuntu-latest
+
+    outputs:
+      buildutils_changed: ${{ steps.get-changed-modules.outputs.BUILDUTILS_CHANGED }}
+      wrapping_changed: ${{ steps.get-changed-modules.outputs.WRAPPING_CHANGED }}
+      gradle_changed: ${{ steps.get-changed-modules.outputs.GRADLE_CHANGED }}
+      maven_changed: ${{ steps.get-changed-modules.outputs.MAVEN_CHANGED }}
+      framework_changed: ${{ steps.get-changed-modules.outputs.FRAMEWORK_CHANGED }}
+      extensions_changed: ${{ steps.get-changed-modules.outputs.EXTENSIONS_CHANGED }}
+      managers_changed: ${{ steps.get-changed-modules.outputs.MANAGERS_CHANGED }}
+      obr_changed: ${{ steps.get-changed-modules.outputs.OBR_CHANGED }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Get the modules changed in this Pull Request
+        id: get-changed-modules
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           ./tools/get-changed-modules.sh --pr-number ${{ github.event.number }}
-
-    outputs:
-      buildutils_changed: "$BUILDUTILS_CHANGED"
-      wrapping_changed: "$WRAPPING_CHANGED"
-      gradle_changed: "$GRADLE_CHANGED"
-      maven_changed: "$MAVEN_CHANGED"
-      framework_changed: "$FRAMEWORK_CHANGED"
-      extensions_changed: "$EXTENSIONS_CHANGED"
-      managers_changed: "$MANAGERS_CHANGED"
-      obr_changed: "$OBR_CHANGED"
-
-  # Environment variables can't be passed directly to reusable workflows,
-  # so they need to be exposed as outputs of this job to be used below.
-  # expose-environment-variables:
-  #   name: Expose environment variables to pass to build orchestrator
-  #   needs: [get-changed-modules]
-  #   runs-on: ubuntu-latest
-
-  #   outputs:
-  #     buildutils_changed: "$BUILDUTILS_CHANGED"
-  #     wrapping_changed: "$WRAPPING_CHANGED"
-  #     gradle_changed: "$GRADLE_CHANGED"
-  #     maven_changed: "$MAVEN_CHANGED"
-  #     framework_changed: "$FRAMEWORK_CHANGED"
-  #     extensions_changed: "$EXTENSIONS_CHANGED"
-  #     managers_changed: "$MANAGERS_CHANGED"
-  #     obr_changed: "$OBR_CHANGED"
-
-  #   steps:
-  #     - run: echo "Exposing environment variables"
 
   # Call the build orchestrator in Pull Request mode.
   build-orchestrator:
