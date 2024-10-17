@@ -111,7 +111,7 @@ jobs:
           -Dgpg.skip=true \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/artifacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml
 
@@ -119,5 +119,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maven
-          path: modules/maven/artifacts/dev/galasa
+          path: modules/maven/repo/dev/galasa
           retention-days: 7

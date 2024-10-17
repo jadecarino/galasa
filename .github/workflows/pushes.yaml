@@ -31,12 +31,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Log base and head commits of this Push event
+        run : |
+          echo "Base commit: ${{ github.event.before }}"
+          echo "Head commit: ${{ github.sha }}"
+
       - name: Get the modules changed in this Push
         id: get-changed-modules
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./tools/get-changed-modules-push.sh
+          ./tools/get-changed-modules-push.sh --
 
   # Call the build orchestrator in Push mode.
   build-orchestrator:

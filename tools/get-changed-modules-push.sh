@@ -60,7 +60,8 @@ function usage {
     cat << EOF
 Options are:
 -h | --help : Display this help text
---something...
+--base The base commit level (the commit before the push)
+--head The head commit level (the commit that triggered the push)
 EOF
 }
 
@@ -78,20 +79,25 @@ module_names=(\
 #-----------------------------------------------------------------------------------------                   
 # Process parameters
 #-----------------------------------------------------------------------------------------
-pr_number=""
+base=""
+head=""
 while [ "$1" != "" ]; do
     case $1 in
-        -h | --help )       usage
-                            exit
-                            ;;
+        -h | --help )   usage
+                        exit
+                        ;;
 
-        --pr-number )       pr_number="$2"
-                            shift
-                            ;;
+        --base )        base="$2"
+                        shift
+                        ;;
 
-        * )                 error "Unexpected argument $1"
-                            usage
-                            exit 1
+        --head )        head="$2"
+                        shift
+                        ;;
+
+        * )             error "Unexpected argument $1"
+                        usage
+                        exit 1
     esac
     shift
 done

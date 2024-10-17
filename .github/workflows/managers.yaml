@@ -102,7 +102,7 @@ jobs:
           -Dorg.gradle.jvmargs=-Xmx4096M \
           -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/managers/artifacts \
+          -PtargetMaven=${{ github.workspace }}/modules/managers/repo \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
         
@@ -127,5 +127,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: managers
-          path: modules/managers/artifacts/dev/galasa
+          path: modules/managers/repo/dev/galasa
           retention-days: 7

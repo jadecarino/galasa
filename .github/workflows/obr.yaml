@@ -145,7 +145,7 @@ jobs:
           mvn -f galasa-bom/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/artifacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-bom-build.log
         
@@ -172,7 +172,7 @@ jobs:
           mvn -f dev.galasa.uber.obr/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/artifacts \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-obr-build.log
     
@@ -188,7 +188,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: obr
-            path: modules/obr/artifacts/dev/galasa
+            path: modules/obr/repo/dev/galasa
             retention-days: 7
 
   build-obr-javadocs:

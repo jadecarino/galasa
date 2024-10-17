@@ -77,7 +77,7 @@ jobs:
           --no-daemon --console plain \
           -PsourceMaven=https://repo.maven.apache.org/maven2/ \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-          -PtargetMaven=${{ github.workspace }}/modules/gradle/artifacts \
+          -PtargetMaven=${{ github.workspace }}/modules/gradle/repo \
           -PjacocoEnabled=true \
           -PisMainOrRelease=true 2>&1 | tee build.log
 
@@ -92,5 +92,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gradle
-          path: modules/gradle/artifacts/dev/galasa
+          path: modules/gradle/repo/dev/galasa
           retention-days: 7
