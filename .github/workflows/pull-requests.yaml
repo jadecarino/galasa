@@ -65,12 +65,19 @@ jobs:
     secrets: inherit
     with:
       pull_request_build: ${{ true }}
-      buildutils_changed: ${{ needs.expose-environment-variables.outputs.buildutils_changed }}
-      wrapping_changed: ${{ needs.expose-environment-variables.outputs.wrapping_changed }}
-      gradle_changed: ${{ needs.expose-environment-variables.outputs.gradle_changed }}
-      maven_changed: ${{ needs.expose-environment-variables.outputs.maven_changed }}
-      framework_changed: ${{ needs.expose-environment-variables.outputs.framework_changed }}
-      extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
-      managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
-      obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
-      
+      # buildutils_changed: ${{ needs.expose-environment-variables.outputs.buildutils_changed }}
+      # wrapping_changed: ${{ needs.expose-environment-variables.outputs.wrapping_changed }}
+      # gradle_changed: ${{ needs.expose-environment-variables.outputs.gradle_changed }}
+      # maven_changed: ${{ needs.expose-environment-variables.outputs.maven_changed }}
+      # framework_changed: ${{ needs.expose-environment-variables.outputs.framework_changed }}
+      # extensions_changed: ${{ needs.expose-environment-variables.outputs.extensions_changed }}
+      # managers_changed: ${{ needs.expose-environment-variables.outputs.managers_changed }}
+      # obr_changed: ${{ needs.expose-environment-variables.outputs.obr_changed }}
+      buildutils_changed: "$BUILDUTILS_CHANGED"
+      wrapping_changed: "$WRAPPING_CHANGED"
+      gradle_changed: "$GRADLE_CHANGED"
+      maven_changed: "$MAVEN_CHANGED"
+      framework_changed: "$FRAMEWORK_CHANGED"
+      extensions_changed: "$EXTENSIONS_CHANGED"
+      managers_changed: "$MANAGERS_CHANGED"
+      obr_changed: "$OBR_CHANGED"
