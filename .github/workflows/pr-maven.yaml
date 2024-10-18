@@ -97,6 +97,8 @@ jobs:
       - name: Get last successful workflow run with gradle artifacts
         id: get-workflow-run-id-with-gradle-artifacts
         if: ${{ steps.download-gradle.outcome == 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           ./tools/get-last-successful-workflow-run-for-artifacts.sh --repo ${{ github.repository }} --module gradle
 
