@@ -38,4 +38,4 @@ $galasabld versioning suffix remove --sourcefolderpath {my-source-folder}
 ```
 This will recursively look for module versions, stripping off any existing suffix.
 So for example, `0.0.1-SNAPSHOT` will be changed to `0.0.1`
-**Change for test pr 3**
+**DUMMY CHANGE**

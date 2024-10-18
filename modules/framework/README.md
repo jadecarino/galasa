@@ -46,4 +46,4 @@ This code is under the [Eclipse Public License 2.0](https://github.com/galasa-de
 
 ## Developer setup instructions
 See the developer instructions [here](./dev-instructions.md)
-**Change for test pr**
+**DUMMY CHANGE**
