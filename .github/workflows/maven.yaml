@@ -91,11 +91,28 @@ jobs:
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
-      - name: Download gradle artifacts
+      # For any modules that were changed in this push,
+      # download their artifacts from this workflow run.
+
+      - name: Download gradle artifacts from this workflow
+        id: download-gradle
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this push,
+      # download artifacts from the last successful workflow.
+
+      - name: Download gradle artifacts from last successful workflow
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
 
       - name: Build Maven source code
         working-directory: modules/maven

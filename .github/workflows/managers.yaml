@@ -58,29 +58,79 @@ jobs:
           gradle-version: 8.9
           cache-disabled: true
 
-      - name: Download wrapping artifacts
+      # For any modules that were changed in this push,
+      # download their artifacts from this workflow run.
+
+      - name: Download wrapping artifacts from this workflow
+        id: download-wrapping
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: wrapping
           path: modules/wrapping/dev/galasa
   
-      - name: Download gradle artifacts
+      - name: Download gradle artifacts from this workflow
+        id: download-gradle
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
 
-      - name: Download maven artifacts
+      - name: Download maven artifacts from this workflow
+        id: download-maven
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: maven
           path: modules/artifacts/dev/galasa
 
-      - name: Download framework artifacts
+      - name: Download framework artifacts from this workflow
+        id: download-framework
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: framework
           path: modules/artifacts/dev/galasa
+
+      # For any modules that weren't changed in this push,
+      # download artifacts from the last successful workflow.
+
+      - name: Download wrapping artifacts from last successful workflow
+        if: ${{ steps.download-wrapping.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+  
+      - name: Download gradle artifacts from last successful workflow
+        if: ${{ steps.download-gradle.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download maven artifacts from last successful workflow
+        if: ${{ steps.download-maven.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
+
+      - name: Download framework artifacts from last successful workflow
+        if: ${{ steps.download-framework.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: modules/artifacts/dev/galasa
+          github-token: ${{ github.token }}
+          run-id: 11364581065
 
       - name: Build Managers source code
         working-directory: modules/managers

@@ -68,7 +68,7 @@ jobs:
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.
 
-      - name: Download wrapping artifacts from this PR
+      - name: Download wrapping artifacts from this workflow
         id: download-wrapping
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -76,7 +76,7 @@ jobs:
           name: wrapping
           path: modules/artifacts/dev/galasa
 
-      - name: Download gradle artifacts from this PR
+      - name: Download gradle artifacts from this workflow
         id: download-gradle
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -84,7 +84,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
 
-      - name: Download maven artifacts from this PR
+      - name: Download maven artifacts from this workflow
         id: download-maven
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -95,33 +95,30 @@ jobs:
       # For any modules that weren't changed in this PR,
       # download artifacts from the last successful workflow.
 
-      - name: Download wrapping artifacts
+      - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: wrapping
           path: modules/artifacts/dev/galasa
-          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
           github-token: ${{ github.token }}
           run-id: 11364581065
 
-      - name: Download gradle artifacts
+      - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: gradle
           path: modules/artifacts/dev/galasa
-          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
           github-token: ${{ github.token }}
           run-id: 11364581065
 
-      - name: Download maven artifacts
+      - name: Download maven artifacts from last successful workflow
         if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
           name: maven
           path: modules/artifacts/dev/galasa
-          # run-id: ${{ steps.get-workflow-id.outputs.workflow_id }}
           github-token: ${{ github.token }}
           run-id: 11364581065
 
