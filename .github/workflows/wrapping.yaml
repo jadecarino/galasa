@@ -20,7 +20,7 @@ jobs:
 
   log-unchanged:
     name: Wrapping is unchanged
-    if: ${{ !inputs.changed }}
+    if: ${{ inputs.changed == 'false' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
 
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
     
     steps:
@@ -40,7 +40,7 @@ jobs:
 
   build-wrapping:
     name: Build Wrapping source code and Docker image for development Maven registry
-    if: ${{ inputs.changed }}
+    if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
