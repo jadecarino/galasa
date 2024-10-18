@@ -95,7 +95,7 @@ jobs:
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.
 
-      - name: Download wrapping artifacts from this PR
+      - name: Download wrapping artifacts from this workflow
         id: download-wrapping
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -103,7 +103,7 @@ jobs:
           name: wrapping
           path: modules/artifacts/dev/galasa
 
-      - name: Download gradle artifacts from this PR
+      - name: Download gradle artifacts from this workflow
         id: download-gradle
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -111,7 +111,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
 
-      - name: Download maven artifacts from this PR
+      - name: Download maven artifacts from this workflow
         id: download-maven
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -119,7 +119,7 @@ jobs:
           name: maven
           path: modules/artifacts/dev/galasa
 
-      - name: Download framework artifacts from this PR
+      - name: Download framework artifacts from this workflow
         id: download-framework
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -127,7 +127,7 @@ jobs:
           name: framework
           path: modules/artifacts/dev/galasa
 
-      - name: Download extensions artifacts
+      - name: Download extensions artifacts from this workflow
         id: download-extensions
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -135,7 +135,7 @@ jobs:
           name: extensions
           path: modules/artifacts/dev/galasa
 
-      - name: Download managers artifacts
+      - name: Download managers artifacts from this workflow
         id: download-managers
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -146,7 +146,7 @@ jobs:
       # For any modules that weren't changed in this PR,
       # download artifacts from the last successful workflow.
 
-      - name: Download wrapping artifacts
+      - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -155,7 +155,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download gradle artifacts
+      - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -164,7 +164,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download maven artifacts
+      - name: Download maven artifacts from last successful workflow
         if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -173,7 +173,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download framework artifacts
+      - name: Download framework artifacts from last successful workflow
         if: ${{ steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -182,7 +182,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download extensions artifacts
+      - name: Download extensions artifacts from last successful workflow
         if: ${{ steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -191,7 +191,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: 11364581065
 
-      - name: Download managers artifacts
+      - name: Download managers artifacts from last successful workflow
         if: ${{ steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -327,7 +327,7 @@ jobs:
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.
 
-      - name: Download wrapping artifacts from this PR
+      - name: Download wrapping artifacts from this workflow
         id: download-wrapping
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -335,7 +335,7 @@ jobs:
           name: wrapping
           path: modules/artifacts/dev/galasa
 
-      - name: Download gradle artifacts from this PR
+      - name: Download gradle artifacts from this workflow
         id: download-gradle
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -343,7 +343,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
 
-      - name: Download maven artifacts from this PR
+      - name: Download maven artifacts from this workflow
         id: download-maven
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -351,7 +351,7 @@ jobs:
           name: maven
           path: modules/artifacts/dev/galasa
 
-      - name: Download framework artifacts from this PR
+      - name: Download framework artifacts from this workflow
         id: download-framework
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -359,7 +359,7 @@ jobs:
           name: framework
           path: modules/artifacts/dev/galasa
 
-      - name: Download extensions artifacts
+      - name: Download extensions artifacts from this workflow
         id: download-extensions
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -367,7 +367,7 @@ jobs:
           name: extensions
           path: modules/artifacts/dev/galasa
 
-      - name: Download managers artifacts
+      - name: Download managers artifacts from this workflow
         id: download-managers
         continue-on-error: true
         uses: actions/download-artifact@v4
@@ -378,7 +378,7 @@ jobs:
       # For any modules that weren't changed in this PR,
       # download artifacts from the last successful workflow.
 
-      - name: Download wrapping artifacts
+      - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -387,7 +387,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download gradle artifacts
+      - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -396,7 +396,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download maven artifacts
+      - name: Download maven artifacts from last successful workflow
         if: ${{ steps.download-maven.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -405,7 +405,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download framework artifacts
+      - name: Download framework artifacts from last successful workflow
         if: ${{ steps.download-framework.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -414,7 +414,7 @@ jobs:
             github-token: ${{ github.token }}
             run-id: 11364581065
 
-      - name: Download extensions artifacts
+      - name: Download extensions artifacts from last successful workflow
         if: ${{ steps.download-extensions.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
@@ -423,7 +423,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: 11364581065
 
-      - name: Download managers artifacts
+      - name: Download managers artifacts from last successful workflow
         if: ${{ steps.download-managers.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
