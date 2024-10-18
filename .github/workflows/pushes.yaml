@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Main Builds / Pushes
+name: Main Build Orchestrator
 
 on:
   push:
@@ -43,21 +43,74 @@ jobs:
         run: |
           ./tools/get-changed-modules-push.sh --repo ${{ github.repository }} --base ${{ github.event.before }} --head ${{ github.sha }}
 
-  # Call the build orchestrator in Push mode.
-  build-orchestrator:
-    name: Call the Build Orchestrator
+  build-buildutils:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'buildutils' module
     needs: [get-changed-modules]
-    uses: ./.github/workflows/build-orchestrator.yaml
+    uses: ./.github/workflows/buildutils.yaml
     secrets: inherit
     with:
-      pull_request_build: ${{ false }}
-      buildutils_changed: ${{ needs.get-changed-modules.outputs.buildutils_changed }}
-      wrapping_changed: ${{ needs.get-changed-modules.outputs.wrapping_changed }}
-      gradle_changed: ${{ needs.get-changed-modules.outputs.gradle_changed }}
-      maven_changed: ${{ needs.get-changed-modules.outputs.maven_changed }}
-      framework_changed: ${{ needs.get-changed-modules.outputs.framework_changed }}
-      extensions_changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
-      managers_changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
-      obr_changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
-      
-  
+      changed: ${{ needs.get-changed-modules.outputs.buildutils_changed }}
+
+  build-wrapping:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'wrapping' module
+    needs: [get-changed-modules]
+    uses: ./.github/workflows/wrapping.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.wrapping_changed }}
+
+  build-gradle:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'gradle' module
+    needs: [get-changed-modules]
+    uses: ./.github/workflows/gradle.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.gradle_changed }}
+
+  build-maven:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'maven' module
+    needs: [get-changed-modules, build-gradle]
+    uses: ./.github/workflows/maven.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.maven_changed }}
+
+  build-framework:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'framework' module
+    needs: [get-changed-modules, build-buildutils, build-wrapping, build-maven]
+    uses: ./.github/workflows/framework.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.framework_changed }}
+
+  build-extensions:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'extensions' module
+    needs: [get-changed-modules, build-framework]
+    uses: ./.github/workflows/extensions.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
+
+  build-managers:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'managers' module
+    needs: [get-changed-modules, build-framework]
+    uses: ./.github/workflows/managers.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
+
+  build-obr:
+    # if: ${{ !inputs.pull_request_build }}
+    name: Build the 'obr' module
+    needs: [get-changed-modules, build-extensions, build-managers]
+    uses: ./.github/workflows/obr.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
