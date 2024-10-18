@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Pull Requests
+name: Pull Request Build
 
 on:
   pull_request:

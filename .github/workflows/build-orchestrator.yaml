@@ -56,7 +56,7 @@ jobs:
 
   pr-build-buildutils:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'buildutils' module of Galasa
+    name: Build the 'buildutils' module
     uses: ./.github/workflows/pr-buildutils.yaml
     secrets: inherit
     with:
@@ -64,7 +64,7 @@ jobs:
 
   pr-build-wrapping:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'wrapping' module of Galasa
+    name: Build the 'wrapping' module
     uses: ./.github/workflows/pr-wrapping.yaml
     secrets: inherit
     with:
@@ -72,7 +72,7 @@ jobs:
 
   pr-build-gradle:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'gradle' module of Galasa
+    name: Build the 'gradle' module
     uses: ./.github/workflows/pr-gradle.yaml
     secrets: inherit
     with:
@@ -80,7 +80,7 @@ jobs:
 
   pr-build-maven:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'maven' module of Galasa
+    name: Build the 'maven' module
     needs: [pr-build-gradle]
     uses: ./.github/workflows/pr-maven.yaml
     secrets: inherit
@@ -89,7 +89,7 @@ jobs:
 
   pr-build-framework:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'framework' module of Galasa
+    name: Build the 'framework' module
     needs: [pr-build-buildutils, pr-build-wrapping, pr-build-maven]
     uses: ./.github/workflows/pr-framework.yaml
     secrets: inherit
@@ -98,7 +98,7 @@ jobs:
 
   pr-build-extensions:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'extensions' module of Galasa
+    name: Build the 'extensions' module
     needs: [pr-build-framework]
     uses: ./.github/workflows/pr-extensions.yaml
     secrets: inherit
@@ -107,7 +107,7 @@ jobs:
 
   pr-build-managers:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'managers' module of Galasa
+    name: Build the 'managers' module
     needs: [pr-build-framework]
     uses: ./.github/workflows/pr-managers.yaml
     secrets: inherit
@@ -116,7 +116,7 @@ jobs:
 
   pr-build-obr:
     if: ${{ inputs.pull_request_build }}
-    name: Build the 'obr' module of Galasa
+    name: Build the 'obr' module
     needs: [pr-build-extensions, pr-build-managers]
     uses: ./.github/workflows/pr-obr.yaml
     secrets: inherit
@@ -127,7 +127,7 @@ jobs:
 
   build-buildutils:
     if: ${{ !inputs.pull_request_build }}
-    name: Build the 'buildutils' module of Galasa
+    name: Build the 'buildutils' module
     uses: ./.github/workflows/buildutils.yaml
     secrets: inherit
     with:
@@ -135,7 +135,7 @@ jobs:
 
   build-framework:
     if: ${{ !inputs.pull_request_build }}
-    name: Build the 'framework' module of Galasa
+    name: Build the 'framework' module
     needs: [build-buildutils]
     uses: ./.github/workflows/framework.yaml
     secrets: inherit
@@ -144,7 +144,7 @@ jobs:
 
   build-extensions:
     if: ${{ !inputs.pull_request_build }}
-    name: Build the 'extensions' module of Galasa
+    name: Build the 'extensions' module
     needs: [build-framework]
     uses: ./.github/workflows/extensions.yaml
     secrets: inherit
@@ -153,7 +153,7 @@ jobs:
 
   build-managers:
     if: ${{ !inputs.pull_request_build }}
-    name: Build the 'managers' module of Galasa
+    name: Build the 'managers' module
     needs: [build-framework]
     uses: ./.github/workflows/managers.yaml
     secrets: inherit
@@ -162,7 +162,7 @@ jobs:
 
   build-obr:
     if: ${{ !inputs.pull_request_build }}
-    name: Build the 'obr' module of Galasa
+    name: Build the 'obr' module
     needs: [build-extensions, build-managers]
     uses: ./.github/workflows/obr.yaml
     secrets: inherit
