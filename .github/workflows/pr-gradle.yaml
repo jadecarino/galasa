@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Gradle pull request build
+name: Gradle PR Build
 
 on:
   workflow_call:

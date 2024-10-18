@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Extensions pull request build
+name: Extensions PR Build
 
 on:
   workflow_call:
