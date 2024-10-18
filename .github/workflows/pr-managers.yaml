@@ -39,10 +39,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-        
-      - name: Print githash
-        run: |
-          echo $GITHUB_SHA > ./managers.githash
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3

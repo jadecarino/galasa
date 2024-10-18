@@ -42,10 +42,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-      
-      - name: Print githash
-        run: |
-          echo $GITHUB_SHA > ./framework.githash
         
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -139,14 +135,14 @@ jobs:
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/framework/repo
       
-      # - name: Upload Jacoco Reports as artifact
-      #   if: failure()
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: unit-tests
-      #     path: modules/framework/galasa-parent/**/build/reports/**/*.html
-      #     retention-days: 7
-      #     if-no-files-found: ignore
+      - name: Upload Jacoco Reports as artifact
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: framework-unit-tests
+          path: modules/framework/galasa-parent/**/build/reports/**/*.html
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload framework artifacts
         uses: actions/upload-artifact@v4
@@ -179,3 +175,11 @@ jobs:
         working-directory: modules/framework
         run: |
           java -jar swagger-codegen-cli.jar generate -i galasa-parent/dev.galasa.framework.api.openapi/src/main/resources/openapi.yaml -l html2 -o docs/generated/galasaapi
+
+      - name: Build Restapidoc image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: modules/framework
+          file: modules/framework/dockerfiles/dockerfile.restapidocsite
+          load: true
+          tags: restapidoc-site:test

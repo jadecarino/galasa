@@ -40,11 +40,6 @@ jobs:
           java-version: '17'
           distribution: 'semeru'
 
-      # The githash is added to the development Maven registry to show what commit level it contains
-      - name: Print githash
-        run: |
-          echo $GITHUB_SHA > ./gradle.githash
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
