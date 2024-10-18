@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Framework pull request build
+name: Framework PR Build
 
 on:
   workflow_call:
@@ -56,14 +56,6 @@ jobs:
           PACKAGE: "dev.galasa.framework.api.beans.generated"
         run: |
           docker run --rm -v ${{ github.workspace }}:/var/workspace ghcr.io/${{ env.NAMESPACE }}/openapi2beans:main generate --yaml var/workspace/${{ env.YAML_LOCATION }} --output var/workspace/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
-
-      # - name: Get last successful workflow run ID for Main builds
-      #   id: get-workflow-id
-      #   env:
-      #     GH_TOKEN: ${{ github.token }}
-      #   run : |
-      #     WORKFLOW_ID=$(gh run list --repo jadecarino/galasa --workflow "Main build orchestrator" --status success --limit 1 | grep -v STATUS | cut -d' ' -f6)
-      #     echo "::set-output name=workflow_id::${WORKFLOW_ID}"
 
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.

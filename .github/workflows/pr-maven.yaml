@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Maven pull request build
+name: Maven PR Build
 
 on:
   workflow_call:

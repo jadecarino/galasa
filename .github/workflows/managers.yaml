@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-name: Managers main build
+name: Managers Main Build
 
 on:
   workflow_call:
