@@ -62,7 +62,6 @@ function usage {
 Options are:
 -h | --help : Display this help text
 --repo          The repository for this GitHub Actions workflow
---module        The module we are looking for artifacts for
 EOF
 }
 
@@ -70,7 +69,6 @@ EOF
 # Process parameters
 #-----------------------------------------------------------------------------------------
 repo=""
-module=""
 while [ "$1" != "" ]; do
     case $1 in
         -h | --help )       usage
@@ -81,10 +79,6 @@ while [ "$1" != "" ]; do
                             shift
                             ;;
 
-        --module )          module="$2"
-                            shift
-                            ;;
-
         * )                 error "Unexpected argument $1"
                             usage
                             exit 1
@@ -92,34 +86,16 @@ while [ "$1" != "" ]; do
     shift
 done
 
-# A map of module names and the job name
-# that states the module was unchanged.
-# This will be used by the GitHub CLI to
-# see if a workflow run skipped building
-# a module and so will have no artifacts.
-declare -A module_skipped_job_name_map
-
-# Assign key-value pairs
-module_skipped_job_name_map=(
-    ["buildutils"]="Buildutils is unchanged"
-    ["wrapping"]="Wrapping is unchanged"
-    ["gradle"]="Gradle is unchanged"
-    ["maven"]="Maven is unchanged"
-    ["framework"]="Framework is unchanged"
-    ["extensions"]="Extensions is unchanged"
-    ["managers"]="Managers is unchanged"
-    ["obr"]="OBR is unchanged"
-)
-
-skipped_job_name=${module_skipped_job_name_map[${module}]}
-
 #-----------------------------------------------------------------------------------------
 # Functions
 #-----------------------------------------------------------------------------------------
 
 function get_last_successful_workflow_id() {
 
-    h1 "Getting the last successful workflow run ID that has stored artifacts for the ${module} module" 
+    MODULE=$1
+    SKIPPED_JOB_NAME=$2
+
+    h1 "Getting the last successful workflow run ID that has stored artifacts for the ${MODULE} module" 
 
     h2 "Using the GitHub CLI to list the successful runs of the Main Build Orchestrator workflow"
     gh run list --repo "${repo}" --workflow "Main Build Orchestrator" --status success | tee gh-run-list.log
@@ -131,16 +107,23 @@ function get_last_successful_workflow_id() {
     echo "Extracted IDs: ${run_ids[@]}"
 
     for run_id in "${run_ids[@]}"; do
-        echo "Checking if the run ${run_id} ran the ${module} build or skipped it"
-        if gh run view ${run_id} --log 2>&1 | grep -q "${skipped_job_name}"; then
-            echo "The build of module ${module} was skipped so will have no artifacts in this workflow run."
+        echo "Checking if the run ${run_id} ran the ${MODULE} build or skipped it"
+        if gh run view ${run_id} --log 2>&1 | grep -q "${SKIPPED_JOB_NAME}"; then
+            echo "The build of module ${MODULE} was skipped so will have no artifacts in this workflow run."
         else
-            echo "The build of module ${module} was not skipped - artifacts should be available to download!"
-            echo "LAST_SUCCESSFUL_WORKFLOW_ID=${run_id}" >> $GITHUB_OUTPUT
+            echo "The build of module ${MODULE} was not skipped - artifacts should be available to download!"
+            echo "${MODULE}_artifacts_id=${run_id}" >> $GITHUB_OUTPUT
             break
         fi
     done
 
 }
 
-get_last_successful_workflow_id
+get_last_successful_workflow_id buildutils "Buildutils is unchanged"
+get_last_successful_workflow_id wrapping "Wrapping is unchanged"
+get_last_successful_workflow_id gradle "Gradle is unchanged"
+get_last_successful_workflow_id maven "Maven is unchanged"
+get_last_successful_workflow_id framework "Framework is unchanged"
+get_last_successful_workflow_id extensions "Extensions is unchanged"
+get_last_successful_workflow_id managers "Managers is unchanged"
+get_last_successful_workflow_id obr "OBR is unchanged"

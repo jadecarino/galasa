@@ -105,14 +105,6 @@ jobs:
       # For any modules that weren't changed in this push,
       # download artifacts from the last successful workflow.
 
-      - name: Get last successful workflow run with gradle artifacts
-        id: get-workflow-run-id-with-gradle-artifacts
-        if: ${{ steps.download-gradle.outcome == 'failure' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ./tools/get-last-successful-workflow-run-for-artifacts.sh --repo ${{ github.repository }} --module gradle
-
       - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
         uses: actions/download-artifact@v4
@@ -120,8 +112,8 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          # run-id: 11364581065
-          run-id: ${{ steps.get-workflow-run-id-with-gradle-artifacts.outputs.LAST_SUCCESSFUL_WORKFLOW_ID }}"
+          run-id: 11364581065
+          # run-id: ${{ inputs.gradle-artifact-id }}
 
       - name: Build Maven source code
         working-directory: modules/maven
