@@ -12,6 +12,10 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+      gradle-artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts for the gradle module'
+        required: true
+        type: string
 
 env:
   BRANCH: ${{ github.ref_name }}
@@ -112,8 +116,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          run-id: 11364581065
-          # run-id: ${{ inputs.gradle-artifact-id }}
+          run-id: ${{ inputs.gradle-artifact-id }}
 
       - name: Build Maven source code
         working-directory: modules/maven

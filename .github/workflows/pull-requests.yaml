@@ -103,7 +103,9 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.framework_changed }}
-      # artifacts-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
+      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
+      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
+      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
 
   pr-build-extensions:
     name: Build the 'extensions' module
@@ -112,7 +114,10 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
-      # artifacts-id: ${{ needs.find-artifacts.outputs.extensions_artifacts_id }}
+      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
+      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
+      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
+      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
 
   pr-build-managers:
     name: Build the 'managers' module
@@ -121,7 +126,10 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
-      # artifacts-id: ${{ needs.find-artifacts.outputs.managers_artifacts_id }}
+      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
+      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
+      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
+      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
 
   pr-build-obr:
     name: Build the 'obr' module
@@ -130,4 +138,9 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
-      # artifacts-id: ${{ needs.find-artifacts.outputs.obr_artifacts_id }}
+      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
+      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
+      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
+      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
+      extensions-artifact-id: ${{ needs.find-artifacts.outputs.extensions_artifacts_id }}
+      managers-artifact-id: ${{ needs.find-artifacts.outputs.managers_artifacts_id }}

@@ -12,6 +12,18 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+      wrapping-artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts for the wrapping module'
+        required: true
+        type: string
+      gradle-artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts for the gradle module'
+        required: true
+        type: string
+      maven-artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts for the maven module'
+        required: true
+        type: string
 
 env:
   NAMESPACE: ${{ github.repository_owner }}
@@ -94,7 +106,7 @@ jobs:
           name: wrapping
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          run-id: 11364581065
+          run-id: ${{ inputs.wrapping-artifact-id }}
 
       - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
@@ -103,7 +115,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          run-id: 11364581065
+          run-id: ${{ inputs.gradle-artifact-id }}
 
       - name: Download maven artifacts from last successful workflow
         if: ${{ steps.download-maven.outcome == 'failure' }}
@@ -112,7 +124,7 @@ jobs:
           name: maven
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          run-id: 11364581065
+          run-id: ${{ inputs.maven-artifact-id }}
 
       - name: Build Framework source code
         working-directory: modules/framework

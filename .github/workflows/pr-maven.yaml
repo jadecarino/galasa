@@ -105,8 +105,7 @@ jobs:
           name: gradle
           path: modules/artifacts/dev/galasa
           github-token: ${{ github.token }}
-          # run-id: 11364581065
-          run-id: ${{ inputs.gradle-artifact-id }}"
+          run-id: ${{ inputs.gradle-artifact-id }}
       
       - name: Building Maven source code
         working-directory: modules/maven
