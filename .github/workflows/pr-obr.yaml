@@ -279,12 +279,16 @@ jobs:
         run: |
           cp -R ${{ github.workspace }}/modules/artifacts ${{ github.workspace }}/modules/obr/repo
 
+      - name: List contents of release repo
+        run: |
+          ls -R ${{ github.workspace }}/modules/obr/repo
+
       - name: Upload obr artifacts
         uses: actions/upload-artifact@v4
         with:
-            name: obr
-            path: modules/obr/repo/dev/galasa
-            retention-days: 7
+          name: obr
+          path: modules/obr/repo/dev/galasa
+          retention-days: 7
       
       - name: Build OBR image for testing
         uses: docker/build-push-action@v5
