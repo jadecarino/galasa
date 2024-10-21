@@ -142,7 +142,7 @@ jobs:
     uses: ./.github/workflows/obr.yaml
     secrets: inherit
     with:
-      changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
+      changed: ${{ true }} # Always rebuild the OBR as it contains all other modules.
       wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
       gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
       maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
