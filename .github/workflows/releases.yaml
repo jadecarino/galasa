@@ -7,6 +7,23 @@ name: Release Build Orchestrator
 
 on:
   workflow_dispatch:
+    inputs:
+      jacoco_enabled:
+        description: 'True if Jacoco code coverage should be enabled (set to "false" for release builds)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+      sign_artifacts:
+        description: 'True if the artifacts built should be signed (set to "false" for development branch builds)'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
 
 jobs:
 
@@ -23,6 +40,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-gradle:
     name: Build the 'gradle' module
@@ -30,6 +49,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-maven:
     name: Build the 'maven' module
@@ -38,6 +59,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-framework:
     name: Build the 'framework' module
@@ -46,6 +69,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-extensions:
     name: Build the 'extensions' module
@@ -54,6 +79,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-managers:
     name: Build the 'managers' module
@@ -62,6 +89,8 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ true }}
+      jacoco_enabled: ${{ inputs.jacoco_enabled }}
+      sign_artifacts: ${{ inputs.sign_artifacts }}
 
   build-obr:
     name: Build the 'obr' module

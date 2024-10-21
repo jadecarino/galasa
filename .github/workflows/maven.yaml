@@ -12,6 +12,16 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+      jacoco_enabled:
+        description: 'True if Jacoco code coverage should be enabled (set to "false" for release builds)'
+        required: false
+        default: 'true'
+        type: string
+      sign_artifacts:
+        description: 'True if the artifacts built should be signed (set to "false" for development branch builds)'
+        required: false
+        default: 'true'
+        type: string
       gradle-artifact-id:
         description: 'The Workflow Run ID of the last workflow containing artifacts for the gradle module'
         required: true
@@ -126,8 +136,8 @@ jobs:
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
-          -Dgalasa.jacocoEnabled=true \
-          -Dgalasa.isRelease=true \
+          -Dgalasa.jacocoEnabled=${{ inputs.jacoco_enabled }} \
+          -Dgalasa.isRelease=${{ inputs.sign_artifacts }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
       

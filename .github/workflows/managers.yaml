@@ -12,6 +12,16 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+      jacoco_enabled:
+        description: 'True if Jacoco code coverage should be enabled (set to "false" for release builds)'
+        required: false
+        default: 'true'
+        type: string
+      sign_artifacts:
+        description: 'True if the artifacts built should be signed (set to "false" for development branch builds)'
+        required: false
+        default: 'true'
+        type: string
       wrapping-artifact-id:
         description: 'The Workflow Run ID of the last workflow containing artifacts for the wrapping module'
         required: true
@@ -164,8 +174,8 @@ jobs:
           -PsourceMaven=${{ github.workspace }}/modules/artifacts \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/modules/managers/repo \
-          -PjacocoEnabled=true \
-          -PisMainOrRelease=true 2>&1 | tee build.log
+          -PjacocoEnabled=${{ inputs.jacoco_enabled }} \
+          -PisMainOrRelease=${{ inputs.sign_artifacts }} 2>&1 | tee build.log
         
       - name: Upload Gradle Build Log
         if: failure()
@@ -179,7 +189,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-report
+          name: managers-jacoco-report
           path: ${{ github.workspace }}/galasa-managers-parent/**/**/build/reports/**/*.html
           retention-days: 7
           if-no-files-found: ignore
