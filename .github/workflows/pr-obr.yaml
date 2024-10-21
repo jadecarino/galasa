@@ -287,7 +287,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: obr
-          path: modules/obr/repo/dev/galasa
+          path: modules/obr/repo
           retention-days: 7
       
       - name: Build OBR image for testing
