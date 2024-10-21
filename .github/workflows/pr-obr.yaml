@@ -272,6 +272,13 @@ jobs:
           path: modules/obr/galasa-obr-build.log
           retention-days: 7
 
+      # The obr-maven-artefacts image which is built from the release repo's directory
+      # needs not only the obr module's artifacts but all other module's artifacts.
+      # All other module's artifacts were placed in the source repo previously in the workflow.
+      - name: Copy source repo into release repo
+        run: |
+          cp -R ${{ github.workspace }}/modules/artifacts ${{ github.workspace }}/modules/obr/repo
+
       - name: Upload obr artifacts
         uses: actions/upload-artifact@v4
         with:
