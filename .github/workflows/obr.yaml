@@ -286,7 +286,7 @@ jobs:
       # All other module's artifacts were placed in the source repo previously in the workflow.
       - name: Copy source repo into release repo
         run: |
-          cp -R ${{ github.workspace }}/modules/artifacts ${{ github.workspace }}/modules/obr/repo
+          cp -R ${{ github.workspace }}/modules/artifacts/dev/galasa/* ${{ github.workspace }}/modules/obr/repo/dev/galasa
 
       - name: Upload obr artifacts
         uses: actions/upload-artifact@v4
