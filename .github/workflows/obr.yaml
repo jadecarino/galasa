@@ -78,11 +78,6 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-  
-      - name: Print githash
-        working-directory: modules/obr
-        run: |
-          echo $GITHUB_SHA > ./obr.githash
 
       - name: Make secrets directory
         run : |
@@ -287,6 +282,17 @@ jobs:
       - name: Copy source repo into release repo
         run: |
           cp -R ${{ github.workspace }}/modules/artifacts/dev/galasa/* ${{ github.workspace }}/modules/obr/repo/dev/galasa
+
+      - name: Add githashes of each module to OBR image
+        run: |
+          echo $(git log -1 --pretty=format:"%H" -- "modules/buildutils") > modules/obr/repo/buildutils.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/wrapping") > modules/obr/repo/wrapping.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/gradle") > modules/obr/repo/gradle.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/maven") > modules/obr/repo/maven.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/framework") > modules/obr/repo/framework.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/extensions") > modules/obr/repo/extensions.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/managers") > modules/obr/repo/managers.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/obr") > modules/obr/repo/obr.githash
 
       - name: Upload obr artifacts
         uses: actions/upload-artifact@v4
