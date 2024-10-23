@@ -119,7 +119,8 @@ function get_last_successful_workflow_id() {
 
 }
 
-get_last_successful_workflow_id buildutils "Buildutils is unchanged"
+get_last_successful_workflow_id openapi2beans "Buildutils is unchanged"
+get_last_successful_workflow_id galasabld "Buildutils is unchanged"
 get_last_successful_workflow_id wrapping "Wrapping is unchanged"
 get_last_successful_workflow_id gradle "Gradle is unchanged"
 get_last_successful_workflow_id maven "Maven is unchanged"
