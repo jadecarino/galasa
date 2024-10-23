@@ -276,14 +276,14 @@ jobs:
 
       - name: Add githashes of each module to OBR image
         run: |
-          echo $(git log -1 --pretty=format:"%H" -- "modules/buildutils") > modules/obr/repo/buildutils.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/wrapping") > modules/obr/repo/wrapping.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/gradle") > modules/obr/repo/gradle.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/maven") > modules/obr/repo/maven.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/framework") > modules/obr/repo/framework.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/extensions") > modules/obr/repo/extensions.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/managers") > modules/obr/repo/managers.githash
-          echo $(git log -1 --pretty=format:"%H" -- "modules/obr") > modules/obr/repo/obr.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/buildutils") > modules/obr/buildutils.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/wrapping") > modules/obr/wrapping.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/gradle") > modules/obr/gradle.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/maven") > modules/obr/maven.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/framework") > modules/obr/framework.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/extensions") > modules/obr/extensions.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/managers") > modules/obr/managers.githash
+          echo $(git log -1 --pretty=format:"%H" -- "modules/obr") > modules/obr/obr.githash
 
       - name: Upload obr artifacts
         uses: actions/upload-artifact@v4
