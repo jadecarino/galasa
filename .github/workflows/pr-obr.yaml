@@ -12,6 +12,10 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
+      galasabld-artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts for galasabld'
+        required: true
+        type: string
       wrapping-artifact-id:
         description: 'The Workflow Run ID of the last workflow containing artifacts for the wrapping module'
         required: true
@@ -102,17 +106,17 @@ jobs:
       - name: Copy custom settings.xml
         run: |
             cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
-      
-      - name:  Generate Galasa BOM
-        run: |
-          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/galasa-bom/pom.template --output /var/root/obr/galasa-bom/pom.xml --bom
-          
-      - name: Display Galasa BOM pom.xml
-        run: |
-          cat modules/obr/galasa-bom/pom.xml
 
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.
+
+      - name: Download galasabld artifacts from this workflow
+        id: download-galasabld
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: galasabld
+          path: modules/artifacts/galasabld
 
       - name: Download wrapping artifacts from this workflow
         id: download-wrapping
@@ -164,6 +168,15 @@ jobs:
 
       # For any modules that weren't changed in this PR,
       # download artifacts from the last successful workflow.
+
+      - name: Download galasabld artifacts from last successful workflow
+        if: ${{ steps.download-galasabld.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: galasabld
+          path: modules/artifacts/galasabld
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.galasabld-artifact-id }}
 
       - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
@@ -218,6 +231,20 @@ jobs:
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: ${{ inputs.managers-artifact-id }}
+
+      - name:  Generate Galasa BOM
+        if: ${{ steps.download-galasabld.outcome == 'success' }}
+        run: |
+          ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/galasa-bom/pom.template --output ${{ github.workspace }}/modules/obr/galasa-bom/pom.xml --bom
+
+      - name:  Generate Galasa BOM
+        if: ${{ steps.download-galasabld.outcome == 'failure' }}
+        run: |
+          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/galasa-bom/pom.template --output /var/root/obr/galasa-bom/pom.xml --bom
+          
+      - name: Display Galasa BOM pom.xml
+        run: |
+          cat modules/obr/galasa-bom/pom.xml
         
       - name: Build Galasa BOM with maven
         working-directory: modules/obr
@@ -238,8 +265,14 @@ jobs:
           name: galasa-bom-build-log
           path: modules/obr/galasa-bom-build.log
           retention-days: 7
+
+      - name:  Generate Galasa OBR
+        if: ${{ steps.download-galasabld.outcome == 'success' }}
+        run: |
+          ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/dev.galasa.uber.obr/pom.template --output ${{ github.workspace }}/modules/obr/dev.galasa.uber.obr/pom.xml --obr
       
       - name:  Generate Galasa OBR
+        if: ${{ steps.download-galasabld.outcome == 'failure' }}
         run: |
           docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/dev.galasa.uber.obr/pom.template --output /var/root/obr/dev.galasa.uber.obr/pom.xml --obr
           
@@ -352,17 +385,17 @@ jobs:
       - name: Copy custom settings.xml
         run: |
           cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
-          
-      - name: Build Galasa Javadoc
-        run: |
-            docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/javadocs/pom.template --output /var/root/obr/javadocs/pom.xml --javadoc
-            
-      - name: Display Galasa Javadoc pom.xml 
-        run: |
-          cat modules/obr/javadocs/pom.xml
 
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.
+
+      - name: Download galasabld artifacts from this workflow
+        id: download-galasabld
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: galasabld
+          path: modules/artifacts/galasabld
 
       - name: Download wrapping artifacts from this workflow
         id: download-wrapping
@@ -414,6 +447,15 @@ jobs:
 
       # For any modules that weren't changed in this PR,
       # download artifacts from the last successful workflow.
+
+      - name: Download galasabld artifacts from last successful workflow
+        if: ${{ steps.download-galasabld.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: galasabld
+          path: modules/artifacts/galasabld
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.galasabld-artifact-id }}
 
       - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
@@ -468,6 +510,20 @@ jobs:
             path: modules/artifacts/dev/galasa
             github-token: ${{ github.token }}
             run-id: ${{ inputs.managers-artifact-id }}
+
+      - name: Build Galasa Javadoc
+        if: ${{ steps.download-galasabld.outcome == 'success' }}
+        run: |
+          ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/javadocs/pom.template --output ${{ github.workspace }}/modules/obr/javadocs/pom.xml --javadoc
+            
+      - name: Build Galasa Javadoc
+        if: ${{ steps.download-galasabld.outcome == 'failure' }}
+        run: |
+          docker run --rm -v ${{ github.workspace }}/modules:/var/root/ ghcr.io/${{ env.NAMESPACE }}/galasabld-amd64:main template --releaseMetadata var/root/framework/release.yaml --releaseMetadata /var/root/extensions/release.yaml --releaseMetadata /var/root/managers/release.yaml --releaseMetadata /var/root/obr/release.yaml --template /var/root/obr/javadocs/pom.template --output /var/root/obr/javadocs/pom.xml --javadoc
+            
+      - name: Display Galasa Javadoc pom.xml 
+        run: |
+          cat modules/obr/javadocs/pom.xml
         
       - name: Build javadoc site using maven
         working-directory: modules/obr/javadocs
