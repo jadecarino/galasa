@@ -63,11 +63,6 @@ jobs:
           java-version: '17'
           distribution: 'semeru'
 
-      # The githash is added to the development Maven registry to show what commit level it contains
-      - name: Print githash
-        run: |
-          echo $GITHUB_SHA > ./wrapping.githash
-
       # Copy secrets into files to use in workflow
       - name: Make secrets directory
         run: |
