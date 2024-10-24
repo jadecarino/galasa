@@ -235,6 +235,7 @@ jobs:
       - name:  Generate Galasa BOM
         if: ${{ steps.download-galasabld.outcome == 'success' }}
         run: |
+          chmod +x ./modules/artifacts/galasabld/galasabld-linux-amd64
           ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/galasa-bom/pom.template --output ${{ github.workspace }}/modules/obr/galasa-bom/pom.xml --bom
 
       - name:  Generate Galasa BOM
@@ -269,6 +270,7 @@ jobs:
       - name:  Generate Galasa OBR
         if: ${{ steps.download-galasabld.outcome == 'success' }}
         run: |
+          chmod +x ./modules/artifacts/galasabld/galasabld-linux-amd64
           ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/dev.galasa.uber.obr/pom.template --output ${{ github.workspace }}/modules/obr/dev.galasa.uber.obr/pom.xml --obr
       
       - name:  Generate Galasa OBR
@@ -514,6 +516,7 @@ jobs:
       - name: Build Galasa Javadoc
         if: ${{ steps.download-galasabld.outcome == 'success' }}
         run: |
+          chmod +x ./modules/artifacts/galasabld/galasabld-linux-amd64
           ./modules/artifacts/galasabld/galasabld-linux-amd64 template --releaseMetadata ${{ github.workspace }}/modules/framework/release.yaml --releaseMetadata ${{ github.workspace }}/modules/extensions/release.yaml --releaseMetadata ${{ github.workspace }}/modules/managers/release.yaml --releaseMetadata ${{ github.workspace }}/modules/obr/release.yaml --template ${{ github.workspace }}/modules/obr/javadocs/pom.template --output ${{ github.workspace }}/modules/obr/javadocs/pom.xml --javadoc
             
       - name: Build Galasa Javadoc

@@ -146,6 +146,7 @@ jobs:
           OUTPUT_LOCATION: "modules/framework/galasa-parent/dev.galasa.framework.api.beans/src/main/java"
           PACKAGE: "dev.galasa.framework.api.beans.generated"
         run: |
+          chmod +x ./modules/artifacts/openapi2beans/openapi2beans-linux-x86_64
           ./modules/artifacts/openapi2beans/openapi2beans-linux-x86_64 generate --yaml ${{ github.workspace }}/${{ env.YAML_LOCATION }} --output ${{ github.workspace }}/${{ env.OUTPUT_LOCATION }} --package ${{ env.PACKAGE }}
       
       - name: Build servlet beans with openapi2beans
