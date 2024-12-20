@@ -23,7 +23,6 @@ env:
   BRANCH: ${{ github.ref_name }}
 
 jobs:
-
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
     runs-on: ubuntu-latest
@@ -33,9 +32,19 @@ jobs:
         run: |
           echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
 
+  check-required-secrets-configured:
+    name: Check required secrets configured
+    uses: ./.github/workflows/check-required-secrets-configured.yaml
+    secrets: inherit
+    with:
+      maven_settings_xml: 'true'
+      gpg_key: 'true'
+      gpg_passphrase: 'true'
+
   build-wrapping:
     name: Build Wrapping source code and Docker image for development Maven registry
     runs-on: ubuntu-latest
+    needs: check-required-secrets-configured
 
     steps:
       - name: Checkout Code
