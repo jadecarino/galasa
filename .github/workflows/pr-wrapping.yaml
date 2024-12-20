@@ -12,8 +12,8 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
-      platform-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the platform'
+      artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts to download'
         required: true
         type: string
 
@@ -46,6 +46,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
+          cache: 'maven'
 
       - name: Download platform from this workflow
         id: download-platform
@@ -63,7 +64,7 @@ jobs:
           name: platform
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.platform-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       # Copy secrets into files to use in workflow
       - name: Make secrets directory

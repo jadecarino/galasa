@@ -12,12 +12,8 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
-      platform-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the platform'
-        required: true
-        type: string
-      gradle-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the gradle module'
+      artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts to download'
         required: true
         type: string
 
@@ -50,6 +46,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
+          cache: 'maven'
       
       # Copy secrets into files to use in workflow
       - name: Make secrets directory
@@ -120,7 +117,7 @@ jobs:
           name: platform
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.platform-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
@@ -129,7 +126,7 @@ jobs:
           name: gradle
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.gradle-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
       
       - name: Building Maven source code
         working-directory: modules/maven

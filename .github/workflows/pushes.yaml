@@ -14,7 +14,7 @@ jobs:
   set-build-properties:
     # Use the version.properties file to source the galasa-version output variable.
     # This variable can be referenced by other jobs in this flow using 
-    # ${{needs.set-build-properties.outputs.galasa-version}}
+    # ${{ needs.set-build-properties.outputs.galasa-version }}
     runs-on: ubuntu-latest
     outputs:
       galasa-version: ${{ steps.set-build-properties.outputs.GALASA_VERSION }}
@@ -82,4 +82,4 @@ jobs:
     uses: ./.github/workflows/obr.yaml
     secrets: inherit
     with:
-      galasa-version: "${{needs.set-build-properties.outputs.galasa-version}}"
+      galasa-version: "${{ needs.set-build-properties.outputs.galasa-version }}"

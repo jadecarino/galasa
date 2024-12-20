@@ -12,6 +12,7 @@ on:
 jobs:
 
   detect-secrets:
+    name: Detect secrets
     runs-on: ubuntu-latest 
     steps:
 
@@ -59,33 +60,25 @@ jobs:
           ./.github/scripts/get-changed-modules-pull-request.sh --pr-number ${{ github.event.number }}
 
   find-artifacts:
-    name: Get Workflow Run IDs with artifacts to download for each module
+    name: Get Workflow Run ID to download artifacts from
     runs-on: ubuntu-latest
 
     outputs: 
-      platform_artifacts_id: ${{ steps.find-artifacts.outputs.platform_artifacts_id }}
-      galasabld_artifacts_id: ${{ steps.find-artifacts.outputs.galasabld_artifacts_id }}
-      openapi2beans_artifacts_id: ${{ steps.find-artifacts.outputs.openapi2beans_artifacts_id }}
-      wrapping_artifacts_id: ${{ steps.find-artifacts.outputs.wrapping_artifacts_id }}
-      gradle_artifacts_id: ${{ steps.find-artifacts.outputs.gradle_artifacts_id }}
-      maven_artifacts_id: ${{ steps.find-artifacts.outputs.maven_artifacts_id }}
-      framework_artifacts_id: ${{ steps.find-artifacts.outputs.framework_artifacts_id }}
-      extensions_artifacts_id: ${{ steps.find-artifacts.outputs.extensions_artifacts_id }}
-      managers_artifacts_id: ${{ steps.find-artifacts.outputs.managers_artifacts_id }}
+      workflow_for_artifact_download_id: ${{ steps.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            .github/scripts
-
-      - name: Get last successful workflow run with artifacts for each module
+      - name: Get last successful workflow run of the "Main Build Orchestrator" for PR's base ref
         id: find-artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./.github/scripts/get-last-successful-workflow-run-for-artifacts.sh --repo ${{ github.repository }}
+          echo "workflow_for_artifact_download_id=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow 'Main Build Orchestrator' \
+            --branch ${{ github.base_ref }} \
+            --status success \
+            --limit 1 \
+            --json databaseId | jq '.[0].databaseId')" >> $GITHUB_OUTPUT
 
   pr-build-platform:
     name: Build the 'platform' module
@@ -110,7 +103,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.wrapping_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
       
   pr-build-gradle:
     name: Build the 'gradle' module
@@ -119,7 +112,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.gradle_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-maven:
     name: Build the 'maven' module
@@ -128,8 +121,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.maven_changed }}
-      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-framework:
     name: Build the 'framework' module
@@ -138,11 +130,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.framework_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
-      openapi2beans-artifact-id: ${{ needs.find-artifacts.outputs.openapi2beans_artifacts_id }}
-      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
-      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
-      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-extensions:
     name: Build the 'extensions' module
@@ -151,11 +139,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.extensions_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
-      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
-      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
-      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
-      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-managers:
     name: Build the 'managers' module
@@ -164,11 +148,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
-      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
-      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
-      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
-      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-obr:
     name: Build the 'obr' module
@@ -177,14 +157,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.obr_changed }}
-      platform-artifact-id: ${{ needs.find-artifacts.outputs.platform_artifacts_id }}
-      galasabld-artifact-id: ${{ needs.find-artifacts.outputs.galasabld_artifacts_id }}
-      wrapping-artifact-id: ${{ needs.find-artifacts.outputs.wrapping_artifacts_id }}
-      gradle-artifact-id: ${{ needs.find-artifacts.outputs.gradle_artifacts_id }}
-      maven-artifact-id: ${{ needs.find-artifacts.outputs.maven_artifacts_id }}
-      framework-artifact-id: ${{ needs.find-artifacts.outputs.framework_artifacts_id }}
-      extensions-artifact-id: ${{ needs.find-artifacts.outputs.extensions_artifacts_id }}
-      managers-artifact-id: ${{ needs.find-artifacts.outputs.managers_artifacts_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   # This is required as all previous jobs are optional based on if a module has changed.
   # This job is set in the branch protection rules as required to merge a Pull Request.

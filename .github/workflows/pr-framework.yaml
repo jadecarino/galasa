@@ -12,24 +12,8 @@ on:
         description: 'True if this module has been changed and should be rebuilt'
         required: true
         type: string
-      platform-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the platform'
-        required: true
-        type: string
-      openapi2beans-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for openapi2beans'
-        required: true
-        type: string
-      wrapping-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the wrapping module'
-        required: true
-        type: string
-      gradle-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the gradle module'
-        required: true
-        type: string
-      maven-artifact-id:
-        description: 'The Workflow Run ID of the last workflow containing artifacts for the maven module'
+      artifact-id:
+        description: 'The Workflow Run ID of the last workflow containing artifacts to download'
         required: true
         type: string
 
@@ -65,6 +49,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
+          cache: 'gradle'
         
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -125,7 +110,7 @@ jobs:
           name: platform
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.platform-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Download openapi2beans artifacts from last successful workflow
         if: ${{ steps.download-openapi2beans.outcome == 'failure' }}
@@ -134,7 +119,7 @@ jobs:
           name: openapi2beans
           path: modules/artifacts/openapi2beans
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.openapi2beans-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Download wrapping artifacts from last successful workflow
         if: ${{ steps.download-wrapping.outcome == 'failure' }}
@@ -143,7 +128,7 @@ jobs:
           name: wrapping
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.wrapping-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Download gradle artifacts from last successful workflow
         if: ${{ steps.download-gradle.outcome == 'failure' }}
@@ -152,7 +137,7 @@ jobs:
           name: gradle
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.gradle-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Download maven artifacts from last successful workflow
         if: ${{ steps.download-maven.outcome == 'failure' }}
@@ -161,7 +146,7 @@ jobs:
           name: maven
           path: modules/artifacts
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.maven-artifact-id }}
+          run-id: ${{ inputs.artifact-id }}
 
       - name: Build servlet beans with openapi2beans
         if: ${{ steps.download-openapi2beans.outcome == 'success' }}
@@ -224,6 +209,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
+          cache: 'gradle'
       
       - name: Install Swagger CLI
         working-directory: modules/framework

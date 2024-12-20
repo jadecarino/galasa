@@ -29,12 +29,20 @@ jobs:
     name: Build Platform
     if: ${{ inputs.changed == 'true' }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
             modules/platform
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'semeru'
+          cache: 'gradle'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
