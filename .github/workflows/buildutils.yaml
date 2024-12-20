@@ -14,10 +14,36 @@ env:
   BRANCH: ${{ github.ref_name }}
 
 jobs:
+  check-secrets:
+    name: Check for required secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if WRITE_GITHUB_PACKAGES_USERNAME is set in this repository
+        run: |
+          if [ -z "${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}" ]; then
+            echo "WRITE_GITHUB_PACKAGES_USERNAME is not set. Please configure it in the repository secrets. \
+            It must contain the GitHub username you want to use to log into GitHub Container Registry."
+            exit 1
+          else
+            echo "WRITE_GITHUB_PACKAGES_USERNAME is set."
+          fi
+
+      - name: Check if WRITE_GITHUB_PACKAGES_TOKEN is set in this repository
+        run: |
+          if [ -z "${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}" ]; then
+            echo "WRITE_GITHUB_PACKAGES_TOKEN is not set. Please configure it in the repository secrets. \
+            It must contain a GitHub Personal Access Token with write:packages scope \
+            that you want to use to log into GitHub Container Registry."
+            exit 1
+          else
+            echo "WRITE_GITHUB_PACKAGES_TOKEN is set."
+          fi
 
   build-push-galasabld:
     name: Build and push galasabld artifacts
     runs-on: ubuntu-latest
+    needs: check-secrets
 
     steps:
       - name: Checkout code
@@ -135,6 +161,7 @@ jobs:
   build-push-openapi2beans:
     name: Build and push openapi2beans artifacts
     runs-on: ubuntu-latest
+    needs: check-secrets
     
     steps:
       - name: Checkout code
@@ -200,6 +227,7 @@ jobs:
   build-push-buildutils-executables:
     name: Build and push buildutils repository executables
     runs-on: ubuntu-latest
+    needs: check-secrets
 
     steps:
       - name: Checkout code
@@ -246,22 +274,27 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
 
       - name: Recycle application in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
         env: 
             ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-bld restart --kind Deployment --resource-name bld-${{ env.BRANCH }} --server argocd.galasa.dev
 
       - name: Wait for app health in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
         env: 
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-bld --resource apps:Deployment:bld-${{ env.BRANCH }} --health --server argocd.galasa.dev
 
   report-failure:
+    # Skip this job for forks
+    if: ${{ failure() && github.repository_owner == 'galasa-dev' }}
     name: Report failure in workflow
     runs-on: ubuntu-latest
     needs: [build-push-galasabld, build-push-galasabld-ibm, build-push-openapi2beans, build-push-buildutils-executables]
-    if: failure()
 
     steps:
       - name: Report failure in workflow to Slack

@@ -18,7 +18,6 @@ env:
   REGISTRY: ghcr.io
   NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
-  ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
 jobs:
 
@@ -52,38 +51,38 @@ jobs:
 
       - name: Make secrets directory
         run : |
-            mkdir /home/runner/work/secrets
+          mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml
         env:
-            MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-            echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
       
       - name: Copy GPG passphrase
         env:
-            GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run : |
-            echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
+          echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
       
       - name: Copy GPG key
         env:
-            GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
+          GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
         run : |
-            echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
+          echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
             
       - name: Make GPG home directory and change permissions
         run: |
-            mkdir /home/runner/work/gpg
-            chmod '700' /home/runner/work/gpg
+          mkdir /home/runner/work/gpg
+          chmod '700' /home/runner/work/gpg
         
       - name: Import GPG
         run: |
-            gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
+          gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
         
       - name: Copy custom settings.xml
         run: |
-            cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
+          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
       
       - name:  Generate Galasa BOM
         run: |
@@ -239,10 +238,18 @@ jobs:
             baseVersion=latest
       
       - name: Recycle OBR application in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name obr-${{ env.BRANCH }} --server argocd.galasa.dev
 
       - name: Wait for OBR application health in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:obr-${{ env.BRANCH }} --health --server argocd.galasa.dev
 
@@ -319,7 +326,7 @@ jobs:
       
       - name: Make secrets directory
         run : |
-            mkdir /home/runner/work/secrets
+          mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml 
         env:
@@ -453,10 +460,18 @@ jobs:
           labels: ${{ steps.metadata-javadoc-site.outputs.labels }}
       
       - name: Recycle javadocsite application in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name javadocsite-${{ env.BRANCH }} --server argocd.galasa.dev
       
       - name: Wait for javadocsite application health in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:javadocsite-${{ env.BRANCH }} --health --server argocd.galasa.dev
       
@@ -480,10 +495,18 @@ jobs:
             baseVersion=latest
           
       - name: Recycle javadoc application in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name javadoc-${{ env.BRANCH }} --server argocd.galasa.dev
 
       - name: Wait for javadoc application health in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
+        env:
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:javadoc-${{ env.BRANCH }} --health --server argocd.galasa.dev
 
@@ -510,38 +533,38 @@ jobs:
 
       - name: Make secrets directory
         run : |
-            mkdir /home/runner/work/secrets
+          mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml
         env:
-            MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-            echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
       
       - name: Copy GPG passphrase
         env:
-            GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run : |
-            echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
+          echo $GPG_PASSPHRASE > /home/runner/work/secrets/passphrase.file
       
       - name: Copy GPG key
         env:
-            GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
+          GPG_KEY_BASE64: ${{ secrets.GPG_KEY }}
         run : |
-            echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
+          echo $GPG_KEY_BASE64 |  base64 --decode > /home/runner/work/secrets/galasa.gpg
             
       - name: Make GPG home directory and change permissions
         run: |
-            mkdir /home/runner/work/gpg
-            chmod '700' /home/runner/work/gpg
+          mkdir /home/runner/work/gpg
+          chmod '700' /home/runner/work/gpg
         
       - name: Import GPG
         run: |
-            gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
+          gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
         
       - name: Copy custom settings.xml
         run: |
-            cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
+          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
       
       - name:  Generate Galasa OBR generic pom.xml
         run: |
@@ -699,6 +722,8 @@ jobs:
             platform=x86_64
 
   trigger-next-workflows:
+    # Skip this job for forks
+    if: ${{ github.repository_owner == 'galasa-dev' }}
     name: Trigger next workflows in the build chain
     needs: [build-obr, build-obr-generic, build-obr-javadocs, build-obr-galasabld-image]
     runs-on: ubuntu-latest
@@ -732,10 +757,11 @@ jobs:
           gh workflow run build.yaml --repo https://github.com/galasa-dev/simplatform --ref ${{ env.BRANCH }}
 
   report-failure:
+    # Skip this job for forks
+    if: ${{ failure() && github.repository_owner == 'galasa-dev' }}
     name: Report failure in workflow
     runs-on: ubuntu-latest
     needs: [log-github-ref, build-obr, build-obr-javadocs, build-obr-generic, trigger-next-workflows]
-    if: failure()
 
     steps:
       - name: Report failure in workflow to Slack

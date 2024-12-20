@@ -25,7 +25,6 @@ env:
   BRANCH: ${{ github.ref_name }}
     
 jobs:
-
   log-github-ref:
     name: Log the GitHub ref this workflow is running on (Branch or tag that received dispatch)
     runs-on: ubuntu-latest
@@ -34,9 +33,76 @@ jobs:
         run: |
           echo "This workflow is running on GitHub ref ${{ env.BRANCH }}"
 
+  check-secrets:
+    name: Check for required secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if GITHUB_TOKEN is set in this repository
+        run: |
+          if [ -z "${{ secrets.GITHUB_TOKEN }}" ]; then
+            echo "GITHUB_TOKEN is not set. Please configure it in the repository secrets. \
+            It must contain SOMETHING???"
+            exit 1
+          else
+            echo "GITHUB_TOKEN is set."
+          fi
+
+      - name: Check if GPG_KEY is set in this repository
+        run: |
+          if [ -z "${{ secrets.GPG_KEY }}" ]; then
+            echo "GPG_KEY is not set. Please configure it in the repository secrets. \
+            It must contain Base 64 encoded GPG key payload."
+            exit 1
+          else
+            echo "GPG_KEY is set."
+          fi
+
+      - name: Check if GPG_KEYID is set in this repository
+        run: |
+          if [ -z "${{ secrets.GPG_KEYID }}" ]; then
+            echo "GPG_KEYID is not set. Please configure it in the repository secrets. \
+            It must contain the ID of the GPG key in plain text."
+            exit 1
+          else
+            echo "GPG_KEYID is set."
+          fi
+
+      - name: Check if GPG_PASSPHRASE is set in this repository
+        run: |
+          if [ -z "${{ secrets.GPG_PASSPHRASE }}" ]; then
+            echo "GPG_PASSPHRASE is not set. Please configure it in the repository secrets. \
+            It must contain the passphrase for the GPG key in plain text."
+            exit 1
+          else
+            echo "GPG_PASSPHRASE is set."
+          fi
+
+      - name: Check if WRITE_GITHUB_PACKAGES_USERNAME is set in this repository
+        run: |
+          if [ -z "${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}" ]; then
+            echo "WRITE_GITHUB_PACKAGES_USERNAME is not set. Please configure it in the repository secrets. \
+            It must contain the GitHub username you want to use to log into GitHub Container Registry."
+            exit 1
+          else
+            echo "WRITE_GITHUB_PACKAGES_USERNAME is set."
+          fi
+
+      - name: Check if WRITE_GITHUB_PACKAGES_TOKEN is set in this repository
+        run: |
+          if [ -z "${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}" ]; then
+            echo "WRITE_GITHUB_PACKAGES_TOKEN is not set. Please configure it in the repository secrets. \
+            It must contain a GitHub Personal Access Token with write:packages scope \
+            that you want to use to log into GitHub Container Registry."
+            exit 1
+          else
+            echo "WRITE_GITHUB_PACKAGES_TOKEN is set."
+          fi
+
   build-framework:
     name: Build Framework using openapi2beans and gradle
     runs-on: ubuntu-latest
+    needs: check-secrets
 
     steps:
       - name: Checkout Code
@@ -175,22 +241,27 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}  
       
       - name: Recycle application in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
         env: 
             ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name restapidocsite-${{ env.BRANCH }} --server argocd.galasa.dev
 
       - name: Wait for app health in ArgoCD
+        # Skip this job for forks
+        if: ${{ github.repository_owner == 'galasa-dev' }}
         env: 
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:restapidocsite-${{ env.BRANCH }} --health --server argocd.galasa.dev
 
   report-failure:
+    # Skip this job for forks
+    if: ${{ failure() && github.repository_owner == 'galasa-dev' }}
     name: Report failure in workflow
     runs-on: ubuntu-latest
     needs: [log-github-ref, build-framework, build-rest-api-documentation]
-    if: failure()
 
     steps:
       - name: Report failure in workflow to Slack
