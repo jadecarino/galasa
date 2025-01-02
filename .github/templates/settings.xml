@@ -11,6 +11,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
+                <!-- Substitute your GPG key information here: -->
                 <gpg.keyname>{{ yourGpgKeyName }}</gpg.keyname>
                 <gpg.passphrase>{{ yourGpgPassphrase }}</gpg.passphrase>
                 <gpg.homedir>/home/runner/work/gpg</gpg.homedir>
