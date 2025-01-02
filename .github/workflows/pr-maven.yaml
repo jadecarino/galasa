@@ -46,7 +46,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'maven'
+          # cache: 'maven'
 
       # For any modules that were changed in this PR,
       # download their artifacts from this workflow run.

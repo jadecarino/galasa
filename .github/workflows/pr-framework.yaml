@@ -49,7 +49,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'gradle'
+          # cache: 'gradle'
         
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -209,7 +209,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          cache: 'gradle'
+          # cache: 'gradle'
       
       - name: Install Swagger CLI
         working-directory: modules/framework
