@@ -54,10 +54,8 @@ jobs:
           mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml
-        env:
-          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          cp ${{ github.workspace }}/.github/common-files/settings.xml /home/runner/work/gpg/settings.xml
       
       - name: Copy GPG passphrase
         env:
@@ -79,10 +77,6 @@ jobs:
       - name: Import GPG
         run: |
           gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
-        
-      - name: Copy custom settings.xml
-        run: |
-          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
       
       - name:  Generate Galasa BOM
         run: |
@@ -143,12 +137,17 @@ jobs:
 
       - name: Build Galasa BOM with maven
         working-directory: modules/obr
+        env:
+          GPG_KEYID: ${{ secrets.GPG_KEYID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
           mvn -f galasa-bom/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-bom-build.log
         
@@ -170,12 +169,17 @@ jobs:
         
       - name: Build Galasa OBR with maven
         working-directory: modules/obr
+        env:
+          GPG_KEYID: ${{ secrets.GPG_KEYID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
           mvn -f dev.galasa.uber.obr/pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/repo \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee galasa-obr-build.log
     
@@ -213,10 +217,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for OBR image
         id: metadata-obr
@@ -279,10 +286,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
 
       - name: Extract metadata for OBR artifacts and galasabld executable image
         id: metadata-obr-galasabld
@@ -330,10 +340,8 @@ jobs:
           mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml 
-        env:
-          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          cp ${{ github.workspace }}/.github/common-files/settings.xml /home/runner/work/gpg/settings.xml
 
       - name: Copy GPG passphrase
         env:
@@ -355,10 +363,6 @@ jobs:
       - name: Import GPG
         run: |
           gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
-      
-      - name: Copy custom settings.xml
-        run: |
-          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
           
       - name: Build Galasa Javadoc
         run: |
@@ -419,6 +423,9 @@ jobs:
         
       - name: Build javadoc site using maven
         working-directory: modules/obr/javadocs
+        env:
+          GPG_KEYID: ${{ secrets.GPG_KEYID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
           mvn -f pom.xml deploy -X \
@@ -426,6 +433,8 @@ jobs:
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
       
@@ -439,10 +448,13 @@ jobs:
       
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for Javadoc site image
         id: metadata-javadoc-site
@@ -538,10 +550,8 @@ jobs:
           mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml
-        env:
-          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          cp ${{ github.workspace }}/.github/common-files/settings.xml /home/runner/work/gpg/settings.xml
       
       - name: Copy GPG passphrase
         env:
@@ -563,10 +573,6 @@ jobs:
       - name: Import GPG
         run: |
           gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
-        
-      - name: Copy custom settings.xml
-        run: |
-          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
       
       - name:  Generate Galasa OBR generic pom.xml
         run: |
@@ -634,6 +640,9 @@ jobs:
         
       - name: Build Galasa OBR generic pom.xml with maven
         working-directory: modules/obr/obr-generic
+        env:
+          GPG_KEYID: ${{ secrets.GPG_KEYID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
           # Note: using the maven plugin version ${{inputs.galasa-version}} which we should have
@@ -641,6 +650,8 @@ jobs:
           mvn -f pom.xml process-sources -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           dev.galasa:galasa-maven-plugin:${{inputs.galasa-version}}:obrembedded \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
@@ -655,10 +666,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for OBR generic image
         id: metadata-obr-generic

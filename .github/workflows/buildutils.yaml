@@ -37,10 +37,13 @@ jobs:
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
       
       - name: Extract metadata for galasabld image
         id: metadata
@@ -95,7 +98,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
+          username: $WRITE_GITHUB_PACKAGES_USERNAME
           password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
       
       - name: Extract metadata for galasabld-ibm image
@@ -156,7 +159,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
+          username: $WRITE_GITHUB_PACKAGES_USERNAME
           password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
       
       - name: Extract metadata for openapi2beans image
@@ -226,7 +229,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
+          username: $WRITE_GITHUB_PACKAGES_USERNAME
           password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
       
       - name: Extract metadata for buildutils-executables image
