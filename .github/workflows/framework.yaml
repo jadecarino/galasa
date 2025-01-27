@@ -155,10 +155,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
         
       - name: Extract metadata for restapidoc-site image
         id: metadata

@@ -61,7 +61,6 @@ jobs:
       check_gpg_keyid: 'true'
       check_gpg_passphrase: 'true'
     secrets:
-      WRITE_GITHUB_PACKAGES_USERNAME: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
       WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
       MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
       GPG_KEY: ${{ secrets.GPG_KEY }}

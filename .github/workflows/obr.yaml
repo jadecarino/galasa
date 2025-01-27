@@ -213,10 +213,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for OBR image
         id: metadata-obr
@@ -279,10 +282,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
 
       - name: Extract metadata for OBR artifacts and galasabld executable image
         id: metadata-obr-galasabld
@@ -439,10 +445,13 @@ jobs:
       
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for Javadoc site image
         id: metadata-javadoc-site
@@ -655,10 +664,13 @@ jobs:
 
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.WRITE_GITHUB_PACKAGES_USERNAME }}
-          password: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
     
       - name: Extract metadata for OBR generic image
         id: metadata-obr-generic
