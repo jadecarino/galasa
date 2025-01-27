@@ -41,6 +41,7 @@ jobs:
             modules/extensions
             modules/managers
             modules/obr
+            .github/common-files/settings.xml
       
       - name: Set up JDK
         uses: actions/setup-java@v4

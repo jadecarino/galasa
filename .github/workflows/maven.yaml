@@ -41,6 +41,7 @@ jobs:
         with:
           sparse-checkout: |
             modules/maven
+            .github/common-files/settings.xml
       
       - name: Set up JDK
         uses: actions/setup-java@v4

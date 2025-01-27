@@ -42,6 +42,7 @@ jobs:
         with:
           sparse-checkout: |
             modules/wrapping
+            .github/common-files/settings.xml
       
       - name: Set up JDK
         uses: actions/setup-java@v4
