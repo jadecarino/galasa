@@ -218,7 +218,7 @@ jobs:
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         env:
-          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
           WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
@@ -287,7 +287,7 @@ jobs:
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         env:
-          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
           WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
@@ -449,7 +449,7 @@ jobs:
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         env:
-          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
           WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
@@ -667,7 +667,7 @@ jobs:
       - name: Login to Github Container Registry
         uses: docker/login-action@v3
         env:
-          WRITE_GITHUB_PACKAGES_USERNAME: $WRITE_GITHUB_PACKAGES_USERNAME
+          WRITE_GITHUB_PACKAGES_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
           WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         with:
           registry: ${{ env.REGISTRY }}
