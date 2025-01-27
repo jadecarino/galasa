@@ -52,7 +52,7 @@ jobs:
     # Only run this workflow if coming from the original galasa-dev/galasa repository.
     if: ${{ github.repository_owner == 'galasa-dev' }}
     name: Check required secrets configured
-    uses: galasa-dev/galasa/.github/workflows/check-required-secrets-configured.yaml@main
+    uses: ./.github/workflows/check-required-secrets-configured.yaml
     with:
       check_write_github_packages_username: 'true'
       check_write_github_packages_token: 'true'

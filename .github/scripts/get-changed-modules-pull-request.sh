@@ -60,6 +60,7 @@ function usage {
     cat << EOF
 Options are:
 -h | --help : Display this help text
+--github-repo The GitHub repository the Pull Request was opened on
 --pr-number The number of the Pull Request
 EOF
 }
@@ -67,11 +68,16 @@ EOF
 #-----------------------------------------------------------------------------------------                   
 # Process parameters
 #-----------------------------------------------------------------------------------------
+github_repo=""
 pr_number=""
 while [ "$1" != "" ]; do
     case $1 in
         -h | --help )       usage
                             exit
+                            ;;
+
+        --github-repo )     github_repo="$2"
+                            shift
                             ;;
 
         --pr-number )       pr_number="$2"
@@ -91,10 +97,10 @@ done
 
 function get_paths_changed_in_pr() {
 
-    h1 "Getting the file paths changed in Pull Request number ${pr_number}" 
+    h1 "Getting the file paths changed in Pull Request number ${pr_number} for GitHub repo ${github_repo}" 
 
     # Extract changed module names from changed files from GitHub CLI output
-    mapfile -t changed_files_in_pr < <(gh pr diff --repo galasa-dev/galasa ${pr_number} --name-only)
+    mapfile -t changed_files_in_pr < <(gh pr diff --repo ${github_repo} ${pr_number} --name-only)
 
     h2 "Files changed:"
 
