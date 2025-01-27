@@ -55,10 +55,8 @@ jobs:
           mkdir /home/runner/work/secrets
 
       - name: Copy settings.xml
-        env:
-          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
         run : |
-          echo $MAVEN_SETTINGS_XML > /home/runner/work/secrets/settings.xml
+          cp ${{ github.workspace }}/.github/common-files/settings.xml /home/runner/work/gpg/settings.xml
 
       - name: Copy GPG passphrase
         env:
@@ -84,10 +82,6 @@ jobs:
       - name: Import GPG
         run: |
           gpg --homedir /home/runner/work/gpg --pinentry-mode loopback --passphrase-file /home/runner/work/secrets/passphrase.file --import /home/runner/work/secrets/galasa.gpg
-      
-      - name: Copy custom settings.xml
-        run: |
-          cp /home/runner/work/secrets/settings.xml /home/runner/work/gpg/settings.xml
 
       - name: Download platform from this workflow
         id: download-platform
@@ -105,6 +99,9 @@ jobs:
 
       - name: Build Maven source code
         working-directory: modules/maven
+        env:
+          GPG_KEYID: ${{ secrets.GPG_KEYID }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           set -o pipefail
           mvn -f galasa-maven-plugin/pom.xml deploy -X \
@@ -113,6 +110,8 @@ jobs:
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/maven/repo \
           -Dgalasa.jacocoEnabled=${{ inputs.jacoco_enabled }} \
           -Dgalasa.isRelease=${{ inputs.sign_artifacts }} \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
       

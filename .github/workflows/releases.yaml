@@ -56,13 +56,11 @@ jobs:
     with:
       check_write_github_packages_username: 'true'
       check_write_github_packages_token: 'true'
-      check_maven_settings_xml: 'true'
       check_gpg_key: 'true'
       check_gpg_keyid: 'true'
       check_gpg_passphrase: 'true'
     secrets:
       WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
-      MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
       GPG_KEY: ${{ secrets.GPG_KEY }}
       GPG_KEYID: ${{ secrets.GPG_KEYID }}
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
