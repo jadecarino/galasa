@@ -8,6 +8,7 @@ name: Main Build Orchestrator
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
 
@@ -98,7 +99,7 @@ jobs:
 
   build-obr:
     name: Build the 'obr' module
-    needs: [build-extensions, build-managers, set-build-properties ]
+    needs: [build-extensions, build-managers, set-build-properties]
     uses: ./.github/workflows/obr.yaml
     secrets: inherit
     with:
