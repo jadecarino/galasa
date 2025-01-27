@@ -28,6 +28,8 @@ on:
 jobs:
 
   set-build-properties:
+    # Only run this workflow if coming from the original galasa-dev/galasa repository.
+    if: ${{ github.repository_owner == 'galasa-dev' }}
     # Use the version.properties file to source the galasa-version output variable.
     # This variable can be referenced by other jobs in this flow using 
     # ${{ needs.set-build-properties.outputs.galasa-version }}
@@ -47,6 +49,8 @@ jobs:
           cat build.properties | grep "=" >> $GITHUB_OUTPUT
 
   check-required-secrets-configured:
+    # Only run this workflow if coming from the original galasa-dev/galasa repository.
+    if: ${{ github.repository_owner == 'galasa-dev' }}
     name: Check required secrets configured
     uses: galasa-dev/galasa/.github/workflows/check-required-secrets-configured.yaml@main
     with:
