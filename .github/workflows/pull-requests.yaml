@@ -43,6 +43,7 @@ jobs:
       framework_changed: ${{ steps.get-changed-modules.outputs.FRAMEWORK_CHANGED }}
       extensions_changed: ${{ steps.get-changed-modules.outputs.EXTENSIONS_CHANGED }}
       managers_changed: ${{ steps.get-changed-modules.outputs.MANAGERS_CHANGED }}
+      ivts_changed: 'true'
       obr_changed: ${{ steps.get-changed-modules.outputs.OBR_CHANGED }}
 
     steps:
@@ -149,6 +150,15 @@ jobs:
     with:
       changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
       artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
+
+  pr-build-ivts:
+    name: Build the 'ivts' module
+    needs: [get-changed-modules, find-artifacts, pr-build-managers]
+    uses: ./.github/workflows/pr-ivts.yaml
+    secrets: inherit
+    with:
+      changed: ${{ needs.get-changed-modules.outputs.ivts_changed }}
+      # artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-obr:
     name: Build the 'obr' module
