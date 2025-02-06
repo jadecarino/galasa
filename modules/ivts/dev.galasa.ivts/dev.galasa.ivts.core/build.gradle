@@ -21,7 +21,7 @@ repositories {
 // Set the variables which will control what the built OSGi bundle will be called
 // and the name it will be published under in the maven repository.
 group = 'dev.galasa.ivts'
-version = '0.0.1-SNAPSHOT'
+version = '0.40.0'
 description = 'Galasa Core Manager IVTs'
 
 // What are the dependencies of the test code ? 
