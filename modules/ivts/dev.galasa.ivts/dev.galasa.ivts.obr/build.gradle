@@ -26,6 +26,11 @@ tasks.withType(PublishToMavenLocal) { task ->
     task.dependsOn mergetestcat
 }
 
+tasks.withType(PublishToMavenRepository) { task ->
+    task.dependsOn genobr
+    task.dependsOn mergetestcat
+}
+
 // Tell gradle to publish the built OBR as a maven artifact on the 
 // local maven repository.
 publishing {
