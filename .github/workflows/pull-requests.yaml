@@ -151,6 +151,8 @@ jobs:
       changed: ${{ needs.get-changed-modules.outputs.managers_changed }}
       artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
+  # For PRs, the IVTs can be built directly after Managers as they just require
+  # the Manager code (and anything required to build that).
   pr-build-ivts:
     name: Build the 'ivts' module
     needs: [get-changed-modules, find-artifacts, pr-build-managers]
@@ -158,7 +160,7 @@ jobs:
     secrets: inherit
     with:
       changed: ${{ needs.get-changed-modules.outputs.ivts_changed }}
-      # artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
+      artifact-id: ${{ needs.find-artifacts.outputs.workflow_for_artifact_download_id }}
 
   pr-build-obr:
     name: Build the 'obr' module
