@@ -38,6 +38,18 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            url  = "$targetMaven"
+            
+            if ("$targetMaven".startsWith('http')) {
+                credentials {
+                    username System.getenv('GITHUB_ACTOR')
+                    password System.getenv('GITHUB_TOKEN')
+                }
+            }
+        }
+    }
 }
 
 // If we are deploying a test catalog using the galasa plugin,
