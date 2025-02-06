@@ -175,7 +175,7 @@ jobs:
   # This job is set in the branch protection rules as required to merge a Pull Request.
   end-pull-request-build:
     name: Pull Request build was successful
-    needs: [pr-build-obr, detect-secrets]
+    needs: [pr-build-obr, pr-build-ivts, detect-secrets]
     runs-on: ubuntu-latest
 
     steps:

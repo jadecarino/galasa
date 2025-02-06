@@ -204,3 +204,15 @@ jobs:
         with:
           name: ivts-obr
           path: modules/ivts/dev.galasa.ivts/dev.galasa.ivts.obr/build/galasa.obr
+
+      - name: Build IVTs image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: modules/ivts
+          file: modules/ivts/dockerfiles/dockerfile.ivts
+          load: true
+          tags: ivts-maven-artefacts:test
+          build-args: |
+            baseVersion=latest
+            dockerRepository=ghcr.io
+            branch=main
