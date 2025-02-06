@@ -20,6 +20,8 @@ on:
         type: string
 
 env:
+  REGISTRY: ghcr.io
+  NAMESPACE: ${{ github.repository_owner }}
   BRANCH: ${{ github.ref_name }}
 
 jobs:
@@ -71,22 +73,52 @@ jobs:
           name: ivts-gradle-build-log
           path: modules/ivts/build.log
 
-      - name: Upload Platform artifacts
+      - name: Upload IVT artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ivts
           path: modules/ivts/repo
 
-#   report-failure:
-#     # Skip this job for forks
-#     if: ${{ failure() && github.repository_owner == 'galasa-dev' }}
-#     name: Report failure in workflow
-#     runs-on: ubuntu-latest
-#     needs: [log-github-ref, build-ivts]
+      - name: Login to Github Container Registry
+        uses: docker/login-action@v3
+        env:
+          WRITE_GITHUB_PACKAGES_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
+          WRITE_GITHUB_PACKAGES_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
+          password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
+    
+      - name: Extract metadata for IVTs
+        id: metadata
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/ivts-maven-artefacts
+    
+      - name: Build IVTs image for development Maven registry
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: modules/ivts
+          file: modules/ivts/dockerfiles/dockerfile.ivts
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            baseVersion=latest
+            dockerRepository=${{ env.REGISTRY }}
+            branch=${{ env.BRANCH }}
 
-#     steps:
-#       - name: Report failure in workflow to Slack
-#         env: 
-#           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-#         run : |
-#           docker run --rm ghcr.io/galasa-dev/galasabld-ibm:main slackpost workflows --repo "galasa" --module "ivts" --workflowName "${{ github.workflow }}" --workflowRunNum "${{ github.run_id }}" --ref "${{ env.BRANCH }}" --hook "${{ env.SLACK_WEBHOOK }}"
+  report-failure:
+    # Skip this job for forks
+    if: ${{ failure() && github.repository_owner == 'galasa-dev' }}
+    name: Report failure in workflow
+    runs-on: ubuntu-latest
+    needs: [log-github-ref, build-ivts]
+
+    steps:
+      - name: Report failure in workflow to Slack
+        env: 
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run : |
+          docker run --rm ghcr.io/galasa-dev/galasabld-ibm:main slackpost workflows --repo "galasa" --module "ivts" --workflowName "${{ github.workflow }}" --workflowRunNum "${{ github.run_id }}" --ref "${{ env.BRANCH }}" --hook "${{ env.SLACK_WEBHOOK }}"
