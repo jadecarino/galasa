@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import dev.galasa.docker.DockerManagerException;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.docker.internal.DockerRegistryImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
@@ -39,11 +40,11 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  */
 public class DockerRegistryURL extends CpsProperties {
 
-    public static URL get(DockerRegistryImpl dockerRegistry) throws DockerManagerException {
+    public static URL get(DockerManagerImpl dockerManager, DockerRegistryImpl dockerRegistry) throws DockerManagerException {
         String id = dockerRegistry.getId();
         String dockerRegistryURL = "";
         try {
-            dockerRegistryURL = getStringNulled(DockerPropertiesSingleton.cps(), "registry", "url", id);
+            dockerRegistryURL = getStringNulled(dockerManager.getCps(), "registry", "url", id);
             // Default value
             if (dockerRegistryURL == null) {
                 if("DOCKERHUB".equals(id)) {

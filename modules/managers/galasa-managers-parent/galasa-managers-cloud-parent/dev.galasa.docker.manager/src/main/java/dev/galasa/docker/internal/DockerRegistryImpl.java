@@ -73,8 +73,8 @@ public class DockerRegistryImpl {
 		this.framework = framework;
 		this.dockerManager = dockerManager;
 		this.registryId = registryId;
-		this.registryUrl = DockerRegistryURL.get(this);
-		this.prefix = DockerImagePrefix.get(this);
+		this.registryUrl = DockerRegistryURL.get(this.dockerManager, this);
+		this.prefix = DockerImagePrefix.get(this.dockerManager, this);
 		
 		this.client = dockerManager.getHttpManager().newHttpClient();
 		this.realmClient = dockerManager.getHttpManager().newHttpClient();
@@ -231,7 +231,7 @@ public class DockerRegistryImpl {
 	 * @throws CredentialsException
 	 */
 	public ICredentials getCreds() throws DockerManagerException, CredentialsException {
-		String credKey = DockerRegistryCredentials.get(this);
+		String credKey = DockerRegistryCredentials.get(this.dockerManager, this);
 		return credService.getCredentials(credKey);
 	}
 

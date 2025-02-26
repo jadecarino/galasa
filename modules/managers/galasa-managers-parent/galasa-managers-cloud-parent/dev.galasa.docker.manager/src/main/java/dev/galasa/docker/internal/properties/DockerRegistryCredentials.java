@@ -6,6 +6,7 @@
 package dev.galasa.docker.internal.properties;
 
 import dev.galasa.docker.DockerManagerException;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.docker.internal.DockerRegistryImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
@@ -36,9 +37,9 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  */
 public class DockerRegistryCredentials extends CpsProperties {
 
-    public static String get(DockerRegistryImpl dockerRegistry) throws DockerManagerException {
+    public static String get(DockerManagerImpl dockerManager, DockerRegistryImpl dockerRegistry) throws DockerManagerException {
         try {
-            String credentialsKey = getStringNulled(DockerPropertiesSingleton.cps(), "registry", "credentials", dockerRegistry.getId());
+            String credentialsKey = getStringNulled(dockerManager.getCps(), "registry", "credentials", dockerRegistry.getId());
             //Default value
             if (credentialsKey == null) {
                 return "DOCKER";

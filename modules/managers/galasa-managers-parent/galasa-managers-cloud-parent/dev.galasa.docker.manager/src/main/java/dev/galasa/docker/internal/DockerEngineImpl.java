@@ -77,7 +77,7 @@ public class DockerEngineImpl implements IDockerEngine {
 		try {
 
 			// Get the DSE image
-			this.dockerEngineId = DockerDSEEngine.get(this);
+			this.dockerEngineId = DockerDSEEngine.get(this.dockerManager, this);
 			if (this.dockerEngineId != null) {
 				initDseEngine();
 			} else {
@@ -97,8 +97,8 @@ public class DockerEngineImpl implements IDockerEngine {
 
 	// Setup the client for the selected Engine
 	private void initDseEngine() throws DockerManagerException, URISyntaxException {
-		String engine = DockerEngine.get(this);
-		String port = DockerEnginePort.get(this);
+		String engine = DockerEngine.get(this.dockerManager, this);
+		String port = DockerEnginePort.get(this.dockerManager, this);
 
 		if (!engine.startsWith("http://") && !engine.startsWith("https://")) {
 			// If no scheme, default to http
@@ -114,14 +114,14 @@ public class DockerEngineImpl implements IDockerEngine {
 	private void initClusterEngine() throws DockerManagerException, DynamicStatusStoreException, URISyntaxException,
 			DockerProvisionException {
 		// Get available Engines
-		String[] engines = DockerEngines.get(this).split(",");
+		String[] engines = DockerEngines.get(this.dockerManager, this).split(",");
 
 		// Select an engine and check slot availabilty
 		for (String engineId : engines) {
 			this.dockerEngineId = engineId;
-			String engine = DockerEngine.get(this);
-			String port = DockerEnginePort.get(this);
-			int slotLimit = Integer.parseInt(DockerSlots.get(this));
+			String engine = DockerEngine.get(this.dockerManager, this);
+			String port = DockerEnginePort.get(this.dockerManager, this);
+			int slotLimit = Integer.parseInt(DockerSlots.get(this.dockerManager, this));
 
 			if (!engine.startsWith("http://") && !engine.startsWith("https://")) {
 				// If no scheme, default to http
@@ -382,10 +382,14 @@ public class DockerEngineImpl implements IDockerEngine {
 		return this.uri.getHost();
 	}
 	
-	public String getBusybox() throws DockerManagerException {
-		String[] dockerRegistries = DockerRegistry.get();
-		String busyboxImageName = DockerRegistryBusyboxImage.get(dockerRegistries);
-		DockerImageImpl image = new DockerImageImpl(framework, dockerManager, this, busyboxImageName);
+	public String getFullyQualifiedBusyboxImageName() throws DockerManagerException {
+		String[] dockerRegistries = DockerRegistry.get(this.dockerManager);
+		String busyboxImageName = DockerRegistryBusyboxImage.get(this.dockerManager, dockerRegistries);
+		return busyboxImageName;
+	}
+
+	public String getBusyboxImageOnEngine(String busyboxImage) throws DockerManagerException {
+		DockerImageImpl image = new DockerImageImpl(framework, dockerManager, this, busyboxImage);
 		image.locateImage();
 		return image.getFullName();
 	}

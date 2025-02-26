@@ -6,17 +6,18 @@
 package dev.galasa.docker.internal.properties;
 
 import dev.galasa.docker.DockerManagerException;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
 
 /**
- * Docker Registry's Busybox Image CPS property
+ * Docker Registry Busybox Image CPS property
  * 
  * @galasa.cps.property
  * 
- * @galasa.name docker.registry.[engineId].busybox.image
+ * @galasa.name docker.registry.[registryId].busybox.image
  * 
- * @galasa.description Provides location of the 'busybox' Docker image on the given registry
+ * @galasa.description Provides fully qualified image name including repository and tag of a 'busybox' Docker image on a given registry.
  * 
  * @galasa.required No - if not provided it will default to 'library/busybox:latest' which is compatible with the default Docker registry, Dockerhub.
  * 
@@ -28,31 +29,31 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  * <code>docker.registry.[registryId].busybox.image=registryorg/busybox:latest</code>
  * 
  * @galasa.extra
- * This CPS property is required when you want to allow the Docker Manager to search for the 'busybox' image in the Docker Registries<br>
+ * This CPS property is required when you want to allow the Docker Manager to search for a 'busybox' image in the Docker Registries<br>
  * provided in the docker.default.registries CPS property, instead of in Dockerhub. If you do not specify this CPS property for any of<br>
  * the provided Docker Registries, it will default to 'library/busybox:latest' so either your Docker Registries or Dockerhub will be<br>
- * searched for the 'busybox' image at that location. This CPS property allows you to point the Docker Manager at a 'busybox' image that<br>
+ * searched for the an image in 'library/busybox:latest'. This CPS property allows you to point the Docker Manager at a 'busybox' image that<br>
  * may not be in the 'library' namespace and may not be tagged with 'latest'.<br> 
  * */
 public class DockerRegistryBusyboxImage extends CpsProperties {
 
-    public static String get(String[] dockerRegistries) throws DockerManagerException {
-		String busyboxImageName = "";
+    public static String get(DockerManagerImpl dockerManager, String[] dockerRegistries) throws DockerManagerException {
+		String busyboxImage = "";
 		if (dockerRegistries.length > 0) {
 			for (String dockerRegistry : dockerRegistries) {
 				try {
-					busyboxImageName = getStringNulled(DockerPropertiesSingleton.cps(), "registry", "busybox.image", dockerRegistry);
+					busyboxImage = getStringNulled(dockerManager.getCps(), "registry", "busybox.image", dockerRegistry);
 				} catch (ConfigurationPropertyStoreException e) {
 					throw new DockerManagerException("Problem asking the CPS for the Busybox image name on registry ID: "  + dockerRegistry, e);
 				}
-				if (busyboxImageName != "") {
+				if (busyboxImage != null && !busyboxImage.equals("")) {
 					break;
 				}
 			}
 		}
-		if (busyboxImageName.equals("")) {
-			busyboxImageName = "library/busybox:latest";
+		if (busyboxImage == null || busyboxImage.equals("")) {
+			busyboxImage = "library/busybox:latest";
 		}
-		return busyboxImageName;
+		return busyboxImage;
 	}
 }

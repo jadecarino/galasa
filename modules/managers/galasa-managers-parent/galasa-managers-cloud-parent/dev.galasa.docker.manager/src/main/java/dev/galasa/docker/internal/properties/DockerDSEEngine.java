@@ -7,6 +7,7 @@ package dev.galasa.docker.internal.properties;
 
 import dev.galasa.docker.DockerManagerException;
 import dev.galasa.docker.internal.DockerEngineImpl;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
 
@@ -32,10 +33,10 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  * */
 public class DockerDSEEngine extends CpsProperties {
 
-    public static String get(final DockerEngineImpl dockerEngineImpl) throws DockerManagerException {
+    public static String get(DockerManagerImpl dockerManager, final DockerEngineImpl dockerEngineImpl) throws DockerManagerException {
 		try {
             // Check for a DSE defined engine
-			final String dockerDseEngine = getStringNulled(DockerPropertiesSingleton.cps(), "dse.engine", dockerEngineImpl.getEngineTag());
+			final String dockerDseEngine = getStringNulled(dockerManager.getCps(), "dse.engine", dockerEngineImpl.getEngineTag());
 			return dockerDseEngine;
 		} catch (final ConfigurationPropertyStoreException e) {
 			throw new DockerManagerException("Problem asking the CPS for the docker dse engine", e);

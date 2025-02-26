@@ -6,6 +6,7 @@
 package dev.galasa.docker.internal.properties;
 
 import dev.galasa.docker.DockerManagerException;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.docker.internal.DockerRegistryImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
@@ -28,11 +29,11 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  */
 public class DockerImagePrefix extends CpsProperties {
 
-    public static String get(DockerRegistryImpl dockerRegistry) throws DockerManagerException {
+    public static String get(DockerManagerImpl dockerManager, DockerRegistryImpl dockerRegistry) throws DockerManagerException {
         String id = dockerRegistry.getId();
         String dockerImagePrefix = "";
         try {
-        	dockerImagePrefix = getStringNulled(DockerPropertiesSingleton.cps(), "registry", "image.prefix", id);
+        	dockerImagePrefix = getStringNulled(dockerManager.getCps(), "registry", "image.prefix", id);
             // Default value
             if (dockerImagePrefix == null) {
             	return "";

@@ -7,6 +7,7 @@ package dev.galasa.docker.internal.properties;
 
 import dev.galasa.docker.DockerManagerException;
 import dev.galasa.docker.internal.DockerEngineImpl;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
 
@@ -35,10 +36,10 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  * */
 public class DockerEngines extends CpsProperties {
 
-    public static String get(final DockerEngineImpl dockerEngineImpl) throws DockerManagerException {
+    public static String get(DockerManagerImpl dockerManager, final DockerEngineImpl dockerEngineImpl) throws DockerManagerException {
 		try {
             // Only support "default" engines currently. Will likely be replaced with a dockerEngineIml.getEngineCluster()
-			final String dockerEngines = getStringNulled(DockerPropertiesSingleton.cps(), "default", "engines");
+			final String dockerEngines = getStringNulled(dockerManager.getCps(), "default", "engines");
 
 			if (dockerEngines == null) {
 				throw new DockerManagerException("Could not find docker engines in CPS.");

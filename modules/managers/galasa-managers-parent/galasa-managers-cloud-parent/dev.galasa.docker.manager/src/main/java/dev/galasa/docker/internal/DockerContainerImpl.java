@@ -556,7 +556,7 @@ public class DockerContainerImpl implements IDockerContainer {
      * @throws DockerManagerException 
      */
     private void checkLeaveRunning() throws DockerManagerException {
-        String flag = DockerLeaveRunning.get(this);
+        String flag = DockerLeaveRunning.get(this.dockerManager, this);
         if (flag != null) {
             logger.debug("Requested leaveRunning state: " + flag);
             leaveRunning = Boolean.parseBoolean(flag);

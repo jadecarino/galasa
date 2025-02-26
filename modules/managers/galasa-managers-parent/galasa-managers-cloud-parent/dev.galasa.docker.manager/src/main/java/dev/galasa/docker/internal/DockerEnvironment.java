@@ -255,7 +255,7 @@ public class DockerEnvironment implements IDockerEnvironment {
         HashMap<String, String> slotProps = new HashMap<>();
 
         try {
-            int maxSlots = Integer.parseInt(DockerSlots.get(engine));
+            int maxSlots = Integer.parseInt(DockerSlots.get(this.dockerManager, engine));
             int usedSlots = 0;
             String currentSlots = dss.get(slotKey);
 

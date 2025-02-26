@@ -31,13 +31,13 @@ import dev.galasa.docker.IDockerContainerConfig;
 import dev.galasa.docker.IDockerManager;
 import dev.galasa.docker.IDockerVolume;
 import dev.galasa.docker.IDockerEngine;
-import dev.galasa.docker.internal.properties.DockerPropertiesSingleton;
 import dev.galasa.docker.internal.properties.DockerRegistry;
 import dev.galasa.docker.spi.IDockerManagerSpi;
 import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.AnnotatedField;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.GenerateAnnotatedField;
+import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IManager;
 import dev.galasa.framework.spi.ResourceUnavailableException;
@@ -89,11 +89,11 @@ public class DockerManagerImpl extends AbstractManager implements IDockerManager
                 youAreRequired(allManagers, activeManagers, galasaTest);
             }
         }
-        try {
-            DockerPropertiesSingleton.setCps(framework.getConfigurationPropertyService(NAMESPACE));
-        } catch (ConfigurationPropertyStoreException e) {
-            throw new DockerManagerException("Failed to set the CPS with the Docker namespace", e);
-        }
+        // try {
+        //     DockerPropertiesSingleton.setCps(framework.getConfigurationPropertyService(NAMESPACE));
+        // } catch (ConfigurationPropertyStoreException e) {
+        //     throw new DockerManagerException("Failed to set the CPS with the Docker namespace", e);
+        // }
 
         this.framework = framework;
         dockerEnvironment = new DockerEnvironment(framework, this);
@@ -279,7 +279,7 @@ public class DockerManagerImpl extends AbstractManager implements IDockerManager
      */
     private void registerDockerRegistires() throws DockerProvisionException {
         try {
-            String[] registryIds = DockerRegistry.get();
+            String[] registryIds = DockerRegistry.get(this);
 
             for (String id: registryIds) {
                 registries.add(new DockerRegistryImpl(framework, this, id));
@@ -343,5 +343,51 @@ public class DockerManagerImpl extends AbstractManager implements IDockerManager
     public IArtifactManager getArtifactManager() {
         return this.artifactManager;
     }
+
+    public IConfigurationPropertyStoreService getCps() throws ConfigurationPropertyStoreException {
+        return this.framework.getConfigurationPropertyService(NAMESPACE);
+    }
+
+    /**
+     * Get a CPS property from the 'docker' namespace.
+     * This makes it possible to unit test scenarios that differ based on CPS properties.
+     *
+     * @param fullPropertyName the name of the property you want. Including the namespace, which must
+     * match {@link DockerManagerImpl#NAMESPACE}
+     */
+    // public String getCpsProperty(String fullPropertyName) throws DockerManagerException {
+
+    //     String propertyValue;
+
+    //     if (!fullPropertyName.startsWith(this.NAMESPACE+".")) {
+    //         // This manager can only get properties from the 'docker' namespace.
+    //         throw new DockerManagerException(
+    //             "Program logic error. CPS property name must start with '" + this.NAMESPACE + ".' for the Docker Manager to access it."+
+    //             " Property" + fullPropertyName + " cannot be retrieved.");
+    //     }
+
+    //     try {
+
+    //         // We get something like "docker.registry.DEFAULT.busybox.image" as input.
+    //         // The CPS we are using is already pinned to the 'docker' namespace, so we don't need to 
+    //         // pass that. It is implicitly given.
+
+    //         String[] propNameParts = fullPropertyName.split("\\.");
+    //         // Skip the namespace 'docker' part.
+    //         String prefix = propNameParts[1];
+    //         String suffix = propNameParts[propNameParts.length-1];
+    //         // Allocate space for the infixes.
+    //         String [] infixes = new String[propNameParts.length-3];
+    //         System.arraycopy(propNameParts, 2, infixes, 0, propNameParts.length-3);
+
+    //         propertyValue = getCps().getProperty(prefix, suffix, infixes);
+    //         logger.info("Property requested:" + fullPropertyName + " value:" + propertyValue);
+
+    //     } catch (ConfigurationPropertyStoreException ex) {
+    //         throw new DockerManagerException("Failed to retrieve the CPS property " + fullPropertyName, ex);
+    //     }
+
+    //     return propertyValue;
+    // }
 
 }

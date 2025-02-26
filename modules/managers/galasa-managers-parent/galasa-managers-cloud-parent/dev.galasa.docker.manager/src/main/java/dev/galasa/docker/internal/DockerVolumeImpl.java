@@ -148,7 +148,9 @@ public class DockerVolumeImpl implements IDockerVolume {
         
         Map<String,Object> subs = new HashMap<>();
         
-        subs.put("BUSYBOX", this.engine.getBusybox());
+        String busyboxImageName = this.engine.getFullyQualifiedBusyboxImageName();
+        String busyboxImageOnEngine = this.engine.getBusyboxImageOnEngine(busyboxImageName);
+        subs.put("BUSYBOX", busyboxImageOnEngine);
         subs.put("FILENAME", fileName);
         subs.put("MOUNTPATH", this.mountPath);
         
@@ -255,7 +257,9 @@ public class DockerVolumeImpl implements IDockerVolume {
         DockerImageBuilderImpl builder = new DockerImageBuilderImpl(engine);
         
         Map<String,Object> subs = new HashMap<>();
-        subs.put("BUSYBOX", engine.getBusybox());
+        String busyboxImageName = this.engine.getFullyQualifiedBusyboxImageName();
+        String busyboxImageOnEngine = this.engine.getBusyboxImageOnEngine(busyboxImageName);
+        subs.put("BUSYBOX", busyboxImageOnEngine);
         subs.put("COMMAND", command);
         logger.info("Command: " + command);
 

@@ -8,6 +8,7 @@ package dev.galasa.docker.internal.properties;
 import java.util.ArrayList;
 
 import dev.galasa.docker.DockerManagerException;
+import dev.galasa.docker.internal.DockerManagerImpl;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.cps.CpsProperties;
 
@@ -43,10 +44,10 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  */
 public class DockerRegistry extends CpsProperties {
 
-    public static String[] get() throws DockerManagerException {
+    public static String[] get(DockerManagerImpl dockerManager) throws DockerManagerException {
         ArrayList<String> ids = new ArrayList<String>();
         try {
-            String registryIds = getStringNulled(DockerPropertiesSingleton.cps(), "default", "registries");
+            String registryIds = getStringNulled(dockerManager.getCps(), "default", "registries");
             if (registryIds != null) {
 				String[] list = registryIds.split(",");
 
