@@ -46,13 +46,13 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          # cache: 'gradle'
+          cache: 'gradle'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.9
-          cache-disabled: true
+          cache-disabled: false
 
       - name: Download platform from this workflow
         id: download-platform

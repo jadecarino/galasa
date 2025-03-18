@@ -49,13 +49,13 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          # cache: 'gradle'
+          cache: 'gradle'
         
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.9
-          cache-disabled: true
+          cache-disabled: false
 
       # This is required so the openapi2beans image can be run in the next step.
       - name: Login to Github Container Registry
@@ -152,7 +152,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'semeru'
-          # cache: 'gradle'
+          cache: 'gradle'
       
       - name: Install Swagger CLI
         working-directory: modules/framework

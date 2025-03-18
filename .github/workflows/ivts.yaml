@@ -48,7 +48,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.9
-          cache-disabled: true
+          cache-disabled: false
 
       - name: Download platform from this workflow
         id: download-platform
