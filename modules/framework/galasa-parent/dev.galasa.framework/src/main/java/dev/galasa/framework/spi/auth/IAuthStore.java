@@ -93,5 +93,5 @@ public interface IAuthStore {
 
     IFrontEndClient createClient(String clientName);
 
-    String jadesDummyMethod();
+    String jadesDummyMethod2();
 }

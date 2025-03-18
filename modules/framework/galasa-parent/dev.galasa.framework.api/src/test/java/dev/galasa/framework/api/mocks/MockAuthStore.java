@@ -83,7 +83,7 @@ public class MockAuthStore implements IAuthStore, IAuthStoreService {
     }
 
     @Override
-    public String jadesDummyMethod() {
+    public String jadesDummyMethod2() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'jadesDummyMethod'");
     }
