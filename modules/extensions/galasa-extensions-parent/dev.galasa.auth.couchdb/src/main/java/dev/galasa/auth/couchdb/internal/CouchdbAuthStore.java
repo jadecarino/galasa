@@ -414,4 +414,8 @@ public class CouchdbAuthStore extends CouchdbStore implements IAuthStore {
         return getDocumentFromDatabase(USERS_DATABASE_NAME, documentId, UserDoc.class);
     }
 
+    public String jadesDummyMethod(){
+        return "";
+    }
+
 }
