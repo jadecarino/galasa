@@ -14,10 +14,9 @@ name: "CodeQL Advanced"
 on:
   push:
     branches: [ "main" ]
-    # paths: [ "modules/cli/**" ]
   pull_request:
     branches: [ "main" ]
-    # paths: [ "modules/cli/**" ]
+    paths: [ "modules/cli/**" ]
 
   schedule:
     - cron: '41 13 * * 0'
@@ -149,19 +148,6 @@ jobs:
         -PjacocoEnabled=false \
         -PisMainOrRelease=false 2>&1 | tee build.log
 
-    # - name: Building Extensions (manually)
-    #   shell: bash
-    #   working-directory: ${{ github.workspace }}/modules/extensions
-    #   run: |
-    #     set -o pipefail
-    #     gradle -b galasa-extensions-parent/build.gradle check publish --info \
-    #     --no-daemon --console plain \
-    #     -PsourceMaven=https://development.galasa.dev/main/maven-repo/obr \
-    #     -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-    #     -PtargetMaven=/home/runner/.m2/repository \
-    #     -PjacocoEnabled=false \
-    #     -PisMainOrRelease=false 2>&1 | tee build.log
-
     - name: Building Managers (manually)
       shell: bash
       working-directory: ${{ github.workspace }}/modules/managers
@@ -198,18 +184,6 @@ jobs:
         -Dgpg.skip=true \
         --batch-mode --errors --fail-at-end \
         --settings settings.xml 2>&1 | tee galasa-obr-build.log
-
-    # - name: Building IVTs (manually)
-    #   shell: bash
-    #   working-directory: ${{ github.workspace }}/modules/ivts
-    #   run: |
-    #     set -o pipefail
-    #     gradle -b galasa-ivts-parent/build.gradle build check publish --info \
-    #     --no-daemon --console plain \
-    #     -PsourceMaven=https://development.galasa.dev/main/maven-repo/obr \
-    #     -PcentralMaven=https://repo.maven.apache.org/maven2/ \
-    #     -PtargetMaven=/home/runner/.m2/repository \
-    #     -PisMainOrRelease=false 2>&1 | tee build.log
 
     - name: Building CLI (manually)
       shell: bash
