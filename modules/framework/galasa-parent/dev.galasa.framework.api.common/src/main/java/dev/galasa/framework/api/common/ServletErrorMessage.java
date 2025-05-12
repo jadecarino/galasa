@@ -21,6 +21,7 @@ public enum ServletErrorMessage {
     GAL5012_SORT_VALUE_MISSING                        (5012,"E: Error parsing the query parameters. 'sort' value was not supplied. Expected query parameter in the format 'sort={fieldName}:{order}' where order is 'asc' for ascending or 'desc' for descending."),
     GAL5013_RESULT_NAME_NOT_RECOGNIZED                (5013,"E: Error parsing the query parameters. 'result' value ''{0}'' not recognised. Expected result name to match one of the following ''{1}''."),
     GAL5014_STATUS_NAME_NOT_RECOGNIZED                (5014,"E: Error parsing the query parameters. 'status' value ''{0}'' not recognised. Expected status name to match one of the following ''{1}''."),
+    GAL5428_DETAIL_VALUE_NOT_RECOGNIZED               (5428,"E: Error parsing the query parameters. 'detail' value ''{0}'' not recognised. Expected detail name to match one of the following ''{1}''."),
 
     // RunsReset/Cancel...
     GAL5045_INVALID_STATUS_UPDATE_REQUEST             (5045, "E: Error occurred. The field ''status'' in the request body is invalid. The ''status'' value ''{0}'' supplied is not supported. Supported values are: ''queued'' and ''finished''."),
@@ -191,7 +192,7 @@ public enum ServletErrorMessage {
     // >>>       Unit tests guarantee that this number is 'free' to use for a new error message.
     // >>>       If you do use this number for a new error template, please incriment this value.
     // >>>
-    public static final int GALxxx_NEXT_MESSAGE_NUMBER_TO_USE = 5428;
+    public static final int GALxxx_NEXT_MESSAGE_NUMBER_TO_USE = 5429;
 
 
     private String template ;

@@ -5,9 +5,13 @@
  */
 package dev.galasa.framework.api.ras.internal.common;
 
+import dev.galasa.framework.api.common.SupportedQueryParameterNames;
+
 public class RasDetailsQueryParams {
     
     public static final String DETAILS_METHOD_QUERY_PARAM_VALUE = "methods";
+
+    public static final SupportedQueryParameterNames SUPPORTED_DETAIL_QUERY_PARAMS = new SupportedQueryParameterNames(DETAILS_METHOD_QUERY_PARAM_VALUE);
 
     public RasDetailsQueryParams() {
         
@@ -22,6 +26,10 @@ public class RasDetailsQueryParams {
 
         return isMethodDetailsExcluded;
 
+    }
+
+    public boolean isParamSupported(String queryParam) {
+        return SUPPORTED_DETAIL_QUERY_PARAMS.isSupported(queryParam);
     }
 
 }

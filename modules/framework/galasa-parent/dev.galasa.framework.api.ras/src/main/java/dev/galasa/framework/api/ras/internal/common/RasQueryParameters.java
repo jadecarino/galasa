@@ -7,8 +7,10 @@ package dev.galasa.framework.api.ras.internal.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.time.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -142,6 +144,10 @@ public class RasQueryParameters {
 
     public List<String> getRunIds() {
         return generalQueryParams.getMultipleString("runId", new ArrayList<String>());
+    }
+
+    public Set<String> getTags() {
+        return new HashSet<>(generalQueryParams.getMultipleString("tags", new ArrayList<String>()));
     }
 
     public boolean isAtLeastOneMandatoryParameterPresent() throws InternalServletException {

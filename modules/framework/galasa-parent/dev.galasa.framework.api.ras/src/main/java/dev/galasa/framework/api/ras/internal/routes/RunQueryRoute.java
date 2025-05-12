@@ -37,6 +37,7 @@ import dev.galasa.framework.spi.ras.RasSearchCriteriaResult;
 import dev.galasa.framework.spi.ras.RasSearchCriteriaRunName;
 import dev.galasa.framework.spi.ras.RasSearchCriteriaStatus;
 import dev.galasa.framework.spi.ras.RasSearchCriteriaSubmissionId;
+import dev.galasa.framework.spi.ras.RasSearchCriteriaTags;
 import dev.galasa.framework.spi.ras.RasSearchCriteriaTestName;
 import dev.galasa.framework.spi.ras.RasSortField;
 import dev.galasa.framework.spi.rbac.RBACException;
@@ -83,6 +84,7 @@ public class RunQueryRoute extends RunsRoute {
 	public static final String QUERY_PARAMETER_RUNNAME = "runname";
 	public static final String QUERY_PARAMETER_RUNID = "runid";
 	public static final String QUERY_PARAMETER_DETAIL = "detail";
+	public static final String QUERY_PARAMETER_TAGS = "tags";
 
     public static final SupportedQueryParameterNames SUPPORTED_QUERY_PARAMETER_NAMES = new SupportedQueryParameterNames(
 		QUERY_PARAMETER_SORT, QUERY_PARAMETER_RESULT, QUERY_PARAMETER_STATUS,
@@ -90,7 +92,7 @@ public class RunQueryRoute extends RunsRoute {
 		QUERY_PARAMETER_TO, QUERY_PARAMETER_TESTNAME, QUERY_PARAMETER_PAGE,
 		QUERY_PARAMETER_SIZE, QUERY_PARAMETER_GROUP, QUERY_PARAMETER_SUBMISSION_ID,
 		QUERY_PARAMETER_INCLUDECURSOR, QUERY_PARAMETER_CURSOR, QUERY_PARAMETER_RUNNAME,
-		QUERY_PARAMETER_RUNID
+		QUERY_PARAMETER_RUNID, QUERY_PARAMETER_TAGS
 	);
 
 
@@ -115,14 +117,8 @@ public class RunQueryRoute extends RunsRoute {
 		HttpServletRequest request = requestContext.getRequest();
 
 		RasQueryParameters queryParams = new RasQueryParameters(generalQueryParams);
-		boolean isMethodDetailsExcluded = true;
-
 		String detail = queryParams.getDetail();
-		if (detail != null && !detail.isEmpty()) {
-			RasDetailsQueryParams rasDetailsQueryParams = new RasDetailsQueryParams();
-			isMethodDetailsExcluded = rasDetailsQueryParams.isMethodDetailsExcluded(detail);
-		}
-
+		boolean isMethodDetailsExcluded = isMethodDetailsExcluded(detail);
 
 		String outputString = retrieveResults(queryParams, isMethodDetailsExcluded);
 		return getResponseBuilder().buildResponse(request, res, "application/json", outputString, HttpServletResponse.SC_OK);
@@ -230,6 +226,7 @@ public class RunQueryRoute extends RunsRoute {
 		String group = queryParams.getGroup();
 		String submissionId = queryParams.getSubmissionId();
 		Instant to = queryParams.getToTime();
+		Set<String> tags = queryParams.getTags();
 
 		Instant defaultFromTime = Instant.now().minus(24,ChronoUnit.HOURS);
 		// from will error if no runname is specified as it is a mandatory field
@@ -279,6 +276,10 @@ public class RunQueryRoute extends RunsRoute {
 		if (submissionId != null && !submissionId.isEmpty()) {
 			RasSearchCriteriaSubmissionId submissionIdCriteria = new RasSearchCriteriaSubmissionId(submissionId);
 			critList.add(submissionIdCriteria);
+		}
+		if (tags != null && !tags.isEmpty()) {
+			RasSearchCriteriaTags tagsCriteria = new RasSearchCriteriaTags(tags.toArray(new String[0]));
+			critList.add(tagsCriteria);
 		}
 
 		return critList;
@@ -535,5 +536,23 @@ public class RunQueryRoute extends RunsRoute {
 			from = params.getFromTime();
 		}
 		return from;
+	}
+
+	private boolean isMethodDetailsExcluded(String detailParam) throws InternalServletException {
+
+		boolean isMethodDetailsExcluded = true;
+
+		if (detailParam != null && !detailParam.isEmpty()) {
+			RasDetailsQueryParams rasDetailsQueryParams = new RasDetailsQueryParams();
+
+			if(!rasDetailsQueryParams.isParamSupported(detailParam)){
+				ServletError error = new ServletError(GAL5428_DETAIL_VALUE_NOT_RECOGNIZED, RasDetailsQueryParams.SUPPORTED_DETAIL_QUERY_PARAMS.toString());
+				throw new InternalServletException(error, HttpServletResponse.SC_BAD_REQUEST);
+			}
+
+			isMethodDetailsExcluded = false;
+		}
+		
+		return isMethodDetailsExcluded;
 	}
 }
