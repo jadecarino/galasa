@@ -86,12 +86,6 @@ jobs:
         -PcentralMaven=https://repo.maven.apache.org/maven2/ \
         -PtargetMaven=/home/runner/.m2/repository 2>&1 | tee build.log
 
-    - name: Building Buildutils (manually)
-      shell: bash
-      working-directory: ${{ github.workspace }}/modules/buildutils
-      run: |
-        make all
-        make all -C openapi2beans
 
     - name: Building Wrapping (manually)
       shell: bash
@@ -251,3 +245,4 @@ jobs:
       with:
         category: "/language:go/run:${{ github.run_id }}"
         checkout_path: ${{ github.workspace }}
+        output: results-go.sarif

@@ -80,3 +80,4 @@ jobs:
       with:
         category: "/language:java-kotlin/run:${{ github.run_id }}"
         checkout_path: ${{ github.workspace }}
+        output: results-java.sarif
