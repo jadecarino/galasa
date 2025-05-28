@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -291,6 +290,7 @@ public class Launcher {
 
         checkForBootstrap(commandLine);
         setStoresFromEnvironmentVariables(env,bootstrapProperties);
+        setExtraBundlesFromEnvironment(env, bootstrapProperties);
         checkForOverrides(commandLine);
         checkForBundles(commandLine);
         checkForMetricsPort(commandLine);
@@ -460,36 +460,24 @@ public class Launcher {
                 logger.error("Invalid bootstrap URI provided", e);
                 commandLineError(null);
             }
-        } else {
-            Path path = Paths.get(this.galasaHome, "bootstrap.properties");
+
             try {
-                if (!path.toFile().exists()) {
-                    if (!path.getParent().toFile().exists()) {
-                        Files.createDirectories(path.getParent());
-                    }
-                    Files.createFile(path);
+                URLConnection bootstrapConnection = bootstrapUri.toURL().openConnection();
+                bootstrapConnection.setConnectTimeout(30000);
+                bootstrapConnection.setReadTimeout(30000);
+                try (InputStream is = bootstrapConnection.getInputStream()) {
+                    bootstrapProperties = new Properties();
+                    bootstrapProperties.load(is);
                 }
-                bootstrapUri = path.toUri();
             } catch (IOException e) {
-                logger.error("Unable to create empty default bootstrap file " + path.toUri().toString(), e);
+                logger.error("Unable to load bootstrap properties", e);
                 commandLineError(null);
             }
+        } else {
+            this.bootstrapProperties = new Properties();
         }
 
-        try {
-            URLConnection bootstrapConnection = bootstrapUri.toURL().openConnection();
-            bootstrapConnection.setConnectTimeout(30000);
-            bootstrapConnection.setReadTimeout(30000);
-            try (InputStream is = bootstrapConnection.getInputStream()) {
-                bootstrapProperties = new Properties();
-                bootstrapProperties.load(is);
-                bootstrapProperties.setProperty("framework.galasa.home",galasaHome);
-
-            }
-        } catch (IOException e) {
-            logger.error("Unable to load bootstrap properties", e);
-            commandLineError(null);
-        }
+        this.bootstrapProperties.setProperty("framework.galasa.home", this.galasaHome);
     }
 
     /**
@@ -652,6 +640,17 @@ public class Launcher {
             authStore = authStore.trim();
             logger.info(String.format("Environment variable: %s used to locate auth store location",AUTH_ENV_VAR));
             bootstrap.setProperty("framework.auth.store",authStore);
+        }
+    }
+
+    void setExtraBundlesFromEnvironment(Environment env, Properties bootstrap) {
+        String EXTRA_BUNDLES_ENV_VAR = "GALASA_EXTRA_BUNDLES";
+        String extraBundles = env.getenv(EXTRA_BUNDLES_ENV_VAR);
+
+        if((extraBundles != null) && (!extraBundles.trim().isEmpty())){
+            extraBundles = extraBundles.trim();
+            logger.info(String.format("Environment variable: %s used to set extra bundles", EXTRA_BUNDLES_ENV_VAR));
+            bootstrap.setProperty("framework.extra.bundles", extraBundles);
         }
     }
 }
