@@ -477,7 +477,10 @@ function generate_javadoc_pom_xml {
 function build_javadoc_pom {
     h2 "Building the javadoc with maven"
     cd ${WORKSPACE_DIR}/obr/javadocs
-    mvn clean install \
+
+    info "Current director is $(pwd)"
+
+    cmd="mvn clean install \
     --settings ${WORKSPACE_DIR}/modules/obr/settings.xml \
     --batch-mode \
     --errors \
@@ -485,8 +488,9 @@ function build_javadoc_pom {
     -Dgpg.skip=true \
     -Dgalasa.source.repo=${SOURCE_MAVEN} \
     -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-    -Dmaven.javadoc.failOnError=true
-
+    -Dmaven.javadoc.failOnError=true"
+    info "Command is $cmd"
+    $cmd
     rc=$? ; if [[ "${rc}" != "0" ]]; then error "maven failed for javadoc build" ;  exit 1 ; fi
 
     success "OK - Build the galasa-uber-javadoc-*.zip file:"
