@@ -290,7 +290,5 @@ function test_gherkin_commands {
 if [[ "$CALLED_BY_MAIN" == "" ]]; then
     source $BASEDIR/calculate-galasactl-executables.sh
     calculate_galasactl_executable
-    # test_gherkin_commands
-    error "Temporarily disabled the gherkin tests so that the PR can build"
-    exit 0
+    test_gherkin_commands
 fi
