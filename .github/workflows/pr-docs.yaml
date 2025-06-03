@@ -68,6 +68,27 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.artifact-id }}
 
+      # We can download the zipped javadoc from the framework module build 
+      # and placed in the maven repository.
+      - name: Download framework artifacts from this workflow
+        id: download-framework
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: /home/runner/.m2/repository
+
+      # The framework module wasn't changed, so download artifacts
+      # from the last successful workflow.
+      - name: Download framework from last successful workflow
+        if: ${{ steps.download-framework.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: /home/runner/.m2/repository
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.artifact-id }}
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
