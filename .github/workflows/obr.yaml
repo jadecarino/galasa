@@ -512,6 +512,12 @@ jobs:
           name: javadoc-site-build-log
           path: modules/obr/javadocs/build.log
           retention-days: 7
+
+      - name: Upload OBR artifacts containing the javadoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: obr
+          path: modules/obr/repo
       
       - name: Login to Github Container Registry
         uses: docker/login-action@v3

@@ -539,6 +539,12 @@ jobs:
           name: javadoc-site-build-log
           path: modules/obr/javadocs/build.log
           retention-days: 7
+
+      - name: Upload OBR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: obr
+          path: modules/obr/repo
       
       - name: Build Javadoc site image for testing
         uses: docker/build-push-action@v5
