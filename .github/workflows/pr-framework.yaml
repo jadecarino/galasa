@@ -236,3 +236,9 @@ jobs:
           file: modules/framework/dockerfiles/dockerfile.restapidocsite
           load: true
           tags: restapidoc-site:test
+
+      - name: Upload rest-api-docs artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rest-api-docs
+          path: modules/framework/repo

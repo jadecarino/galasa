@@ -45,12 +45,12 @@ jobs:
 
       # We can download the zipped javadoc from the framework module build 
       # and placed in the maven repository.
-      - name: Download framework artifacts from this workflow
-        id: download-framework
+      - name: Download rest-api artifacts from this workflow
+        id: download-rest-api
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: framework
+          name: rest-api-docs
           path: /home/runner/.m2/repository
 
       - name: Setup Gradle
