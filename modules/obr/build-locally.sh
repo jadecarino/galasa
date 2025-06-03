@@ -293,7 +293,7 @@ function check_dependencies_present {
 function construct_bom_pom_xml {
     h2 "Generating a bom pom.xml from a template, using all the versions of everything..."
 
-    cd ${WORKSPACE_DIR}/${project}/galasa-bom
+    cd ${WORKSPACE_DIR}/modules/${project}/galasa-bom
 
 
     # Check local build version
@@ -458,7 +458,7 @@ function build_generated_obr_generic_pom {
 function generate_javadoc_pom_xml {
     h2 "Generate a pom.xml we can use with the javadoc"
     #------------------------------------------------------------------------------------
-    cd ${WORKSPACE_DIR}/obr/javadocs
+    cd ${WORKSPACE_DIR}/modules/obr/javadocs
 
     ${GALASA_BUILD_TOOL_PATH} template \
     --releaseMetadata "${framework_manifest_path}" \
@@ -476,7 +476,7 @@ function generate_javadoc_pom_xml {
 #------------------------------------------------------------------------------------
 function build_javadoc_pom {
     h2 "Building the javadoc with maven"
-    cd ${WORKSPACE_DIR}/obr/javadocs
+    cd ${WORKSPACE_DIR}/modules/obr/javadocs
     mvn clean install \
     --settings ${WORKSPACE_DIR}/modules/obr/settings.xml \
     --batch-mode \
