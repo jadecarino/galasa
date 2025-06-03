@@ -476,7 +476,8 @@ function generate_javadoc_pom_xml {
 #------------------------------------------------------------------------------------
 function build_javadoc_pom {
     h2 "Building the javadoc with maven"
-    cd ${WORKSPACE_DIR}/obr/javadocs
+    cd "${BASEDIR}/javadocs" 
+    rc=$? ; if [[ "${rc}" != "0" ]]; then error "Failed to cd to the javadocs folder" ; exit 1 ; fi
 
     info "Current directory is $(pwd)"
 
