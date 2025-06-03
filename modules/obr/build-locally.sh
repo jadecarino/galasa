@@ -478,7 +478,7 @@ function build_javadoc_pom {
     h2 "Building the javadoc with maven"
     cd ${WORKSPACE_DIR}/obr/javadocs
 
-    info "Current director is $(pwd)"
+    info "Current directory is $(pwd)"
 
     cmd="mvn clean install \
     --settings ${WORKSPACE_DIR}/modules/obr/settings.xml \
