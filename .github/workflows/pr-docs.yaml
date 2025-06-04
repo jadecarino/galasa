@@ -96,7 +96,7 @@ jobs:
         id: download-javadoc
         uses: actions/download-artifact@v4
         with:
-          name: obr
+          name: javadoc
           path: /home/runner/.m2/repository
 
       # The javadoc doc wasn't available/changed, so download artifacts
@@ -105,7 +105,7 @@ jobs:
         if: ${{ steps.download-javadoc.outcome == 'failure' }}
         uses: actions/download-artifact@v4
         with:
-          name: obr
+          name: javadoc
           path: /home/runner/.m2/repository
           github-token: ${{ github.token }}
           run-id: ${{ inputs.artifact-id }}
