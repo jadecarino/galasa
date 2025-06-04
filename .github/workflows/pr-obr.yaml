@@ -522,17 +522,17 @@ jobs:
       - name: Build javadoc site using maven
         working-directory: modules/obr/javadocs
         run: |
-          # Note: We don't install or deploy the site here. Doing so would create a site with tons of 
-          # transitive dependencies which we don't need.
           set -o pipefail
-          mvn -f pom.xml verify -X \
+          # Note: We install the built artifacts into a temporary location.
+          mkdir -p ${{ github.workspace }}/modules/obr/javadocs/temp
+          mvn -f pom.xml install -X \
           -Dgpg.skip=true \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/temp \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
-          --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee build.log
+          --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
 
       - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
         working-directory: modules/obr/javadocs
@@ -548,7 +548,7 @@ jobs:
           "-Dversion=${component_version}" \
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
-          "-Dfile=target/galasa-uber-javadoc-${component_version}.zip"
+          "-Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${component_version}.zip"
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
