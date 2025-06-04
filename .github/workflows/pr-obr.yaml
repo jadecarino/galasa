@@ -536,7 +536,7 @@ jobs:
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/temp \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
-          --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
+          2>&1 | tee build.log
 
       - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
         working-directory: modules/obr/javadocs
@@ -559,7 +559,7 @@ jobs:
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
-          --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a build.log
+          2>&1 | tee -a build.log
 
       - name: Upload Javadoc site build log
         if: failure()
