@@ -488,7 +488,7 @@ function build_javadoc_pom {
 
     info "Current directory is $(pwd)"
 
-    cmd="mvn clean install \
+    cmd="mvn verify \
     --settings ${WORKSPACE_DIR}/modules/obr/settings.xml \
     --batch-mode \
     --errors \
@@ -500,9 +500,21 @@ function build_javadoc_pom {
     info "Command is $cmd"
     $cmd
     rc=$? ; if [[ "${rc}" != "0" ]]; then error "maven failed for javadoc build" ;  exit 1 ; fi
-
-    success "OK - Build the galasa-uber-javadoc-*.zip file:"
-    ls "${WORKSPACE_DIR}/modules/obr/javadocs/target/*.zip"
+    success "OK - Built the galasa-uber-javadoc-${component_version}.zip file"
+    
+    info "Creating a variant of the javadoc maven bundle which has no transitive dependencies"
+    info "source file is:"
+    ls "${BASEDIR}/javadocs/target/galasa-uber-javadoc-${component_version}.zip"
+    cd .. || (error "Failed to change folder" ; exit 1)
+    mvn deploy:deploy-file \
+    "-Durl=file://${HOME}/.m2/repository" \
+    -DgroupId=dev.galasa \
+    "-Dversion=${component_version}" \
+    -DartifactId=galasa-uber-javadoc \
+    -Dpackaging=zip \
+    "-Dfile=${BASEDIR}/javadocs/target/galasa-uber-javadoc-${component_version}.zip"
+    rc=$? ; if [[ "${rc}" != "0" ]]; then error "Failed to publish galasa-uber-javadoc to maven repo" ;  exit 1 ; fi
+    success "OK - published the artifact with no transitive dependencies"
 }
 
 #------------------------------------------------------------------------------------

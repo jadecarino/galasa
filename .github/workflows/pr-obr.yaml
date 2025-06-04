@@ -522,8 +522,10 @@ jobs:
       - name: Build javadoc site using maven
         working-directory: modules/obr/javadocs
         run: |
+          # Note: We don't install or deploy the site here. Doing so would create a site with tons of 
+          # transitive dependencies which we don't need.
           set -o pipefail
-          mvn -f pom.xml deploy -X \
+          mvn -f pom.xml verify -X \
           -Dgpg.skip=true \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
@@ -531,6 +533,27 @@ jobs:
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
           --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee build.log
+
+      - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
+        working-directory: modules/obr/javadocs
+        run: |
+          # Note: This creates a new pom.xml which is very simple, so no transitive dependencies are
+          # available for it.
+          # Note: We append to the build log.
+          set -o pipefail
+          mvn deploy:deploy-file \
+          -Dgpg.skip=true \
+          "-Durl=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo" \
+          -DgroupId=dev.galasa \
+          "-Dversion=${component_version}" \
+          -DartifactId=galasa-uber-javadoc \
+          -Dpackaging=zip \
+          "-Dfile=target/galasa-uber-javadoc-${component_version}.zip"
+          -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
+          -Dmaven.javadoc.failOnError=false \
+          --batch-mode --errors --fail-at-end \
+          --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a build.log
 
       - name: Upload Javadoc site build log
         if: failure()

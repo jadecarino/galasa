@@ -29,8 +29,10 @@ def group = "dev.galasa"
 dependencies {
     // We need the swagger generator to generate API documentation from the openapi.yaml file
     // https://mvnrepository.com/artifact/io.swagger.codegen.v3/swagger-codegen-cli
-    compileOnly ('dev.galasa:dev.galasa.cli.docs:'+version+'@zip')
-    compileOnly ('dev.galasa:galasa-uber-javadoc:'+version+'@zip')
+    implementation ('dev.galasa:dev.galasa.cli.docs:'+version+'@zip')
+    implementation ('dev.galasa:galasa-uber-javadoc:'+version+'@zip') {
+        exclude group:"dev.galasa",module:"dev.galasa.platform"
+    }
 }
 
 task downloadRawDependencies(type: Copy) {
