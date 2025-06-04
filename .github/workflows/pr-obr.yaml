@@ -16,6 +16,10 @@ on:
         description: 'The Workflow Run ID of the last workflow containing artifacts to download'
         required: true
         type: string
+      galasa-version:
+        description: 'The version of Galasa we are building. FOr example: 0.42.0'
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -525,7 +529,7 @@ jobs:
           set -o pipefail
           # Note: We install the built artifacts into a temporary location.
           mkdir -p ${{ github.workspace }}/modules/obr/javadocs/temp
-          mvn -f pom.xml install -X \
+          mvn -f pom.xml deploy -X \
           -Dgpg.skip=true \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
@@ -536,6 +540,8 @@ jobs:
 
       - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
         working-directory: modules/obr/javadocs
+        env:
+          GALASA_VERSION: ${{ inputs.galasa-version }}
         run: |
           # Note: This creates a new pom.xml which is very simple, so no transitive dependencies are
           # available for it.
@@ -545,10 +551,10 @@ jobs:
           -Dgpg.skip=true \
           "-Durl=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo" \
           -DgroupId=dev.galasa \
-          "-Dversion=${component_version}" \
+          -Dversion=${{ env.GALASA_VERSION }} \
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
-          "-Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${component_version}.zip"
+          -Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip"
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \

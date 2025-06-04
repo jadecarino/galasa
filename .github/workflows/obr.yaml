@@ -512,6 +512,7 @@ jobs:
         env:
           GPG_KEYID: ${{ secrets.GPG_KEYID }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GALASA_VERSION: ${{ inputs.galasa-version }}
         run: |
           # Note: This creates a new pom.xml which is very simple, so no transitive dependencies are
           # available for it.
@@ -522,10 +523,10 @@ jobs:
           -Dgpg.passphrase="${{ env.GPG_PASSPHRASE }}" \
           "-Durl=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo" \
           -DgroupId=dev.galasa \
-          "-Dversion=${component_version}" \
+          "-Dversion=${{ env.GALASA_VERSION }}" \
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
-          "-Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${component_version}.zip"
+          "-Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip"
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
