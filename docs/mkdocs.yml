@@ -241,10 +241,10 @@ nav:
       - z/OS Managers:
         - docs/managers/zos-managers/index.md
         - docs/managers/zos-managers/rse-api-manager.md
-        - docs/managers/zos-managers/z-os-batch-rse-api-manager.md
-        - docs/managers/zos-managers/z-os-batch-z-os-mf-manager.md
+        - docs/managers/zos-managers/zos-batch-rse-api-manager.md
+        - docs/managers/zos-managers/zos-batch-zos-mf-manager.md
         - docs/managers/zos-managers/z-os-file-manager.md
-        - docs/managers/zos-managers/z-os-file-rse-api-manager.md
+        - docs/managers/zos-managers/zos-file-rse-api-manager.md
         - docs/managers/zos-managers/z-os-file-zos-mf-manager.md
         - docs/managers/zos-managers/zos-batch-manager.md
         - docs/managers/zos-managers/zos-batch-zos-mf-manager.md
