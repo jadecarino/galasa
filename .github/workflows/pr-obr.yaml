@@ -561,7 +561,7 @@ jobs:
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
-          2>&1 | tee -a javadoc/build.log
+          2>&1 | tee -a javadocs/build.log
 
       - name: Upload Javadoc site build log
         if: failure()
