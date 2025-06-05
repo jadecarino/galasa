@@ -95,6 +95,7 @@ jobs:
       - name: Download javadoc artifacts from this workflow
         id: download-javadoc
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: javadoc
           path: /home/runner/.m2/repository
