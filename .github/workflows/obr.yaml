@@ -527,6 +527,8 @@ jobs:
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
           -Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip \
+          -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+          -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
           --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a build.log
