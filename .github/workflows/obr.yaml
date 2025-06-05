@@ -497,7 +497,7 @@ jobs:
           set -o pipefail
           # Note: We install the built artifacts into a temporary location.
           mkdir -p ${{ github.workspace }}/modules/obr/javadocs/temp
-          mvn -f pom.xml install -X \
+          mvn -f pom.xml deploy -X \
           -Dgalasa.source.repo=file:${{ github.workspace }}/modules/artifacts \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/temp \
