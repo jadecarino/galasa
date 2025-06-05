@@ -58,7 +58,6 @@ theme:
   - navigation.footer
   - navigation.indexes
   - navigation.instant
-  - navigation.sections
   - navigation.tabs
   - navigation.tabs.sticky
   - navigation.top
@@ -111,6 +110,9 @@ plugins:
   - search
   - blog:
       blog_dir: hub
+      blog_toc: true
+      archive_toc: true
+      categories_toc: true
       categories_allowed:
         - Blog
         - Podcast
@@ -121,7 +123,9 @@ plugins:
       post_readtime: false
   - blog:
       blog_dir: releases
-      archive: false
+      blog_toc: true
+      archive: true
+      archive_toc: true
       categories: false
       post_readtime: false
 
