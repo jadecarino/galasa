@@ -507,8 +507,10 @@ jobs:
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
 
+      # Note: We publish from a different repository, so the maven comand can't find the javadoc's pom.xml,
+      # as we want it to create a new one.
       - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
-        working-directory: modules/obr/javadocs
+        working-directory: modules/obr
         env:
           GPG_KEYID: ${{ secrets.GPG_KEYID }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
@@ -531,7 +533,7 @@ jobs:
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
           --batch-mode --errors --fail-at-end \
-          --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a build.log
+          --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a javadoc/build.log
       
       - name: Upload Javadoc site build log
         if: failure()
