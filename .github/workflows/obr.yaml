@@ -502,8 +502,8 @@ jobs:
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/temp \
           -Dmaven.javadoc.failOnError=false \
-          -Dgpg.key.id="${{ env.GPG_KEYID }}" \
-          -Dgpg.passphrase="${{ env.GPG_PASSPHRASE }}" \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
           --batch-mode --errors --fail-at-end \
           --settings /home/runner/work/gpg/settings.xml 2>&1 | tee build.log
 
@@ -519,14 +519,14 @@ jobs:
           # Note: We append to the build log.
           set -o pipefail
           mvn deploy:deploy-file \
-          -Dgpg.key.id="${{ env.GPG_KEYID }}" \
-          -Dgpg.passphrase="${{ env.GPG_PASSPHRASE }}" \
-          "-Durl=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo" \
+          -Dgpg.key.id=${{ env.GPG_KEYID }} \
+          -Dgpg.passphrase=${{ env.GPG_PASSPHRASE }} \
+          -Durl=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -DgroupId=dev.galasa \
-          "-Dversion=${{ env.GALASA_VERSION }}" \
+          -Dversion=${{ env.GALASA_VERSION }} \
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
-          "-Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip"
+          -Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \
