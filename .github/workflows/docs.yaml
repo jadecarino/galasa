@@ -50,7 +50,7 @@ jobs:
         id: download-javadoc
         uses: actions/download-artifact@v4
         with:
-          name: docs
+          name: javadoc
           path: /home/runner/.m2/repository
 
       # - name: Download rest-api artifacts from this workflow
