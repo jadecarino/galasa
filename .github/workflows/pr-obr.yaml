@@ -556,7 +556,7 @@ jobs:
           -Dversion=${{ env.GALASA_VERSION }} \
           -DartifactId=galasa-uber-javadoc \
           -Dpackaging=zip \
-          -Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip \
+          -Dfile=${{ github.workspace }}/modules/obr/javadocs/temp/dev/galasa/galasa-uber-javadoc/${{ env.GALASA_VERSION }}/galasa-uber-javadoc-${{ env.GALASA_VERSION }}.zip \
           -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
           -Dgalasa.release.repo=file:${{ github.workspace }}/modules/obr/javadocs/docker/repo \
           -Dmaven.javadoc.failOnError=false \

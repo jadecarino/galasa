@@ -242,4 +242,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rest-api-docs
-          path: modules/framework/repo
+          path: ${{ github.workspace }}/modules/framework/repo
