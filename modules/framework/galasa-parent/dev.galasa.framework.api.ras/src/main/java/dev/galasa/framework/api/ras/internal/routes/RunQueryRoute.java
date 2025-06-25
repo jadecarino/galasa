@@ -247,8 +247,10 @@ public class RunQueryRoute extends RunsRoute {
 		}
 		if (requestor != null && !requestor.isEmpty()) {
 			String matchedRequestor = findMatchingRequestor(requestor);
-			RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(matchedRequestor);
-			critList.add(requestorCriteria);
+			if(matchedRequestor != null && matchedRequestor.isBlank()){
+				RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(matchedRequestor);
+				critList.add(requestorCriteria);
+			}
 		}
 		if (testName != null && !testName.isEmpty()) {
 			RasSearchCriteriaTestName testNameCriteria = new RasSearchCriteriaTestName(testName);
