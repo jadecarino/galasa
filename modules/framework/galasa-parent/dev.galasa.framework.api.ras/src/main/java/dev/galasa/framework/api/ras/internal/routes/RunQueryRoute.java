@@ -215,7 +215,7 @@ public class RunQueryRoute extends RunsRoute {
         return runs;
     }
 
-	private List<IRasSearchCriteria> getCriteria(RasQueryParameters queryParams) throws InternalServletException {
+	private List<IRasSearchCriteria> getCriteria(RasQueryParameters queryParams) throws InternalServletException, ResultArchiveStoreException {
 
 		String requestor = queryParams.getRequestor();
 		String testName = queryParams.getTestName();
@@ -246,7 +246,8 @@ public class RunQueryRoute extends RunsRoute {
 			critList.add(toCriteria);
 		}
 		if (requestor != null && !requestor.isEmpty()) {
-			RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(requestor);
+			String matchedRequestor = findMatchingRequestor(requestor);
+			RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(matchedRequestor);
 			critList.add(requestorCriteria);
 		}
 		if (testName != null && !testName.isEmpty()) {
@@ -310,6 +311,23 @@ public class RunQueryRoute extends RunsRoute {
             throw new InternalServletException(error, HttpServletResponse.SC_BAD_REQUEST, e);
         }
         return gson.toJson(runsPage);
+	}
+
+	private String findMatchingRequestor(String requestor) throws ResultArchiveStoreException, InternalServletException {
+		String matchedRequestor = null;
+
+		// Get all requestors in the service
+		List<String> requestorsList = getRequestors();
+		if (requestorsList != null && !requestorsList.isEmpty()) {
+			for (String req : requestorsList) {
+				if (req.equalsIgnoreCase(requestor)) {
+					matchedRequestor = req;
+					break;
+				}
+			}
+		}
+
+		return matchedRequestor;
 	}
 
 	private String buildResponseBody(RasRunResultPage runsPage, int pageSize, boolean isMethodDetailsExcluded) throws ResultArchiveStoreException {
