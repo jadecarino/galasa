@@ -27,7 +27,7 @@ public class RasSearchCriteriaRequestor implements IRasSearchCriteria {
 		
 		if(requestors != null) {
 			for(String requestor : requestors) {
-				if(requestor.equals(structure.getRequestor())){
+				if(requestor.equalsIgnoreCase(structure.getRequestor())){
 					return Boolean.TRUE;
 				}
 			}
