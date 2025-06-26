@@ -155,21 +155,37 @@ public class RunQueryRoute extends RunsRoute {
 			if (runIds != null && runIds.size() > 0) {
 				runs = getRunsByIds(runIds, isMethodDetailsExcluded);
 			} else {
-				List<IRasSearchCriteria> criteria = getCriteria(queryParams);
 
-				// Story https://github.com/galasa-dev/projectmanagement/issues/1978 will
-				// replace the old
-				// page-based pagination with the new cursor-based pagination
-				if (includeCursor || pageCursor != null) {
-					String runName = queryParams.getRunName();
-					if (runName != null) {
-						runsPage = new RasRunResultPage(getRunsByRunName(runName));
-					} else {
-						runsPage = getRunsPage(pageCursor, pageSize, formatSortField(sortValue), criteria);
+				String requestor  = queryParams.getRequestor();
+				String matchedRequestor = null;
+
+				if (requestor != null && !requestor.isEmpty()) {
+					matchedRequestor = findMatchingRequestor(requestor);
+
+					// We weren't able to match against a known requestor, so there should be no runs
+					// for the given requestor
+					if (matchedRequestor == null) {
+						runsPage = new RasRunResultPage(new ArrayList<>());
 					}
-				} else {
-					runs = getRuns(criteria, isMethodDetailsExcluded);
 				}
+
+				if (runsPage == null) {
+					List<IRasSearchCriteria> criteria = getCriteria(queryParams, matchedRequestor);
+
+					// Story https://github.com/galasa-dev/projectmanagement/issues/1978 will
+					// replace the old page-based pagination with the new cursor-based pagination
+					if (includeCursor || pageCursor != null) {
+						String runName = queryParams.getRunName();
+						if (runName != null) {
+							runsPage = new RasRunResultPage(getRunsByRunName(runName));
+						} else {
+							runsPage = getRunsPage(pageCursor, pageSize, formatSortField(sortValue), criteria);
+						}
+					} else {
+						runs = getRuns(criteria, isMethodDetailsExcluded);
+					}
+				}
+
 			}
 
 			if (runsPage == null) {
@@ -224,9 +240,8 @@ public class RunQueryRoute extends RunsRoute {
 		return runs;
 	}
 
-	private List<IRasSearchCriteria> getCriteria(RasQueryParameters queryParams) throws InternalServletException {
+	private List<IRasSearchCriteria> getCriteria(RasQueryParameters queryParams, String matchedRequestor) throws InternalServletException {
 
-		String requestor = queryParams.getRequestor();
 		String testName = queryParams.getTestName();
 		String bundle = queryParams.getBundle();
 		List<String> result = queryParams.getResultsFromParameters(getResultNames());
@@ -254,12 +269,9 @@ public class RunQueryRoute extends RunsRoute {
 			RasSearchCriteriaQueuedTo toCriteria = new RasSearchCriteriaQueuedTo(to);
 			critList.add(toCriteria);
 		}
-		if (requestor != null && !requestor.isEmpty()) {
-			String matchedRequestor = findMatchingRequestor(requestor);
-			if (matchedRequestor != null) {
-				RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(matchedRequestor);
-				critList.add(requestorCriteria);
-			}
+		if (matchedRequestor != null && !matchedRequestor.isEmpty()) {
+			RasSearchCriteriaRequestor requestorCriteria = new RasSearchCriteriaRequestor(matchedRequestor);
+			critList.add(requestorCriteria);
 		}
 		if (testName != null && !testName.isEmpty()) {
 			RasSearchCriteriaTestName testNameCriteria = new RasSearchCriteriaTestName(testName);
@@ -273,7 +285,7 @@ public class RunQueryRoute extends RunsRoute {
 			RasSearchCriteriaResult resultCriteria = new RasSearchCriteriaResult(result.toArray(new String[0]));
 			critList.add(resultCriteria);
 		}
-		if (statuses != null && !statuses.isEmpty()) {
+		if (statuses != null && !statuses.isEmpty()){
 			RasSearchCriteriaStatus statusCriteria = new RasSearchCriteriaStatus(statuses);
 			critList.add(statusCriteria);
 		}
