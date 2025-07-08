@@ -13,15 +13,20 @@
 #-----------------------------------------------------------------------------------------
 
 # Where is this script executing from ?
-BASEDIR=$(dirname "$0");pushd $BASEDIR 2>&1 >> /dev/null ;BASEDIR=$(pwd);popd 2>&1 >> /dev/null
-# echo "Running from directory ${BASEDIR}"
-export ORIGINAL_DIR=$(pwd)
-# cd "${BASEDIR}"
+BASEDIR=$(dirname "$0");
+pushd "$BASEDIR" >> /dev/null 2>&1  || (echo "Failed to pushd" ; exit 1)
+BASEDIR=$(pwd)
+popd >> /dev/null 2>&1 || (echo "Failed to popd" ; exit 1)
 
-cd "${BASEDIR}/.."
+# echo "Running from directory ${BASEDIR}"
+ORIGINAL_DIR=$(pwd)
+export ORIGINAL_DIR
+# cd "${BASEDIR}" || (error "Failed to change folder" ; exit 1)
+
+cd "${BASEDIR}/../.." || (error "Failed to change folder" ; exit 1)
 WORKSPACE_DIR=$(pwd)
 
-cd "${BASEDIR}/../.."
+cd "${BASEDIR}/../.." || (error "Failed to change folder" ; exit 1)
 REPO_ROOT=$(pwd)
 
 #-----------------------------------------------------------------------------------------
@@ -124,7 +129,7 @@ if [[ -z $GPG_PASSPHRASE ]]; then
 fi
 
 if [[ "${detectsecrets}" != "true" ]] && [[ "${detectsecrets}" != "false" ]]; then
-    error "--detectsecrets flag must be 'true' or 'false'. Was $detectesecrets"
+    error "--detectsecrets flag must be 'true' or 'false'. Was $detectsecrets"
     exit 1
 fi
 
@@ -133,17 +138,16 @@ fi
 #-----------------------------------------------------------------------------------------
 source_dir="."
 
-project=$(basename ${BASEDIR})
+project=$(basename "${BASEDIR}")
 h1 "Building ${project}"
 
 
 # Over-rode SOURCE_MAVEN if you want to build from a different maven repo...
 if [[ -z ${SOURCE_MAVEN} ]]; then
-    cd ~/.m2/repository
+    cd ~/.m2/repository || (error "Failed to change folder" ; exit 1)
     local_maven_repo_folder=$(pwd)
-    cd - 
+    cd - || (error "Failed to change folder" ; exit 1)
     export SOURCE_MAVEN="file://$local_maven_repo_folder"
-    # export SOURCE_MAVEN=https://development.galasa.dev/main/maven-repo/obr/
     info "SOURCE_MAVEN repo defaulting to ${SOURCE_MAVEN}."
     info "Set this environment variable if you want to over-ride this value."
 else
@@ -153,17 +157,18 @@ fi
 # Create a temporary dir.
 # Note: This bash 'spell' works in OSX and Linux.
 if [[ -z ${LOGS_DIR} ]]; then
-    export LOGS_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t "galasa-logs")
+    LOGS_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t "galasa-logs")
+    export LOGS_DIR
     info "Logs are stored in the ${LOGS_DIR} folder."
     info "Over-ride this setting using the LOGS_DIR environment variable."
 else
-    mkdir -p ${LOGS_DIR} 2>&1 > /dev/null # Don't show output. We don't care if it already existed.
+    mkdir -p "${LOGS_DIR}" > /dev/null 2>&1 # Don't show output. We don't care if it already existed.
     info "Logs are stored in the ${LOGS_DIR} folder."
     info "Over-ridden by caller using the LOGS_DIR variable."
 fi
 
 info "Using source code at ${source_dir}"
-cd ${BASEDIR}/${source_dir}
+cd "${BASEDIR}/${source_dir}" || (error "Failed to change folder" ; exit 1)
 if [[ "${DEBUG}" == "1" ]]; then
     OPTIONAL_DEBUG_FLAG="-debug"
 else
@@ -173,7 +178,7 @@ fi
 
 log_file=${LOGS_DIR}/${project}.txt
 info "Log will be placed at ${log_file}"
-date > ${log_file}
+date > "${log_file}"
 
 #------------------------------------------------------------------------------------
 function check_docker_installed {
@@ -189,8 +194,9 @@ function check_docker_installed {
 #------------------------------------------------------------------------------------
 function get_galasabld_binary_location {
     # What's the architecture-variable name of the build tool we want for this local build ?
-    export ARCHITECTURE=$(uname -m) # arm64 or amd64
-    if [ $ARCHITECTURE == "x86_64" ]; then
+    ARCHITECTURE=$(uname -m) # arm64 or amd64
+    export ARCHITECTURE
+    if [ "$ARCHITECTURE" == "x86_64" ]; then
         export ARCHITECTURE="amd64"
     fi
 
@@ -219,14 +225,14 @@ function get_galasabld_binary_location {
         info "Using the 'galasabld' tool which is on the PATH"
         GALASA_BUILD_TOOL_PATH=${GALASABLD_ON_PATH}
     else
-        GALASABLD_ON_PATH=$(which $GALASA_BUILD_TOOL_NAME)
+        GALASABLD_ON_PATH=$(which "$GALASA_BUILD_TOOL_NAME")
         rc=$?
         if [[ "${rc}" == "0" ]]; then
             info "Using the '$GALASA_BUILD_TOOL_NAME' tool which is on the PATH"
             GALASA_BUILD_TOOL_PATH=${GALASABLD_ON_PATH}
         else
             info "The galasa build tool 'galasabld' or '$GALASA_BUILD_TOOL_NAME' is not on the path."
-            export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
+            export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/modules/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
             if [[ ! -e ${GALASA_BUILD_TOOL_PATH} ]]; then
                 error "Cannot find the $GALASA_BUILD_TOOL_NAME tools on locally built workspace."
                 info "Try re-building the buildutils project"
@@ -241,17 +247,18 @@ function get_galasabld_binary_location {
 #------------------------------------------------------------------------------------
 function read_component_version {
     h2 "Getting the component version"
-    export component_version=$(cat release.yaml | grep "version" | head -1 | cut -f2 -d':' | xargs)
+    component_version=$(cat release.yaml | grep "version" | head -1 | cut -f2 -d':' | xargs)
+    export component_version
     success "Component version is $component_version"
 }
 
 #------------------------------------------------------------------------------------
 function download_dependencies {
     h2 "Downloading the dependencies to get release.yaml information"
-    cd ${BASEDIR}/dependency-download
+    cd "${BASEDIR}/dependency-download" || (error "Failed to change folder" ; exit 1)
 
     gradle getDeps \
-        -Dgalasa.source.repo=${SOURCE_MAVEN} \
+        "-Dgalasa.source.repo=${SOURCE_MAVEN}" \
         -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/
     rc=$?
     if [[ "${rc}" != "0" ]]; then
@@ -268,15 +275,15 @@ function check_dependencies_present {
     export framework_manifest_path=${BASEDIR}/dependency-download/build/dependencies/dev.galasa.framework.manifest.yaml
     export managers_manifest_path=${BASEDIR}/dependency-download/build/dependencies/dev.galasa.managers.manifest.yaml
     export extensions_manifest_path=${BASEDIR}/dependency-download/build/dependencies/dev.galasa.extensions.manifest.yaml
-    # export framework_manifest_path=${WORKSPACE_DIR}/framework/release.yaml
-    # export managers_manifest_path=${WORKSPACE_DIR}/managers/release.yaml
+    # export framework_manifest_path=${WORKSPACE_DIR}/modules/framework/release.yaml
+    # export managers_manifest_path=${WORKSPACE_DIR}/modules/managers/release.yaml
 
     declare -a required_files=(
-    ${WORKSPACE_DIR}/${project}/dev.galasa.uber.obr/pom.template
-    ${framework_manifest_path}
-    ${extensions_manifest_path}
-    ${managers_manifest_path}
-    ${WORKSPACE_DIR}/obr/release.yaml
+    "${WORKSPACE_DIR}/modules/${project}/dev.galasa.uber.obr/pom.template"
+    "${framework_manifest_path}"
+    "${extensions_manifest_path}"
+    "${managers_manifest_path}"
+    "${WORKSPACE_DIR}/modules/obr/release.yaml"
     )
     for required_file in "${required_files[@]}"
     do
@@ -294,24 +301,24 @@ function check_dependencies_present {
 function construct_bom_pom_xml {
     h2 "Generating a bom pom.xml from a template, using all the versions of everything..."
 
-    cd ${WORKSPACE_DIR}/${project}/galasa-bom
+    cd "${WORKSPACE_DIR}/modules/${project}/galasa-bom" || (error "Failed to change folder" ; exit 1)
 
 
     # Check local build version
-    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
+    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/modules/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
     info "Using galasabld tool ${GALASA_BUILD_TOOL_PATH}"
 
     cmd="${GALASA_BUILD_TOOL_PATH} template \
     --releaseMetadata ${framework_manifest_path} \
     --releaseMetadata ${extensions_manifest_path} \
     --releaseMetadata ${managers_manifest_path} \
-    --releaseMetadata ${WORKSPACE_DIR}/obr/release.yaml \
+    --releaseMetadata ${WORKSPACE_DIR}/modules/obr/release.yaml \
     --template pom.template \
     --output pom.xml \
     --bom \
     "
-    echo "Command is $cmd" >> ${log_file}
-    $cmd 2>&1 >> ${log_file}
+    echo "Command is $cmd" >> "${log_file}"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$?
     if [[ "${rc}" != "0" ]]; then
@@ -325,23 +332,23 @@ function construct_bom_pom_xml {
 function construct_uber_obr_pom_xml {
     h2 "Generating a pom.xml from a template, using all the versions of everything..."
 
-    cd ${WORKSPACE_DIR}/${project}/dev.galasa.uber.obr
+    cd "${WORKSPACE_DIR}/modules/${project}/dev.galasa.uber.obr" || (error "Failed to change folder" ; exit 1)
 
     # Check local build version
-    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
+    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/modules/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
     info "Using galasabld tool ${GALASA_BUILD_TOOL_PATH}"
 
     cmd="${GALASA_BUILD_TOOL_PATH} template \
     --releaseMetadata ${framework_manifest_path} \
     --releaseMetadata ${extensions_manifest_path} \
     --releaseMetadata ${managers_manifest_path} \
-    --releaseMetadata ${WORKSPACE_DIR}/obr/release.yaml \
+    --releaseMetadata ${WORKSPACE_DIR}/modules/obr/release.yaml \
     --template pom.template \
     --output pom.xml \
     --obr \
     "
-    echo "Command is $cmd" >> ${log_file}
-    $cmd 2>&1 >> ${log_file}
+    echo "Command is $cmd" >> "${log_file}"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$?
     if [[ "${rc}" != "0" ]]; then
@@ -355,23 +362,23 @@ function construct_uber_obr_pom_xml {
 function construct_obr_generic_pom_xml {
     h2 "Generating a pom.xml from the OBR generic template, using all the versions of everything..."
 
-    cd ${WORKSPACE_DIR}/${project}/obr-generic
+    cd "${WORKSPACE_DIR}/modules/${project}/obr-generic" || (error "Failed to change folder" ; exit 1)
 
     # Check local build version
-    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
+    export GALASA_BUILD_TOOL_PATH=${WORKSPACE_DIR}/modules/buildutils/bin/${GALASA_BUILD_TOOL_NAME}
     info "Using galasabld tool ${GALASA_BUILD_TOOL_PATH}"
 
     cmd="${GALASA_BUILD_TOOL_PATH} template \
     --releaseMetadata ${framework_manifest_path} \
     --releaseMetadata ${extensions_manifest_path} \
     --releaseMetadata ${managers_manifest_path} \
-    --releaseMetadata ${WORKSPACE_DIR}/obr/release.yaml \
+    --releaseMetadata ${WORKSPACE_DIR}/modules/obr/release.yaml \
     --template pom.template \
     --output pom.xml \
     --obr \
     "
-    echo "Command is $cmd" >> ${log_file}
-    $cmd 2>&1 >> ${log_file}
+    echo "Command is $cmd" >> "${log_file}"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$?
     if [[ "${rc}" != "0" ]]; then
@@ -384,7 +391,7 @@ function construct_obr_generic_pom_xml {
 #------------------------------------------------------------------------------------
 function check_developer_attribution_present {
     h2 "Checking that pom has developer attribution."
-    cat ${BASEDIR}/galasa-bom/pom.template | grep "<developers>" >> /dev/null
+    cat "${BASEDIR}/galasa-bom/pom.template" | grep "<developers>" >> /dev/null
     rc=$?
     if [[ "${rc}" != "0" ]]; then
         error "The pom.template must have developer attribution inside. \
@@ -397,14 +404,17 @@ function check_developer_attribution_present {
 
 #------------------------------------------------------------------------------------
 function build_generated_bom_pom {
-    h2 "Building the generated pom.xml to package-up things into an OBR we can publish..."
-    cd ${BASEDIR}/galasa-bom
+    h2 "build_generated_bom_pom: Building the generated pom.xml to package-up things into an OBR we can publish..."
+    cd "${BASEDIR}/galasa-bom" || (error "Failed to change folder" ; exit 1)
 
-    mvn \
+    cmd="mvn install \
     -Dgpg.passphrase=${GPG_PASSPHRASE} \
     -Dgalasa.source.repo=${SOURCE_MAVEN} \
-    -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ install \
-    2>&1 >> ${log_file}
+    -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+    --settings ${WORKSPACE_DIR}/modules/obr/settings.xml"
+    info "current directory is $(pwd)"
+    info "Command is $cmd"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$? ; if [[ "${rc}" != "0" ]]; then
         error "Failed to push built obr into maven repo ${project}. log file is ${log_file}"
@@ -415,14 +425,17 @@ function build_generated_bom_pom {
 
 #------------------------------------------------------------------------------------
 function build_generated_uber_obr_pom {
-    h2 "Building the generated pom.xml to package-up things into an OBR we can publish..."
-    cd ${BASEDIR}/dev.galasa.uber.obr
+    h2 "build_generated_uber_obr_pom: Building the generated pom.xml to package-up things into an OBR we can publish..."
+    cd "${BASEDIR}/dev.galasa.uber.obr" || (error "Failed to change folder" ; exit 1)
 
-    mvn \
+    cmd="mvn install \
     -Dgpg.passphrase=${GPG_PASSPHRASE} \
     -Dgalasa.source.repo=${SOURCE_MAVEN} \
-    -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ install \
-    2>&1 >> ${log_file}
+    -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
+    --settings ${WORKSPACE_DIR}/modules/obr/settings.xml"
+    info "current directory is $(pwd)"
+    info "Command is $cmd"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$? ; if [[ "${rc}" != "0" ]]; then
         error "Failed to push built obr into maven repo ${project}. log file is ${log_file}"
@@ -434,14 +447,16 @@ function build_generated_uber_obr_pom {
 #------------------------------------------------------------------------------------
 function build_generated_obr_generic_pom {
     h2 "Building the generated OBR generic pom.xml..."
-    cd ${BASEDIR}/obr-generic
+    cd "${BASEDIR}/obr-generic" || (error "Failed to change folder" ; exit 1)
 
-    mvn install \
+    cmd="mvn install \
     -Dgpg.passphrase=${GPG_PASSPHRASE} \
     -Dgalasa.source.repo=${SOURCE_MAVEN} \
     -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
     dev.galasa:galasa-maven-plugin:$component_version:obrembedded \
-    2>&1 >> ${log_file}
+    --settings ${WORKSPACE_DIR}/modules/obr/settings.xml"
+    info "Command is $cmd"
+    $cmd >> "${log_file}" 2>&1 
 
     rc=$?; if [[ "${rc}" != "0" ]]; then
         error "Failed to push OBR generic build into maven repo ${project}. log file is ${log_file}"
@@ -454,45 +469,61 @@ function build_generated_obr_generic_pom {
 function generate_javadoc_pom_xml {
     h2 "Generate a pom.xml we can use with the javadoc"
     #------------------------------------------------------------------------------------
-    cd ${WORKSPACE_DIR}/obr/javadocs
+    cd "${WORKSPACE_DIR}/modules/obr/javadocs" || (error "Failed to change folder" ; exit 1)
 
     ${GALASA_BUILD_TOOL_PATH} template \
-    --releaseMetadata ${framework_manifest_path} \
-    --releaseMetadata ${extensions_manifest_path} \
-    --releaseMetadata ${managers_manifest_path} \
-    --releaseMetadata ${WORKSPACE_DIR}/obr/release.yaml \
+    --releaseMetadata "${framework_manifest_path}" \
+    --releaseMetadata "${extensions_manifest_path}" \
+    --releaseMetadata "${managers_manifest_path}" \
+    --releaseMetadata "${WORKSPACE_DIR}/modules/obr/release.yaml" \
     --template pom.template \
     --output pom.xml \
     --javadoc
 
     rc=$? ; if [[ "${rc}" != "0" ]]; then error "Failed to create the pom.xml for javadoc" ;  exit 1 ; fi
-    success "OK - pom.xml file created at ${WORKSPACE_DIR}/obr/javadocs/pom.xml"
+    success "OK - pom.xml file created at ${WORKSPACE_DIR}/modules/obr/javadocs/pom.xml"
 }
 
 #------------------------------------------------------------------------------------
 function build_javadoc_pom {
     h2 "Building the javadoc with maven"
-    cd ${WORKSPACE_DIR}/obr/javadocs
-    mvn clean install \
-    --settings ${WORKSPACE_DIR}/obr/settings.xml \
+    cd "${BASEDIR}/javadocs" || (error "Failed to change folder" ; exit 1)
+
+    info "Current directory is $(pwd)"
+
+    cmd="mvn verify \
+    --settings ${WORKSPACE_DIR}/modules/obr/settings.xml \
     --batch-mode \
     --errors \
     --fail-at-end \
     -Dgpg.skip=true \
     -Dgalasa.source.repo=${SOURCE_MAVEN} \
     -Dgalasa.central.repo=https://repo.maven.apache.org/maven2/ \
-    -Dmaven.javadoc.failOnError=true
-
+    -Dmaven.javadoc.failOnError=true"
+    info "Command is $cmd"
+    $cmd
     rc=$? ; if [[ "${rc}" != "0" ]]; then error "maven failed for javadoc build" ;  exit 1 ; fi
-
-    success "OK - Build the galasa-uber-javadoc-*.zip file:"
-    ls ${WORKSPACE_DIR}/obr/javadocs/target/*.zip
+    success "OK - Built the galasa-uber-javadoc-${component_version}.zip file"
+    
+    info "Creating a variant of the javadoc maven bundle which has no transitive dependencies"
+    info "source file is:"
+    ls "${BASEDIR}/javadocs/target/galasa-uber-javadoc-${component_version}.zip"
+    cd .. || (error "Failed to change folder" ; exit 1)
+    mvn deploy:deploy-file \
+    "-Durl=file://${HOME}/.m2/repository" \
+    -DgroupId=dev.galasa \
+    "-Dversion=${component_version}" \
+    -DartifactId=galasa-uber-javadoc \
+    -Dpackaging=zip \
+    "-Dfile=${BASEDIR}/javadocs/target/galasa-uber-javadoc-${component_version}.zip"
+    rc=$? ; if [[ "${rc}" != "0" ]]; then error "Failed to publish galasa-uber-javadoc to maven repo" ;  exit 1 ; fi
+    success "OK - published the artifact with no transitive dependencies"
 }
 
 #------------------------------------------------------------------------------------
 function check_secrets {
     h2 "updating secrets baseline"
-    cd ${BASEDIR}
+    cd "${BASEDIR}" || (error "Failed to change folder" ; exit 1)
     detect-secrets scan --update .secrets.baseline
     rc=$? 
     check_exit_code $rc "Failed to run detect-secrets. Please check it is installed properly" 
@@ -531,9 +562,7 @@ function check_secrets_unless_supressed() {
         info "Script invoked directly, running detect-secrets.sh script"
 
         # Run the detect-secrets.sh in root
-        cd "${WORKSPACE_DIR}/.."
-        TOOL_DIR=$(pwd)
-        $TOOL_DIR/tools/detect-secrets.sh
+        "$WORKSPACE_DIR/tools/detect-secrets.sh"
     fi
 }
 
@@ -545,7 +574,7 @@ function build_boot_embedded_docker_image {
     docker build -f "${BASEDIR}/dockerfiles/dockerfile.bootembedded" \
     -t galasa-boot-embedded:latest \
     --build-arg jdkImage="${JDK_IMAGE}" \
-    ${BASEDIR}
+    "${BASEDIR}"
 
     rc=$?
     check_exit_code ${rc} "Failed to build the OBR boot embedded Docker image."
@@ -556,7 +585,7 @@ function build_boot_embedded_docker_image {
 # #------------------------------------------------------------------------------------
 # h2 "Packaging the javadoc into a docker file"
 # #------------------------------------------------------------------------------------
-# cd ${WORKSPACE_DIR}/obr/javadocs
+# cd ${WORKSPACE_DIR}/modules/obr/javadocs || (error "Failed to change folder" ; exit 1)
 # docker --file ${WORKSPACE_DIR}/automation/dockerfiles/javadocs/javadocs-image-dockerfile .
 
 # rc=$? ; if [[ "${rc}" != "0" ]]; then error "Failed to create the docker image containing the javadoc" ;  exit 1 ; fi
@@ -579,7 +608,7 @@ generate_javadoc_pom_xml
 build_javadoc_pom
 
 if [[ "$detectsecrets" == "true" ]]; then
-    $REPO_ROOT/tools/detect-secrets.sh 
+    "$REPO_ROOT/tools/detect-secrets.sh"
     check_exit_code $? "Failed to detect secrets"
 fi
 

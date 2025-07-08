@@ -5,9 +5,11 @@
  */
 package dev.galasa.framework.api.runs.routes;
 
+import static dev.galasa.framework.spi.rbac.BuiltInAction.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -17,8 +19,19 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.junit.Test;
 
+import dev.galasa.framework.api.common.HttpMethod;
+import dev.galasa.framework.api.common.MimeType;
+import dev.galasa.framework.api.common.ResponseBuilder;
+import dev.galasa.framework.api.common.mocks.FilledMockEnvironment;
+import dev.galasa.framework.api.common.mocks.MockEnvironment;
+import dev.galasa.framework.api.common.mocks.MockFramework;
+import dev.galasa.framework.api.common.mocks.MockHttpServletRequest;
+import dev.galasa.framework.api.common.mocks.MockHttpServletResponse;
 import dev.galasa.framework.api.runs.RunsServletTest;
 import dev.galasa.framework.api.runs.mocks.MockRunsServlet;
+import dev.galasa.framework.mocks.FilledMockRBACService;
+import dev.galasa.framework.mocks.MockRBACService;
+import dev.galasa.framework.spi.rbac.Action;
 
 public class TestGroupRunsRoute extends RunsServletTest{
 
@@ -735,4 +748,149 @@ public class TestGroupRunsRoute extends RunsServletTest{
         assertThat(outStream.toString()).isEqualTo(expectedJson);
     }
 
+    @Test
+    public void testUpdateRunStatusByGroupIdWhenNoActiveRunsExistReturnsOK() throws Exception {
+        // Given...
+		String groupName = "8149dc91-dabc-461a-b9e8-6f11a4455f59";
+        String payload = generateStatusUpdateJson("cancelled");
+
+        setServlet("/"+groupName, groupName, payload, "PUT");
+		MockRunsServlet servlet = getServlet();
+		HttpServletRequest req = getRequest();
+		HttpServletResponse resp = getResponse();
+        ServletOutputStream outStream = resp.getOutputStream();
+
+        // When...
+        servlet.init();
+        servlet.doPut(req, resp);
+
+        // Then...
+        String expectedString = "Info: When trying to cancel the run group '8149dc91-dabc-461a-b9e8-6f11a4455f59', no recent active (unfinished) test runs were found which are part of that group. Archived test runs may be part of that group, which can be queried separately from the Result Archive Store.";
+        assertThat(resp.getStatus()).isEqualTo(200);
+        assertThat(outStream.toString()).isEqualTo(expectedString);
+    }
+
+    @Test
+    public void testUpdateRunStatusByGroupIdWithFewFinishedRunsReturnsAccepted() throws Exception {
+        // Given...
+		String groupName = "8149dc91-dabc-461a-b9e8-6f11a4455f59";
+        String payload = generateStatusUpdateJson("cancelled");
+        String submissionId = "submission1";
+        Set<String> tags = new HashSet<>();
+        addRun("name1", "type1", "requestor1", "test1", "BUILDING","bundle1", "testClass1", groupName, submissionId,tags);
+        addRun("name2", "type2", "requestor2", "test2", "BUILDING","bundle2", "testClass2", groupName, submissionId,tags);
+        addRun("name3", "type3", "requestor3", "test3", "FINISHED","bundle3", "testClass3", groupName, submissionId,tags);
+        addRun("name4", "type4", "requestor4", "test4", "UP","bundle4", "testClass4", groupName, submissionId,tags);
+        addRun("name5", "type6", "requestor5", "test5", "DISCARDED","bundle5", "testClass6", groupName, submissionId,tags);
+        addRun("name6", "type6", "requestor6", "test6", "FINISHED","bundle6", "testClass6", groupName, submissionId,tags);
+        addRun("name7", "type7", "requestor7", "test7", "FINISHED","bundle7", "testClass7", groupName, submissionId,tags);
+        addRun("name8", "type8", "requestor8", "test8", "BUILDING","bundle8", "testClass8", groupName, submissionId,tags);
+        addRun("name9", "type9", "requestor9", "test9", "BUILDING","bundle9", "testClass9", groupName, submissionId,tags);
+        addRun("name10", "type10", "requestor10", "test10", "BUILDING","bundle10", "testClass10", groupName, submissionId,tags);
+
+        setServlet("/" + groupName, groupName, payload, "PUT", this.runs);
+		MockRunsServlet servlet = getServlet();
+		HttpServletRequest req = getRequest();
+		HttpServletResponse resp = getResponse();
+        ServletOutputStream outStream = resp.getOutputStream();
+
+        // When...
+        servlet.init();
+        servlet.doPut(req, resp);
+
+        // Then...
+        String expectedString = "The request to cancel run with group id '8149dc91-dabc-461a-b9e8-6f11a4455f59' has been received.";
+        assertThat(resp.getStatus()).isEqualTo(202);
+        assertThat(outStream.toString()).isEqualTo(expectedString);
+    }
+
+    @Test
+    public void testUpdateRunStatusByGroupIdWithAllActiveRunsReturnsAccepted() throws Exception {
+        // Given...
+		String groupName = "8149dc91-dabc-461a-b9e8-6f11a4455f59";
+        String payload = generateStatusUpdateJson("cancelled");
+        String submissionId = "submission1";
+        Set<String> tags = new HashSet<>();
+        addRun("name1", "type1", "requestor1", "test1", "BUILDING","bundle1", "testClass1", groupName, submissionId,tags);
+        addRun("name2", "type2", "requestor2", "test2", "BUILDING","bundle2", "testClass2", groupName, submissionId,tags);
+        addRun("name3", "type3", "requestor3", "test3", "BUILDING","bundle3", "testClass3", groupName, submissionId,tags);
+        addRun("name4", "type4", "requestor4", "test4", "BUILDING","bundle4", "testClass4", groupName, submissionId,tags);
+        addRun("name5", "type6", "requestor5", "test5", "BUILDING","bundle5", "testClass6", groupName, submissionId,tags);
+        addRun("name6", "type6", "requestor6", "test6", "BUILDING","bundle6", "testClass6", groupName, submissionId,tags);
+        addRun("name7", "type7", "requestor7", "test7", "BUILDING","bundle7", "testClass7", groupName, submissionId,tags);
+        addRun("name8", "type8", "requestor8", "test8", "BUILDING","bundle8", "testClass8", groupName, submissionId,tags);
+        addRun("name9", "type9", "requestor9", "test9", "BUILDING","bundle9", "testClass9", groupName, submissionId,tags);
+        addRun("name10", "type10", "requestor10", "test10", "BUILDING","bundle10", "testClass10", groupName, submissionId,tags);
+
+        setServlet("/" + groupName, groupName, payload, "PUT", this.runs);
+		MockRunsServlet servlet = getServlet();
+		HttpServletRequest req = getRequest();
+		HttpServletResponse resp = getResponse();
+        ServletOutputStream outStream = resp.getOutputStream();
+
+        // When...
+        servlet.init();
+        servlet.doPut(req, resp);
+
+        // Then...
+        String expectedString = "The request to cancel run with group id '8149dc91-dabc-461a-b9e8-6f11a4455f59' has been received.";
+        assertThat(resp.getStatus()).isEqualTo(202);
+        assertThat(outStream.toString()).isEqualTo(expectedString);
+    }
+
+    @Test
+    public void testUpdateRunStatusByGroupIdWithInvalidRequestReturnsBadRequest() throws Exception {
+        // Given...
+		String groupName = "8149dc91-dabc-461a-b9e8-6f11a4455f59";
+        String payload = generateStatusUpdateJson("some-fake-status");
+
+        setServlet("/" + groupName, groupName, payload, "PUT");
+		MockRunsServlet servlet = getServlet();
+		HttpServletRequest req = getRequest();
+		HttpServletResponse resp = getResponse();
+        ServletOutputStream outStream = resp.getOutputStream();
+
+        // When...
+        servlet.init();
+        servlet.doPut(req, resp);
+
+        // Then...
+        assertThat(resp.getStatus()).isEqualTo(400);
+        checkErrorStructure(outStream.toString(),5431, "Error occurred. The field 'result' in the request body is invalid");
+    }
+
+    @Test
+    public void testLaunchTestWithMissingPermissionsReturnsForbidden() throws Exception {
+        // Given...
+		String groupName = "valid";
+        String[] classes = new String[]{"Class/name"};
+        String submissionId = "submission1";
+        Set<String> tags = new HashSet<>();
+        String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, "testRequestor", submissionId, tags);
+
+        // Set up permissions without the TEST_RUN_LAUNCH action
+        List<Action> permittedActions = List.of(GENERAL_API_ACCESS.getAction());
+        MockRBACService mockRbacService = FilledMockRBACService.createTestRBACServiceWithTestUser(JWT_USERNAME, permittedActions);
+
+        MockFramework mockFramework = new MockFramework();
+        mockFramework.setRBACService(mockRbacService);
+
+        MockEnvironment mockEnv = FilledMockEnvironment.createTestEnvironment();
+        MockRunsServlet servlet = new MockRunsServlet(mockEnv);
+        servlet.setResponseBuilder(new ResponseBuilder(mockEnv));
+        servlet.setFramework(mockFramework);
+
+		HttpServletRequest req = new MockHttpServletRequest("/"+groupName, payload, HttpMethod.POST.toString(), REQUIRED_HEADERS);
+		HttpServletResponse resp = new MockHttpServletResponse();
+        ServletOutputStream outStream = resp.getOutputStream();
+
+        // When...
+        servlet.init();
+        servlet.doPost(req, resp);
+
+        // Then...
+        assertThat(resp.getStatus()).isEqualTo(403);
+        assertThat(resp.getContentType()).isEqualTo(MimeType.APPLICATION_JSON.toString());
+        checkErrorStructure(outStream.toString(), 5125, "GAL5125E", "TEST_RUN_LAUNCH");
+    }
 }

@@ -11,6 +11,7 @@ import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class RasSearchCriteriaSubmissionId implements IRasSearchCriteria {
 
+	private static final String CRITERIA_NAME = "submissionId";
 	private final String[] submissionIds;
 
 	public RasSearchCriteriaSubmissionId(@NotNull String... submissionIdCriteria) {
@@ -36,4 +37,14 @@ public class RasSearchCriteriaSubmissionId implements IRasSearchCriteria {
     public String[] getSubmissionIds() {
         return this.submissionIds;
     }
+
+	@Override
+	public String getCriteriaName() {
+		return CRITERIA_NAME;
+	}
+
+	@Override
+	public String[] getCriteriaContent() {
+		return this.submissionIds;
+	}
 }

@@ -47,7 +47,31 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: platform
-          path: modules/artifacts
+          path: /home/runner/.m2/repository
+
+      - name: Download wrapping artifacts from this workflow
+        id: download-wrapping
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: wrapping
+          path: /home/runner/.m2/repository
+
+      - name: Download gradle artifacts from this workflow
+        id: download-gradle
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: gradle
+          path: /home/runner/.m2/repository
+
+      - name: Download maven artifacts from this workflow
+        id: download-maven
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: maven
+          path: /home/runner/.m2/repository
 
       - name: Download framework artifacts from this workflow
         id: download-framework
@@ -55,7 +79,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: framework
-          path: modules/artifacts
+          path: /home/runner/.m2/repository
+
+      - name: Download managers artifacts from this workflow
+        id: download-managers
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: managers
+          path: /home/runner/.m2/repository
 
       - name: Download obr artifacts from this workflow
         id: download-obr
@@ -63,7 +95,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: obr
-          path: modules/artifacts
+          path: /home/runner/.m2/repository
 
 
       # Pull down dependencies with Gradle and put them in the right places.
@@ -73,7 +105,7 @@ jobs:
           set -o pipefail
           gradle -b build.gradle installJarsIntoTemplates --info \
           --no-daemon --console plain \
-          -PsourceMaven=${{ github.workspace }}/modules/artifacts \
+          -PsourceMaven=/home/runner/.m2/repository \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
           -PtargetMaven=${{ github.workspace }}/repo 2>&1 | tee build.log
 
@@ -130,6 +162,31 @@ jobs:
         working-directory: ./modules/cli
         run : |
           make all
+
+      # Generate the CLI syntax markdown documentation into a zip, published to maven
+      - name: Package and publish the CLI syntax documentation
+        working-directory: ./modules/cli
+        run : |
+          set -o pipefail
+          gradle -b build.gradle publish --info --warning-mode all \
+          --no-daemon --console plain \
+          -PsourceMaven=/home/runner/.m2/repository \
+          -PcentralMaven=https://repo.maven.apache.org/maven2/ \
+          -PtargetMaven=${{ github.workspace }}/modules/cli/repo 2>&1 | tee build-docs.log    
+
+      - name: Upload CLI docs build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-docs-gradle-build-log
+          path: modules/cli/build-docs.log
+          retention-days: 7
+
+      - name: Upload cli docs built artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli
+          path: modules/cli/repo
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -255,7 +312,8 @@ jobs:
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm \
           ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-cli restart \
-          --kind Deployment --resource-name cli-${{ env.BRANCH }} --server argocd.galasa.dev
+          --kind Deployment --resource-name cli-${{ env.BRANCH }} --server argocd.galasa.dev \
+          --grpc-web
        
       - name: Wait for application health in ArgoCD
         # Skip this step for forks
@@ -265,7 +323,8 @@ jobs:
         run: |
           docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm \
           ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-cli \
-          --resource apps:Deployment:cli-${{ env.BRANCH }} --health --server argocd.galasa.dev
+          --resource apps:Deployment:cli-${{ env.BRANCH }} --health --server argocd.galasa.dev \
+          --grpc-web
 
   trigger-next-workflow:
     # Skip this job for forks

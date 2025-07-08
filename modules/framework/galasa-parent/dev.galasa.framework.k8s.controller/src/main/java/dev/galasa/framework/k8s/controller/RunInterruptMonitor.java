@@ -35,36 +35,42 @@ public class RunInterruptMonitor implements Runnable {
     private final IFrameworkRuns runs;
     private final KubernetesEngineFacade kubeApi;
     private final Queue<RunInterruptEvent> eventQueue;
+    private final ISettings settings ;
 
-    public RunInterruptMonitor(KubernetesEngineFacade kubeApi, IFrameworkRuns runs, Queue<RunInterruptEvent> eventQueue) {
+    public RunInterruptMonitor(KubernetesEngineFacade kubeApi, IFrameworkRuns runs, Queue<RunInterruptEvent> eventQueue, ISettings settings) {
         this.runs = runs;
         this.kubeApi = kubeApi;
         this.eventQueue = eventQueue;
+        this.settings = settings ;
     }
 
     @Override
     public void run() {
-        logger.info("Starting scan for interrupted runs");
-
-        try {
-            List<RunInterruptEvent> interruptedRunEvents = getInterruptedRunEvents();
-
-            List<String> interruptedRunNames = getInterruptedRunNames(interruptedRunEvents);
-
-            deletePodsForInterruptedRuns(interruptedRunNames);
-
-            // Add the interrupt events to set the DSS entries of the interrupted
-            // runs to finished and complete all deferred RAS actions
-            eventQueue.addAll(interruptedRunEvents);
-
-            logger.info("Finished scanning for interrupted runs");
-        } catch (Exception e) {
-            logger.error("Problem with interrupted run scan", e);
+        if (!kubeApi.isEtcdAndRasReady()) {
+            logger.warn("etcd or RAS pods are not ready, waiting for them to be ready before scanning for interrupted runs");
+        } else {
+            logger.info("Starting scan for interrupted runs");
+    
+            try {
+                List<RunInterruptEvent> interruptedRunEvents = getInterruptedRunEvents();
+    
+                List<String> interruptedRunNames = getInterruptedRunNames(interruptedRunEvents);
+    
+                deletePodsForInterruptedRuns(interruptedRunNames);
+    
+                // Add the interrupt events to set the DSS entries of the interrupted
+                // runs to finished and complete all deferred RAS actions
+                eventQueue.addAll(interruptedRunEvents);
+    
+                logger.info("Finished scanning for interrupted runs");
+            } catch (Exception e) {
+                logger.error("Problem with interrupted run scan", e);
+            }
         }
     }
 
     private void deletePodsForInterruptedRuns(List<String> interruptedRunNames) throws K8sControllerException {
-        List<V1Pod> podsToDelete = getPodsForInterruptedRuns(kubeApi.getPods(), interruptedRunNames);
+        List<V1Pod> podsToDelete = getPodsForInterruptedRuns(kubeApi.getTestPods(settings.getEngineLabel()), interruptedRunNames);
         for (V1Pod pod : podsToDelete) {
             String podName = pod.getMetadata().getName();
             logger.info("Deleting pod " + podName + " as the run has been interrupted");

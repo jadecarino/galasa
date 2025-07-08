@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/galasa-dev/cli/pkg/api"
@@ -18,15 +19,19 @@ import (
 )
 
 type RunsQuery struct {
-    pageCursor string
-    runName string
-    requestor string
-    result string
-    group string
-    fromTime time.Time
-    toTime time.Time
-    shouldGetActive bool
+    pageCursor             string
+    runName                string
+    requestor              string
+    result                 string
+    group                  string
+    fromTime               time.Time
+    toTime                 time.Time
+    shouldGetActive        bool
+	isNeedingMethodDetails bool
+    tags                   []string
 }
+
+const METHOD_DETAIL_QUERY_PARAM = "methods"
 
 func NewRunsQuery(
     runName string,
@@ -36,6 +41,8 @@ func NewRunsQuery(
     fromAgeMins int,
     toAgeMins int,
     shouldGetActive bool,
+	isNeedingMethodDetails bool,
+    tags []string,
     now time.Time,
 ) *RunsQuery {
     runsQuery := &RunsQuery{
@@ -44,29 +51,31 @@ func NewRunsQuery(
         result: result,
         group: group,
         shouldGetActive: shouldGetActive,
+		isNeedingMethodDetails: isNeedingMethodDetails,
+        tags: tags,
     }
 
-    if fromAgeMins != 0 {
-        runsQuery.fromTime = now.Add(-(time.Duration(fromAgeMins) * time.Minute)).UTC() // Add a minus, so subtract
-    }
+	if fromAgeMins != 0 {
+		runsQuery.fromTime = now.Add(-(time.Duration(fromAgeMins) * time.Minute)).UTC() // Add a minus, so subtract
+	}
 
-    if toAgeMins != 0 {
-        runsQuery.toTime = now.Add(-(time.Duration(toAgeMins) * time.Minute)).UTC() // Add a minus, so subtract
-    }
+	if toAgeMins != 0 {
+		runsQuery.toTime = now.Add(-(time.Duration(toAgeMins) * time.Minute)).UTC() // Add a minus, so subtract
+	}
 
-    return runsQuery
+	return runsQuery
 }
 
 func (query *RunsQuery) SetPageCursor(newPageCursor string) {
-    query.pageCursor = newPageCursor
+	query.pageCursor = newPageCursor
 }
 
 func (query *RunsQuery) GetRunsPageFromRestApi(
-    commsClient api.APICommsClient,
-    restApiVersion string,
+	commsClient api.APICommsClient,
+	restApiVersion string,
 ) (*galasaapi.RunResults, error) {
-    var err error
-    var runData *galasaapi.RunResults
+	var err error
+	var runData *galasaapi.RunResults
 
     err = commsClient.RunAuthenticatedCommandWithRateLimitRetries(func(apiClient *galasaapi.APIClient) error {
         var err error
@@ -98,6 +107,13 @@ func (query *RunsQuery) GetRunsPageFromRestApi(
         if query.group != "" {
             apicall = apicall.Group(query.group)
         }
+		if query.isNeedingMethodDetails {
+			apicall = apicall.Detail(METHOD_DETAIL_QUERY_PARAM)
+		}
+        if len(query.tags) > 0 {
+            apicall = apicall.Tags(strings.Join(query.tags, ","))
+        }
+
         apicall = apicall.Sort("from:desc")
         runData, httpResponse, err = apicall.Execute()
     

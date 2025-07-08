@@ -56,6 +56,14 @@ public interface IResultArchiveStore {
     void writeLog(@NotNull List<String> messages) throws ResultArchiveStoreException;
 
     /**
+     * Retrieves the run log line count so far from the RAS so we can
+     * provide the run log start and end line numbers for each method
+     * of a test class, in the test structure.
+     * @return
+     */
+    long retrieveRunLogLineCount();
+
+    /**
      * Update the Test Structure object in the RASs with the current status
      * 
      * @param testStructure - The Test Structure

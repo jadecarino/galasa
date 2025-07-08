@@ -1,5 +1,5 @@
-# Galasa
-This is a home for all of the Galasa Java code.
+# Galasa 
+This is the main source code repository for the Galasa open source project.
 
 ## Code structure
 - [`modules`](./modules/) - The code
@@ -17,7 +17,7 @@ The `set-version.sh` script allows you to set the version of the Galasa througho
 
 Use the `--help` flag to see what options are supported.
 
-Basic usage: `set-version.sh --version 0.41.0`
+Basic usage: `set-version.sh --version 0.43.0`
 
 ## Using vscode
 When using vscode to develop this code, we recommend the following settings are added to your `settings.json` file:

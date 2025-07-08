@@ -113,6 +113,8 @@ public class NetworkThread extends Thread {
     private final ArrayList<String>  possibleDeviceTypes = new ArrayList<>();
     private String                   selectedDeviceType;
 
+    private String requestedDeviceName;
+
     private ByteArrayOutputStream    commandSoFar;
 
     private SSCPLUDataTransform sscpLuDataTransform;
@@ -127,6 +129,10 @@ public class NetworkThread extends Thread {
         this.inputStream = inputStream;
         this.terminal = terminal;
         this.sscpLuDataTransform = new SSCPLUDataTransform(screen);
+
+        if (terminal != null) {
+            this.requestedDeviceName = terminal.getRequestedDeviceName();
+        }
 
         if (deviceTypes == null || deviceTypes.isEmpty()) {
             this.possibleDeviceTypes.add("IBM-DYNAMIC");
@@ -177,66 +183,70 @@ public class NetworkThread extends Thread {
             return;
         }
 
+        this.telnetSessionStarted = true;  // must be started if receiving 3270
+        ByteBuffer buffer = readTerminatedMessage(header, messageStream);
+
         if (basicTelnetDatastream) {
-            this.telnetSessionStarted = true;  // must be started if receiving 3270
-
-            ByteBuffer buffer = readTerminatedMessage(header, messageStream);
-
-
             Inbound3270Message inbound3270Message = process3270Data(buffer);
             this.screen.processInboundMessage(inbound3270Message);
-            return;
         } else {
-            this.telnetSessionStarted = true;  // must be started if receiving 3270
-
-            ByteBuffer buffer = readTerminatedMessage(header, messageStream);
-
-            if (buffer.remaining() < 5) {
-                throw new NetworkException("Missing 5 bytes of the TN3270E datastream header");
-            }
-
-            byte tn3270eHeader = buffer.get();
-            if (tn3270eHeader == DT_BIND_IMAGE) {
-                logger.trace("BIND_IMAGE received");
-                logger.trace("Received message header: " + reportCommandSoFar());
-                logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
-                return;
-            }
-            if (tn3270eHeader == DT_UNBIND) {
-                logger.trace("UNBIND_IMAGE received");
-                logger.trace("Received message header: " + reportCommandSoFar());
-                logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
-                return;
-            }
-
-            // 3270 datastream headers consist of 5 bytes in the following format:
-            // -----------------------------------------------------------
-            //   DATA-TYPE | REQUEST-FLAG | RESPONSE-FLAG |  SEQ-NUMBER  
-            //    1 byte        1 byte         1 byte         2 bytes
-            // -----------------------------------------------------------
-            // This advances through the message buffer to skip the header bytes after DATA-TYPE.
-            buffer.get(new byte[4]);
-            
-            Inbound3270Message inbound3270Message = null;
-            if (tn3270eHeader == DT_SSCP_LU_DATA) {
-                logger.trace("SSCP_LU_DATA received");
-                logger.trace("Received message header: " + reportCommandSoFar());
-                logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
-
-                // Convert the SSCP-LU-DATA datastream into a 3270 message
-                // This makes the assumption that SSCP-LU-DATA datastreams are unformatted and do not
-                // contain any special command codes or orders that are in normal 3270 datastreams.
-                // The resulting 3270 message will only contain text and newline orders.
-                inbound3270Message = this.sscpLuDataTransform.processSSCPLUData(buffer);
-
-            } else if (tn3270eHeader == DT_3270_DATA) {
-                inbound3270Message = process3270Data(buffer);
-            } else {
-                throw new NetworkException("Was expecting a TN3270E datastream header of zeros - " + reportCommandSoFar());
-            }
-
-            this.screen.processInboundMessage(inbound3270Message);
+            processTn3270eDatastream(buffer);
         }
+    }
+
+    private void processTn3270eDatastream(ByteBuffer buffer) throws IOException, NetworkException {
+        if (buffer.remaining() < 5) {
+            throw new NetworkException("Missing 5 bytes of the TN3270E datastream header");
+        }
+
+        byte tn3270eHeader = buffer.get();
+        handleTn3270eHeader(tn3270eHeader, buffer);
+    }
+
+    private void handleTn3270eHeader(byte tn3270eHeader, ByteBuffer buffer) throws NetworkException {
+        if (tn3270eHeader == DT_BIND_IMAGE) {
+            logger.trace("BIND_IMAGE received");
+            logger.trace("Received message header: " + reportCommandSoFar());
+            logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
+            return;
+        }
+        if (tn3270eHeader == DT_UNBIND) {
+            logger.trace("UNBIND_IMAGE received");
+            logger.trace("Received message header: " + reportCommandSoFar());
+            logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
+            return;
+        }
+
+        // 3270 datastream headers consist of 5 bytes in the following format:
+        // -----------------------------------------------------------
+        //   DATA-TYPE | REQUEST-FLAG | RESPONSE-FLAG |  SEQ-NUMBER  
+        //    1 byte        1 byte         1 byte         2 bytes
+        // -----------------------------------------------------------
+        // This advances through the message buffer to skip the header bytes after DATA-TYPE.
+        buffer.get(new byte[4]);
+
+        boolean isSSCPLUDisplay = false;
+        Inbound3270Message inbound3270Message = null;
+        if (tn3270eHeader == DT_SSCP_LU_DATA) {
+            logger.trace("SSCP_LU_DATA received");
+            logger.trace("Received message header: " + reportCommandSoFar());
+            logger.trace("Received message buffer: " + Hex.encodeHexString(buffer.array()));
+            isSSCPLUDisplay = true;
+
+            // Convert the SSCP-LU-DATA datastream into a 3270 message
+            // This makes the assumption that SSCP-LU-DATA datastreams are unformatted and do not
+            // contain any special command codes or orders that are in normal 3270 datastreams.
+            // The resulting 3270 message will only contain text and newline orders.
+            inbound3270Message = this.sscpLuDataTransform.processSSCPLUData(buffer);
+
+        } else if (tn3270eHeader == DT_3270_DATA) {
+            inbound3270Message = process3270Data(buffer);
+        } else {
+            throw new NetworkException("Was expecting a TN3270E datastream header of zeros - " + reportCommandSoFar());
+        }
+
+        this.screen.setIsSSCPLUDisplay(isSSCPLUDisplay);
+        this.screen.processInboundMessage(inbound3270Message);
     }
 
     private void doIac(InputStream messageStream) throws NetworkException, IOException {
@@ -406,6 +416,14 @@ public class NetworkThread extends Thread {
 
         byte[] deviceType = this.selectedDeviceType.getBytes(ascii7);
 
+        // Build up a telnet device type request command, which takes the form:
+        // IAC SB TN3270E DEVICE-TYPE REQUEST <device-type>
+        //        [ [CONNECT <resource-name>] | [ASSOCIATE <device-name>] ] IAC SE
+        //
+        // This command is used in response to the server's SEND DEVICE-TYPE command, so that a 3270 client
+        // can ask to use a specific device type and device name to the server.
+        //
+        // See https://www.rfc-editor.org/rfc/rfc2355 for more details.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         baos.write(IAC);
         baos.write(SB);
@@ -413,6 +431,15 @@ public class NetworkThread extends Thread {
         baos.write(DEVICE_TYPE);
         baos.write(REQUEST);
         baos.write(deviceType);
+
+        // If a specific device name has been requested, add the CONNECT <device-name> option to the command
+        if (this.requestedDeviceName != null && !this.requestedDeviceName.isBlank()) {
+            logger.trace("Requesting TN3270E device name " + this.requestedDeviceName);
+            byte[] deviceNameBytes = this.requestedDeviceName.getBytes(ascii7);
+            baos.write(CONNECT);
+            baos.write(deviceNameBytes);
+        }
+
         baos.write(IAC);
         baos.write(SE);
 
@@ -906,7 +933,12 @@ public class NetworkThread extends Thread {
                         order = new OrderSetAttribute(buffer);
                         break;
                     case OrderModifyField.ID:
-                        order = new OrderModifyField(buffer);
+                        try {
+                            order = new OrderModifyField(buffer);
+                        } catch (DatastreamException e) {
+                            logger.trace("Failed to process MF order, processing as blank text instead", e);
+                            order = new OrderText(" ", codePage);
+                        }
                         break;
                     case OrderInsertCursor.ID:
                         order = new OrderInsertCursor();

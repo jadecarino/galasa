@@ -5,6 +5,7 @@
  */
 package dev.galasa.framework.api.runs;
 
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,8 +38,8 @@ import dev.galasa.framework.spi.utils.GalasaGson;
 
 public class RunsServletTest extends BaseServletTest {
 
+    public static final Map<String, String> REQUIRED_HEADERS = new HashMap<>(Map.of("Authorization", "Bearer " + DUMMY_JWT));
 	static final GalasaGson gson = new GalasaGson();
-    private static final Map<String, String> REQUIRED_HEADERS = new HashMap<>(Map.of("Authorization", "Bearer " + DUMMY_JWT));
 
 	MockRunsServlet servlet;
 	HttpServletRequest req;
@@ -69,6 +70,11 @@ public class RunsServletTest extends BaseServletTest {
 		this.req = new MockHttpServletRequest(path, value, method, REQUIRED_HEADERS);
 	}
 
+    protected void setServlet(String path, String groupName, String value, String method, List<IRun> runs){
+		setServlet(path, groupName, runs);
+		this.req = new MockHttpServletRequest(path, value, method, REQUIRED_HEADERS);
+	}
+
     protected void setServlet(String path, String groupName, String value, String method, Map<String, String> headerMap){
 		setServlet(path, groupName, null);
         headerMap.putAll(REQUIRED_HEADERS);
@@ -96,6 +102,13 @@ public class RunsServletTest extends BaseServletTest {
     protected void addRun(String runName, String runType, String requestor, String test, String runStatus, String bundle, String testClass, String groupName, String submissionId, Set<String> tags){
 		this.runs.add(new MockIRun( runName, runType, requestor, test, runStatus, bundle, testClass, groupName, submissionId, tags));
     }
+
+    protected String generateStatusUpdateJson(String result) {
+		return
+		"{\n" +
+		"  \"result\": \"" + result + "\"\n" +
+		"}";
+	}
 
 	protected String generateExpectedJson(List<IRun> runs, boolean complete) {
 

@@ -23,17 +23,17 @@ import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class RunResultUtility {
 	
-	public static @NotNull RasRunResult toRunResult(@NotNull IRunResult runResult, boolean isShort) throws ResultArchiveStoreException {
+	public static @NotNull RasRunResult toRunResult(@NotNull IRunResult runResult, boolean isMethodDetailsExcluded) throws ResultArchiveStoreException {
 	   
 	    String runId = runResult.getRunId();
 		RasTestStructure structure = getTestStructure(runResult);
 		Path artifactsPath = runResult.getArtifactsRoot();
 		List<RasArtifact> artifacts = new ArrayList<>();
 		
-		if(isShort) {
+		if(isMethodDetailsExcluded) {
       	   structure.setMethods(null);
       	   artifacts = null;
-		}else {
+		} else {
 		   artifacts = getArtifacts(artifactsPath);
 		}
 		
@@ -85,8 +85,8 @@ public class RunResultUtility {
       	      String result = method.getResult();
       	      Instant startTime = method.getStartTime();
       	      Instant endTime = method.getEndTime();
-      	      int runLogStart = method.getRunLogStart();
-      	      int runLogEnd = method.getRunLogEnd();
+      	      long runLogStart = method.getRunLogStart();
+      	      long runLogEnd = method.getRunLogEnd();
       	      List<RasTestMethod> befores = convertMethods(method.getBefores());
       	      List<RasTestMethod> afters = convertMethods(method.getAfters());
       	      

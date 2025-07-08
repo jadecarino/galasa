@@ -6,7 +6,7 @@
 openapi: 3.0.3
 info:
   title: Galasa Ecosystem API
-  version : "0.41.0"
+  version : "0.43.0"
   description: The Galasa Ecosystem REST API allows you to interact with a Galasa Ecosystem.
   contact:
     url: https://galasa.dev/support
@@ -1586,6 +1586,24 @@ paths:
           schema:
             type: string
           example: a6847035-7768-4416-91a6-fe05cf10da85
+        - name: detail
+          in: query
+          description: |
+            Controls the amount of details extracted from a run's test structure and included in responses.
+            Providing "methods" will include the list of methods that were executed as part of a test run.
+            Only "methods" is supported. Query parameter values are case-sensitive, for e.g providing METHODS would result in a Bad Request
+          schema:
+            type: string
+          example: methods
+        - name: tags
+          in: query
+          description: |
+            One or more tags that may be associated with one or more existing test runs.
+            Multiple tags can be supplied as a comma-separated list, for example, 'tags=tag1,tag2,tag3'.
+            If multiple tags are supplied, test runs that have any of the supplied tags will be returned.
+          schema:
+            type: string
+          example: my-zos-tests
         
         # Temporary feature flag to enable cursor-based pagination
         - name: includeCursor
@@ -2122,6 +2140,80 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         '403':
           $ref: "#/components/responses/Forbidden"
+    put:
+      summary: Update the status of a test run by group id
+      description: |
+        Updates the status of a test run in order to cancel it.
+
+        To cancel the run, put a value such that the status is "finished" and the result is "cancelled".
+
+        Requests to this endpoint require a valid bearer token in JWT format to be provided
+        in the 'Authorization' header (e.g. 'Authorization: Bearer <bearer-token>').
+      operationId: putRunStatusByGroupId
+      tags:
+      - Runs API
+      parameters:
+        - name: groupId
+          in: path
+          description: Group Id of the runs to be cancelled
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupStatusRequest'
+      responses:
+        '200':
+          description: Runs already finished
+          content:
+            application/json:
+              schema:
+                type: string
+              examples:
+                runsAlreadyFinished:
+                  value: "Info: When trying to cancel the run group 'group-one', no recent active (unfinished) test runs were found which are part of that group. Archived test runs may be part of that group, which can be queried separately from the Result Archive Store." 
+                  summary: An information message indicating there are no active test runs under provided group id.
+        '202':
+          description: Run status updated
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                cancelRun:
+                  value: The request to cancel run with group id xxgroupxx has been received.
+                  summary: Cancel run action success
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+              examples:
+                invalidRequestPayload:
+                  value:
+                    error_code: 5431
+                    error_message: "E: Error occurred. The field ''result'' in the request body is invalid. The ''result'' value ''badRequest'' supplied is not supported. Supported values are: ''cancelled''."
+                  summary: The provided request body is invalid
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+              examples:
+                genericerror:
+                  value:
+                    error_code: 5000
+                    error_message: "GAL5000E: Error occurred when trying to access the endpoint. Report the problem to your Galasa Ecosystem owner."
+                  summary: An Error occurred when trying to access the endpoint
 ##################################################################################
 # Secrets API
 ##################################################################################
@@ -2916,6 +3008,12 @@ components:
         result:
           type: string
           enum: [nil,"cancelled"]
+    UpdateGroupStatusRequest:
+      type: object
+      properties:
+        result:
+          type: string
+          enum: ["cancelled"]
     User:
       type: object
       properties:
@@ -3094,8 +3192,10 @@ components:
           type: string
         runLogStart:
           type: integer
+          format: int64
         runLogEnd:
           type: integer
+          format: int64
         befores:
           type: array
           items:
