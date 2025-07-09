@@ -253,9 +253,21 @@ public class CouchdbRasStore extends CouchdbStore implements IResultArchiveStore
             throw new ResultArchiveStoreException("Failed to get run document revision");
         }
 
+        writeTestStructure(testStructure, documentId, revision);
+    }
+
+    private synchronized void writeTestStructure(TestStructure testStructure, String documentId, String revision)
+            throws ResultArchiveStoreException {
+
         String jsonStructure = gson.toJson(testStructure);
         HttpEntityEnclosingRequestBase request = httpRequestFactory.getHttpPutRequest(this.storeUri + "/"+RUNS_DB+"/" + documentId);
-        request.setHeader("If-Match", revision);
+
+        // If no revision is passed in, then the PUT request to CouchDB will create a new document
+        // with the given document ID.
+        if (revision != null) {
+            request.setHeader("If-Match", revision);
+        }
+
         request.setEntity(new StringEntity(jsonStructure, StandardCharsets.UTF_8));
 
         RetryableCouchdbUpdateOperationProcessor retryProcessor = new RetryableCouchdbUpdateOperationProcessor(timeService, logFactory);
@@ -270,6 +282,18 @@ public class CouchdbRasStore extends CouchdbStore implements IResultArchiveStore
         } catch (CouchdbException e) {
             throw new ResultArchiveStoreException("Failed to update test structure", e);
         }
+    }
+
+    @Override
+    public synchronized void createTestStructure(@NotNull String runId, @NotNull TestStructure testStructure)
+            throws ResultArchiveStoreException {
+
+        String documentId = runId;
+        if (runId.startsWith(COUCHDB_RUN_ID_PREFIX)) {
+            documentId = runId.substring(COUCHDB_RUN_ID_PREFIX.length());
+        }
+
+        writeTestStructure(testStructure, documentId, null);
     }
 
     @Override

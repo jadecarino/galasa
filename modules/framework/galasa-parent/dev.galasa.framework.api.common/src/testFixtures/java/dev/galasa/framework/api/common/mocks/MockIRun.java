@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
@@ -180,7 +181,7 @@ public class MockIRun implements IRun{
 
     @Override
     public String getRasRunId() {
-        throw new UnsupportedOperationException("Unimplemented method 'getRasRunId'");
+        return UUID.randomUUID().toString();
     }
 
     @Override

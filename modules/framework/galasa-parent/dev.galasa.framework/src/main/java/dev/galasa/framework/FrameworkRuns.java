@@ -226,11 +226,13 @@ public class FrameworkRuns implements IFrameworkRuns {
         boolean local = runRequest.isLocalRun();
         boolean trace = runRequest.isTraceEnabled();
         Set<String> tags = runRequest.getTags();
+        String runId = generateRasRunId(runName);
 
         String runPropertyPrefix = RUN_PREFIX + runName;
 
         // *** Set up the otherRunProperties that will go with the Run number
         HashMap<String, String> otherRunProperties = new HashMap<>();
+        otherRunProperties.put(runPropertyPrefix + ".rasrunid", runId);
         otherRunProperties.put(runPropertyPrefix + ".status", "queued");
         otherRunProperties.put(runPropertyPrefix + ".queued", Instant.now().toString());
         otherRunProperties.put(runPropertyPrefix + ".testbundle", bundleName);
@@ -448,6 +450,10 @@ public class FrameworkRuns implements IFrameworkRuns {
         if (!this.dss.putSwap(runPropertyPrefix + ".status", "up", "queued", otherProperties)) {
             throw new FrameworkException("Failed to switch Shared Environment " + sharedEnvironmentRunName + " to discard");
         }
+    }
+
+    private String generateRasRunId(String runName) {
+        return UUID.randomUUID().toString() + "-" + timeService.now().toEpochMilli() + "-" + runName;
     }
 
     private String assignNewRunName(SubmitRunRequest runRequest) throws FrameworkException, InterruptedException {

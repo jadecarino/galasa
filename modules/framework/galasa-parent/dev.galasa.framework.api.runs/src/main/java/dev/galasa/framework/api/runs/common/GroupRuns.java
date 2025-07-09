@@ -7,6 +7,7 @@ package dev.galasa.framework.api.runs.common;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,15 +18,19 @@ import javax.validation.constraints.NotNull;
 
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IFrameworkRuns.SharedEnvironmentPhase;
+import dev.galasa.framework.spi.IResultArchiveStore;
 import dev.galasa.api.runs.ScheduleRequest;
 import dev.galasa.api.runs.ScheduleStatus;
 import dev.galasa.framework.api.common.InternalServletException;
 import dev.galasa.framework.api.common.ProtectedRoute;
 import dev.galasa.framework.api.common.ResponseBuilder;
 import dev.galasa.framework.api.common.ServletError;
+import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IRun;
+import dev.galasa.framework.spi.ResultArchiveStoreException;
 import dev.galasa.framework.spi.rbac.RBACException;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 import dev.galasa.framework.spi.utils.GalasaGson;
 
 import static dev.galasa.framework.api.common.ServletErrorMessage.*;
@@ -33,12 +38,14 @@ import static dev.galasa.framework.api.common.ServletErrorMessage.*;
 public class GroupRuns extends ProtectedRoute {
 
     protected IFramework framework;
+    private IResultArchiveStore rasStore;
     private final GalasaGson gson = new GalasaGson();
     
 
     public GroupRuns(ResponseBuilder responseBuilder, String path, IFramework framework) throws RBACException {
         super(responseBuilder, path, framework.getRBACService());
         this.framework = framework;
+        this.rasStore = framework.getResultArchiveStore();
     }
 
     protected List<IRun> getRuns(String groupName) throws InternalServletException {
@@ -129,11 +136,55 @@ public class GroupRuns extends ProtectedRoute {
                 );
                 
                 status.getRuns().add(newRun.getSerializedRun());
+                
+                // Create an empty RAS record for the submitted run
+                createRunRasRecord(newRun);
+
             } catch (FrameworkException fe) {
                 ServletError error = new ServletError(GAL5021_UNABLE_TO_SUBMIT_RUNS, className);  
                 throw new InternalServletException(error, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, fe);
             }
         }
         return status;
+    }
+
+    /**
+     * Create a new test structure, and populate it with as much information as we can from the DSS.
+     * @param run The run structure. It has data loaded already from the DSS
+     * @return A TestStructure which is written into the RAS eventually.
+     */
+    private TestStructure createRunTestStructure(IRun run) {
+        TestStructure testStructure = new TestStructure();
+
+        String runName = run.getName();
+        String group = run.getGroup();
+        String submissionId = run.getSubmissionId();
+        Instant queuedAt = run.getQueued();
+        String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");         
+
+        testStructure.setQueued(queuedAt);
+        testStructure.setStartTime(Instant.now());
+        testStructure.setRunName(runName);
+        testStructure.setRequestor(requestor);
+        testStructure.setGroup(group);
+        testStructure.setSubmissionId(submissionId);
+
+        for (String tag : run.getTags()) {
+            testStructure.addTag(tag);
+        }
+
+        return testStructure;
+    }
+
+    private void createRunRasRecord(IRun newRun) throws InternalServletException {
+        TestStructure newTestStructure = createRunTestStructure(newRun);
+        String runId = newRun.getRasRunId();
+
+        try {
+            rasStore.createTestStructure(runId, newTestStructure);
+        } catch (ResultArchiveStoreException e) {
+            ServletError error = new ServletError(GAL5021_UNABLE_TO_SUBMIT_RUNS, runId);
+            throw new InternalServletException(error, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e);
+        }
     }
 }

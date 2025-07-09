@@ -145,4 +145,12 @@ public class FrameworkMultipleResultArchiveStore implements IResultArchiveStoreS
     public long retrieveRunLogLineCount() {
         throw new UnsupportedOperationException("Unimplemented method 'retrieveRunLogLineCount'");
     }
+
+    @Override
+    public void createTestStructure(@NotNull String runId, @NotNull TestStructure testStructure)
+            throws ResultArchiveStoreException {
+        for (IResultArchiveStoreService rasService : this.rasServices) {
+            rasService.createTestStructure(runId, testStructure);
+        }
+    }
 }

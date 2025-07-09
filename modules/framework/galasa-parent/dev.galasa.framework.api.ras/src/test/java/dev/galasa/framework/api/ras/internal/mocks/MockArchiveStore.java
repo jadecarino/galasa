@@ -77,4 +77,10 @@ public class MockArchiveStore implements IResultArchiveStore {
     public long retrieveRunLogLineCount() {
         throw new UnsupportedOperationException("Unimplemented method 'retrieveRunLogLineCount'");
     }
+
+    @Override
+    public void createTestStructure(@NotNull String runId, @NotNull TestStructure testStructure)
+            throws ResultArchiveStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'createTestStructure'");
+    }
 }
