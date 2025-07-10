@@ -27,7 +27,7 @@ public class MockIResultArchiveStore implements IResultArchiveStore {
     private String runId ;
 
     public MockIResultArchiveStore() {
-        // No-op constructor
+        // Do nothing...
     }
 
     public MockIResultArchiveStore(String runId, MockFileSystem mockFileSystem) {

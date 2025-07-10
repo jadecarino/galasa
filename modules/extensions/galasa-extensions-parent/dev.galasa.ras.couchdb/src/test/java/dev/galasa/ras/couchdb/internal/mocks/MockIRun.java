@@ -15,7 +15,8 @@ import dev.galasa.framework.spi.RunRasAction;
 
 public class MockIRun implements IRun {
 
-    private String name ;
+    private String rasRunId;
+    private String name;
 
     public MockIRun(String name) {
         this.name = name ;
@@ -24,6 +25,15 @@ public class MockIRun implements IRun {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public String getRasRunId() {
+        return this.rasRunId;
+    }
+
+    public void setRasRunId(String rasRunId) {
+        this.rasRunId = rasRunId;
     }
 
     @Override
@@ -134,11 +144,6 @@ public class MockIRun implements IRun {
     @Override
     public String getInterruptReason() {
         throw new UnsupportedOperationException("Unimplemented method 'getInterruptReason'");
-    }
-
-    @Override
-    public String getRasRunId() {
-        throw new UnsupportedOperationException("Unimplemented method 'getRasRunId'");
     }
 
     @Override

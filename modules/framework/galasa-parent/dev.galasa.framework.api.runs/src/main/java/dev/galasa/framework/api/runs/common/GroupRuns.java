@@ -8,6 +8,7 @@ package dev.galasa.framework.api.runs.common;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -156,18 +157,24 @@ public class GroupRuns extends ProtectedRoute {
     private TestStructure createRunTestStructure(IRun run) {
         TestStructure testStructure = new TestStructure();
 
+        String bundleName = run.getTestBundleName();
+        String testName = run.getTestClassName();
         String runName = run.getName();
         String group = run.getGroup();
         String submissionId = run.getSubmissionId();
         Instant queuedAt = run.getQueued();
-        String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");         
+        String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");
 
+        testStructure.setBundle(bundleName);
+        testStructure.setTestName(testName);
         testStructure.setQueued(queuedAt);
-        testStructure.setStartTime(Instant.now());
         testStructure.setRunName(runName);
         testStructure.setRequestor(requestor);
         testStructure.setGroup(group);
         testStructure.setSubmissionId(submissionId);
+        testStructure.setLogRecordIds(new ArrayList<>());
+        testStructure.setArtifactRecordIds(new ArrayList<>());
+        testStructure.normalise();
 
         for (String tag : run.getTags()) {
             testStructure.addTag(tag);
