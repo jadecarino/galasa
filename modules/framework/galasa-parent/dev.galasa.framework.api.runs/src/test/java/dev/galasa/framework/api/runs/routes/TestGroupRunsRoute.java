@@ -126,17 +126,6 @@ public class TestGroupRunsRoute extends BaseServletTest {
         payloadJson.addProperty("trace", true);
 
         return gson.toJson(payloadJson);
-        // String payload = "{\"classNames\": ["+classes+"]," +
-        //     "\"requestorType\": \""+requestorType+"\"," +
-        //     "\"requestor\": \""+requestor+"\"," +
-        //     "\"testStream\": \""+testStream+"\"," +
-        //     "\"obr\": \"this.obr\","+
-        //     "\"mavenRepository\": \"this.maven.repo\"," +
-        //     "\"sharedEnvironmentRunTime\": \"envRunTime\"," +
-        //     "\"overrides\": {}," +
-        //     "\"trace\": true }";
-            
-        // return payload;
     }
 
     /*

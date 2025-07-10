@@ -165,6 +165,15 @@ public class GroupRuns extends ProtectedRoute {
         Instant queuedAt = run.getQueued();
         String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");
 
+        if (testName != null) {
+            // The test name is in the form "package.class", so get the class after the last "."
+            String trimmedTestName = testName.trim();
+            if (trimmedTestName.contains(".") && !trimmedTestName.endsWith(".")) {
+                String testShortName = testName.substring(testName.lastIndexOf(".") + 1);
+                testStructure.setTestShortName(testShortName);
+            }
+        }
+
         testStructure.setBundle(bundleName);
         testStructure.setTestName(testName);
         testStructure.setQueued(queuedAt);
