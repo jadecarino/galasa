@@ -42,6 +42,7 @@ import dev.galasa.framework.mocks.MockIResultArchiveStore;
 import dev.galasa.framework.mocks.MockRBACService;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.rbac.Action;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class TestGroupRunsRoute extends BaseServletTest {
 
@@ -658,8 +659,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
         "\"trace\": true }";
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted",
-               "Class", "java", groupName, submissionId,tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, "Class/name", "submitted",
+               "Class", "name", groupName, submissionId,tags));
 
         MockEnvironment mockEnv = FilledMockEnvironment.createTestEnvironment();
         MockIFrameworkRuns mockFrameworkRuns = new MockIFrameworkRuns(groupName, runs);
@@ -689,13 +690,15 @@ public class TestGroupRunsRoute extends BaseServletTest {
     public void testPostRunsWithValidBodyReturnsOK() throws Exception {
         // Given...
 		String groupName = "valid";
-        String class1 = "Class/name";
+        String testName1 = "package.class";
+        String class1 = "bundle/" + testName1;
         String[] classes = new String[]{class1};
         String submissionId = "submission1";
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
+        MockIRun run = new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], testName1, groupName, submissionId, tags);
+        runs.add(run);
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, null, submissionId,tags);
 
@@ -720,6 +723,18 @@ public class TestGroupRunsRoute extends BaseServletTest {
         String expectedJson = generateExpectedJson(runs, false);
         assertThat(resp.getStatus()).isEqualTo(201);
         assertThat(outStream.toString()).isEqualTo(expectedJson);
+
+        List<TestStructure> testStructureHistory = mockRasStore.getTestStructureHistory();
+        assertThat(testStructureHistory).hasSize(1);
+
+        TestStructure testStructure = testStructureHistory.get(0);
+        assertThat(testStructure.getRunName()).isEqualTo(run.getName());
+        assertThat(testStructure.getBundle()).isEqualTo(run.getTestBundleName());
+        assertThat(testStructure.getTestName()).isEqualTo(run.getTestClassName());
+        assertThat(testStructure.getTestShortName()).isEqualTo("class");
+        assertThat(testStructure.getSubmissionId()).isEqualTo(run.getSubmissionId());
+        assertThat(testStructure.getRequestor()).isEqualTo(run.getRequestor());
+        assertThat(testStructure.getGroup()).isEqualTo(run.getGroup());
     }
 
     @Test
@@ -732,7 +747,7 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "null", groupName, null, submissionId,tags);
 
@@ -772,8 +787,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class2.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], "name", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class2, "submitted", class2.split("/")[0], "name", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, null, submissionId,tags);
 
@@ -811,8 +826,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class2.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], "name", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class2, "submitted", class2.split("/")[0], "name", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, null, submissionId, tags);
 
@@ -861,8 +876,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
 
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted",
-               "Class", "java", groupName, submissionId,tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, "Class/name", "submitted",
+               "Class", "name", groupName, submissionId,tags));
 
         MockEnvironment mockEnv = FilledMockEnvironment.createTestEnvironment();
         MockIFrameworkRuns mockFrameworkRuns = new MockIFrameworkRuns(groupName, runs);
@@ -898,7 +913,7 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], "name", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, "testRequestor", submissionId, tags);
 
@@ -936,8 +951,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class2.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], "name", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class2, "submitted", class2.split("/")[0], "name", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, "testRequestor", submissionId,tags);
 
@@ -975,8 +990,8 @@ public class TestGroupRunsRoute extends BaseServletTest {
         Set<String> tags = new HashSet<>();
         List<IRun> runs = new ArrayList<IRun>();
 
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class1.split("/")[0], "java", groupName, submissionId, tags));
-        runs.add(new MockIRun("runnamename", "requestorType", JWT_USERNAME, "name", "submitted", class2.split("/")[0], "java", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class1, "submitted", class1.split("/")[0], "name", groupName, submissionId, tags));
+        runs.add(new MockIRun("runname", "requestorType", JWT_USERNAME, class2, "submitted", class2.split("/")[0], "name", groupName, submissionId, tags));
 
         String payload = generatePayload(classes, "requestorType", JWT_USERNAME, "this.test.stream", groupName, "testRequestor", submissionId,tags);
 

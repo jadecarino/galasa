@@ -56,6 +56,7 @@ public class TestStructure {
     public TestStructure( TestStructure source ) {
         if (source!=null) {
             this.runName = source.runName;
+            this.group = source.group;
             this.bundle = source.bundle;
             this.testName = source.testName;
             this.submissionId = source.submissionId;
