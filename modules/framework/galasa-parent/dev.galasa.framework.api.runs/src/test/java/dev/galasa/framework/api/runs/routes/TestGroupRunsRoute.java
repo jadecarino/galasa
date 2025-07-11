@@ -731,7 +731,6 @@ public class TestGroupRunsRoute extends BaseServletTest {
         assertThat(testStructure.getRunName()).isEqualTo(run.getName());
         assertThat(testStructure.getBundle()).isEqualTo(run.getTestBundleName());
         assertThat(testStructure.getTestName()).isEqualTo(run.getTestClassName());
-        assertThat(testStructure.getTestShortName()).isEqualTo("class");
         assertThat(testStructure.getSubmissionId()).isEqualTo(run.getSubmissionId());
         assertThat(testStructure.getRequestor()).isEqualTo(run.getRequestor());
         assertThat(testStructure.getGroup()).isEqualTo(run.getGroup());

@@ -7,8 +7,6 @@ package dev.galasa.framework.api.runs.common;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +24,6 @@ import dev.galasa.framework.api.common.InternalServletException;
 import dev.galasa.framework.api.common.ProtectedRoute;
 import dev.galasa.framework.api.common.ResponseBuilder;
 import dev.galasa.framework.api.common.ServletError;
-import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.ResultArchiveStoreException;
@@ -149,51 +146,8 @@ public class GroupRuns extends ProtectedRoute {
         return status;
     }
 
-    /**
-     * Create a new test structure, and populate it with as much information as we can from the DSS.
-     * @param run The run structure. It has data loaded already from the DSS
-     * @return A TestStructure which is written into the RAS eventually.
-     */
-    private TestStructure createRunTestStructure(IRun run) {
-        TestStructure testStructure = new TestStructure();
-
-        String bundleName = run.getTestBundleName();
-        String testName = run.getTestClassName();
-        String runName = run.getName();
-        String group = run.getGroup();
-        String submissionId = run.getSubmissionId();
-        Instant queuedAt = run.getQueued();
-        String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");
-
-        if (testName != null) {
-            // The test name is in the form "package.class", so get the class after the last "."
-            String trimmedTestName = testName.trim();
-            if (trimmedTestName.contains(".") && !trimmedTestName.endsWith(".")) {
-                String testShortName = testName.substring(testName.lastIndexOf(".") + 1);
-                testStructure.setTestShortName(testShortName);
-            }
-        }
-
-        testStructure.setBundle(bundleName);
-        testStructure.setTestName(testName);
-        testStructure.setQueued(queuedAt);
-        testStructure.setRunName(runName);
-        testStructure.setRequestor(requestor);
-        testStructure.setGroup(group);
-        testStructure.setSubmissionId(submissionId);
-        testStructure.setLogRecordIds(new ArrayList<>());
-        testStructure.setArtifactRecordIds(new ArrayList<>());
-        testStructure.normalise();
-
-        for (String tag : run.getTags()) {
-            testStructure.addTag(tag);
-        }
-
-        return testStructure;
-    }
-
     private void createRunRasRecord(IRun newRun) throws InternalServletException {
-        TestStructure newTestStructure = createRunTestStructure(newRun);
+        TestStructure newTestStructure = newRun.toTestStructure();
         String runId = newRun.getRasRunId();
 
         try {

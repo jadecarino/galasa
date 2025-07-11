@@ -21,10 +21,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.api.run.Run;
+import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 import dev.galasa.framework.spi.utils.GalasaGson;
 
 public class RunImpl implements IRun {
@@ -371,4 +373,47 @@ public class RunImpl implements IRun {
         return buffArray.toString();
     }
 
+    /**
+     * Create a new test structure, and populate it with as much information as we can from the run.
+     * @return A TestStructure which is written into the RAS eventually.
+     */
+    @Override
+    public TestStructure toTestStructure() {
+        TestStructure testStructure = new TestStructure();
+
+        String bundleName = getTestBundleName();
+        String testName = getTestClassName();
+        String runName = getName();
+        String group = getGroup();
+        String submissionId = getSubmissionId();
+        Instant queuedAt = getQueued();
+        String requestor = AbstractManager.defaultString(getRequestor(), "unknown");
+
+        if (testName != null) {
+            // The test name is in the form "package.class", so get the class after the last "."
+            String trimmedTestName = testName.trim();
+            int lastDotIndex = trimmedTestName.lastIndexOf(".");
+            if (lastDotIndex != -1 && (lastDotIndex + 1) < trimmedTestName.length()) {
+                String testShortName = testName.substring(lastDotIndex + 1);
+                testStructure.setTestShortName(testShortName);
+            }
+        }
+
+        testStructure.setBundle(bundleName);
+        testStructure.setTestName(testName);
+        testStructure.setQueued(queuedAt);
+        testStructure.setRunName(runName);
+        testStructure.setRequestor(requestor);
+        testStructure.setGroup(group);
+        testStructure.setSubmissionId(submissionId);
+        testStructure.setLogRecordIds(new ArrayList<>());
+        testStructure.setArtifactRecordIds(new ArrayList<>());
+        testStructure.normalise();
+
+        for (String tag : getTags()) {
+            testStructure.addTag(tag);
+        }
+
+        return testStructure;
+    }
 }

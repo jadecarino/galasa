@@ -12,6 +12,7 @@ import java.util.Set;
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class MockIRun implements IRun {
 
@@ -153,5 +154,10 @@ public class MockIRun implements IRun {
 
     public Set<String> getTags() {
         throw new UnsupportedOperationException("Unimplemented method 'getTags'");
+    }
+
+    @Override
+    public TestStructure toTestStructure() {
+        throw new UnsupportedOperationException("Unimplemented method 'toTestStructure'");
     }
 }

@@ -317,8 +317,12 @@ public class FrameworkRuns implements IFrameworkRuns {
             keysToDelete.add(getSuffixedRunDssKey(runName, "interruptReason"));
             this.dss.delete(keysToDelete);
 
-            // Set the status of the run back to 'queued'
-            this.dss.put(getSuffixedRunDssKey(runName, "status"), TestRunLifecycleStatus.QUEUED.toString());
+            // Set the status of the run back to 'queued' and generate a new run ID
+            Map<String, String> propertiesToSet = new HashMap<>();
+            propertiesToSet.put(getSuffixedRunDssKey(runName, "status"), TestRunLifecycleStatus.QUEUED.toString());
+            propertiesToSet.put(getSuffixedRunDssKey(runName, "rasrunid"), generateRasRunId(runName));
+            this.dss.put(propertiesToSet);
+
             isReset = true;
         }
 
