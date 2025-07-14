@@ -226,11 +226,13 @@ public class FrameworkRuns implements IFrameworkRuns {
         boolean local = runRequest.isLocalRun();
         boolean trace = runRequest.isTraceEnabled();
         Set<String> tags = runRequest.getTags();
+        String runId = generateRasRunId(runName);
 
         String runPropertyPrefix = RUN_PREFIX + runName;
 
         // *** Set up the otherRunProperties that will go with the Run number
         HashMap<String, String> otherRunProperties = new HashMap<>();
+        otherRunProperties.put(runPropertyPrefix + ".rasrunid", runId);
         otherRunProperties.put(runPropertyPrefix + ".status", "queued");
         otherRunProperties.put(runPropertyPrefix + ".queued", Instant.now().toString());
         otherRunProperties.put(runPropertyPrefix + ".testbundle", bundleName);
@@ -315,8 +317,12 @@ public class FrameworkRuns implements IFrameworkRuns {
             keysToDelete.add(getSuffixedRunDssKey(runName, "interruptReason"));
             this.dss.delete(keysToDelete);
 
-            // Set the status of the run back to 'queued'
-            this.dss.put(getSuffixedRunDssKey(runName, "status"), TestRunLifecycleStatus.QUEUED.toString());
+            // Set the status of the run back to 'queued' and generate a new run ID
+            Map<String, String> propertiesToSet = new HashMap<>();
+            propertiesToSet.put(getSuffixedRunDssKey(runName, "status"), TestRunLifecycleStatus.QUEUED.toString());
+            propertiesToSet.put(getSuffixedRunDssKey(runName, "rasrunid"), generateRasRunId(runName));
+            this.dss.put(propertiesToSet);
+
             isReset = true;
         }
 
@@ -448,6 +454,10 @@ public class FrameworkRuns implements IFrameworkRuns {
         if (!this.dss.putSwap(runPropertyPrefix + ".status", "up", "queued", otherProperties)) {
             throw new FrameworkException("Failed to switch Shared Environment " + sharedEnvironmentRunName + " to discard");
         }
+    }
+
+    private String generateRasRunId(String runName) {
+        return UUID.randomUUID().toString() + "-" + timeService.now().toEpochMilli() + "-" + runName;
     }
 
     private String assignNewRunName(SubmitRunRequest runRequest) throws FrameworkException, InterruptedException {
