@@ -73,14 +73,17 @@ public class TestRunner extends BaseTestRunner {
 
         String testBundleName = run.getTestBundleName();
         String testClassName = run.getTestClassName();
-
-        this.testStructure = createNewTestStructure(run);
-        writeTestStructure();
             
         try {
+            this.testStructure = createNewTestStructure(run);
 
-            String rasRunId = this.ras.calculateRasRunId();
-            storeRasRunIdInDss(dss, rasRunId);
+            String rasRunId = run.getRasRunId();
+            if (rasRunId == null) {
+                writeTestStructure();
+
+                rasRunId = this.ras.calculateRasRunId();
+                storeRasRunIdInDss(dss, rasRunId);
+            }
 
             Class<?> testClass ;
 

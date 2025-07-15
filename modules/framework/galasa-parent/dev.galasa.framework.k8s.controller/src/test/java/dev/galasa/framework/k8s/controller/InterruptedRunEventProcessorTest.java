@@ -102,7 +102,7 @@ public class InterruptedRunEventProcessorTest {
         RunInterruptEvent interruptEvent = new RunInterruptEvent(rasActions, runName, interruptReason);
         eventQueue.add(interruptEvent);
 
-        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade);
+        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade, mockRas);
 
         // When...
         processor.run();
@@ -152,7 +152,7 @@ public class InterruptedRunEventProcessorTest {
         RunInterruptEvent interruptEvent = new RunInterruptEvent(rasActions, runName, interruptReason);
         eventQueue.add(interruptEvent);
 
-        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade);
+        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade, mockRas);
 
         // When...
         processor.run();
@@ -203,7 +203,7 @@ public class InterruptedRunEventProcessorTest {
         RunInterruptEvent interruptEvent = new RunInterruptEvent(rasActions, runName, interruptReason);
         eventQueue.add(interruptEvent);
 
-        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade);
+        InterruptedRunEventProcessor processor = new InterruptedRunEventProcessor(eventQueue, mockFrameworkRuns, rasActionProcessor, facade, mockRas);
 
         // Check that we have one element in the event queue before processing
         assertThat(eventQueue).hasSize(1);
