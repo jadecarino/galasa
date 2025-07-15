@@ -25,6 +25,9 @@ import dev.galasa.framework.spi.IFrameworkInitialisation;
 @Component(service = { IDynamicStatusStoreRegistration.class })
 public class Etcd3DynamicStatusStoreRegistration implements IDynamicStatusStoreRegistration {
 
+    private static final String MAX_GRPC_MESSAGE_SIZE_ENV_VAR = "MAX_GRPC_MESSAGE_SIZE";
+    private static final int DEFAULT_MAX_GRPC_MESSAGE_SIZE = 4194304;
+
     /**
      * This intialise method is a overide that registers the correct store to the
      * framework.
@@ -44,7 +47,8 @@ public class Etcd3DynamicStatusStoreRegistration implements IDynamicStatusStoreR
         if (isEtcdUri(dss)) {
             try {
                 URI uri = new URI(dss.toString().substring(5));
-                frameworkInitialisation.registerDynamicStatusStore(new Etcd3DynamicStatusStore(uri));
+                int maxgRPCMessageSize = getEnvironmentVariableOrDefault(MAX_GRPC_MESSAGE_SIZE_ENV_VAR, DEFAULT_MAX_GRPC_MESSAGE_SIZE);
+                frameworkInitialisation.registerDynamicStatusStore(new Etcd3DynamicStatusStore(uri, maxgRPCMessageSize));
             } catch (URISyntaxException e) {
                 throw new DynamicStatusStoreException("Could not create URI", e);
             }
@@ -59,5 +63,13 @@ public class Etcd3DynamicStatusStoreRegistration implements IDynamicStatusStoreR
      */
     public static boolean isEtcdUri(URI uri) {
         return "etcd".equals(uri.getScheme());
+    }
+
+    protected int getEnvironmentVariableOrDefault(String envVar, int defaultValue) {
+        String value = System.getenv(envVar);
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return Integer.valueOf(value.trim());
     }
 }
