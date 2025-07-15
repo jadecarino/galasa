@@ -28,6 +28,7 @@ import dev.galasa.framework.mocks.MockRun;
 import dev.galasa.framework.mocks.MockTimeService;
 import dev.galasa.framework.mocks.MockFrameworkRuns;
 import dev.galasa.framework.spi.IRun;
+import dev.galasa.framework.spi.Result;
 import dev.galasa.framework.spi.creds.FrameworkEncryptionService;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -579,5 +580,52 @@ public class TestPodSchedulerTest {
         // Then...
         assertThat(api.podsLaunched).hasSize(1);
         assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("allocated");
+    }
+
+    @Test
+    public void testThatInterruptedQueuedRunDoesNotGetScheduled() throws Exception {
+        // Given...
+        String testRunName = "U12345";
+        MockRun run = createMockRun(testRunName);
+        String queuedStatus = TestRunLifecycleStatus.QUEUED.toString();
+        String interruptReason = Result.CANCELLED;
+        run.setStatus(queuedStatus);
+        run.setInterruptReason(interruptReason);
+
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        // Set a "queued" state and an interrupt reason of "cancelled" for this test run
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        mockDss.put("run."+testRunName+".status",queuedStatus);
+        mockDss.put("run."+testRunName+".interruptReason", interruptReason);
+
+        List<IRun> runs = new ArrayList<>();
+        runs.add(run);
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(runs);
+
+        List<V1Pod> mockPods = new ArrayList<V1Pod>();
+
+        String galasaServiceInstallName = "myGalasaService";
+        boolean isPodReady = true;
+        V1Pod etcdPod = createPodWithReadiness(galasaServiceInstallName + "-etcd", isPodReady);
+        V1Pod rasPod = createPodWithReadiness(galasaServiceInstallName + "-ras", isPodReady);
+
+        mockPods.add(etcdPod);
+        mockPods.add(rasPod);
+
+        MockKubernetesApiClient api = new MockKubernetesApiClient(mockPods);
+        KubernetesEngineFacade kubeEngineFacade = new KubernetesEngineFacade(api, "myNamespace", galasaServiceInstallName);
+
+        MockISettings settings = new MockISettings();
+        MockCPSStore mockCPS = new MockCPSStore(null);
+    
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        
+        // When...
+        podScheduler.run();
+
+        // Then...
+        assertThat(api.podsLaunched).hasSize(0);
+        assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("queued");
     }
 }

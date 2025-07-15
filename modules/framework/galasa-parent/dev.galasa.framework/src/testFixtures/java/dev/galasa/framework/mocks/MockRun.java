@@ -15,6 +15,7 @@ import java.util.UUID;
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class MockRun implements IRun {
     private String testBundleName;
@@ -201,6 +202,23 @@ public class MockRun implements IRun {
     @Override
     public boolean isTrace() {
         return true;
+    }
+
+    @Override
+    public TestStructure toTestStructure() {
+        TestStructure testStructure = new TestStructure();
+
+        testStructure.setBundle(testBundleName);
+        testStructure.setTestName(testClassName);
+        testStructure.setRunName(testRunName);
+        testStructure.setRequestor(requestorName);
+        testStructure.setSubmissionId(submissionId);
+
+        for (String tag : tags) {
+            testStructure.addTag(tag);
+        }
+
+        return testStructure;
     }
 
     // ------------- un-implemented methods follow ----------------

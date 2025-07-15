@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import dev.galasa.api.run.Run;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public interface IRun {
 
@@ -63,4 +64,6 @@ public interface IRun {
 
     List<RunRasAction> getRasActions();
     public Set<String> getTags();
+
+    TestStructure toTestStructure();
 }

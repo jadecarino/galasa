@@ -92,4 +92,10 @@ public class MockRASStoreService implements IResultArchiveStoreService{
         throw new UnsupportedOperationException("Unimplemented method 'updateTestStructure'");
     }
 
+    @Override
+    public void createTestStructure(@NotNull String runId, @NotNull TestStructure testStructure)
+            throws ResultArchiveStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'createTestStructure'");
+    }
+
 }

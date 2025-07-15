@@ -111,11 +111,11 @@ public class TestPodScheduler implements Runnable {
                 List<IRun> queuedRuns = this.runs.getQueuedRuns();
                 // TODO filter by capability
     
-                // *** Remove all the local runs
+                // Remove all the local runs and any runs that have been interrupted
                 Iterator<IRun> queuedRunsIterator = queuedRuns.iterator();
                 while (queuedRunsIterator.hasNext()) {
                     IRun run = queuedRunsIterator.next();
-                    if (run.isLocal()) {
+                    if (run.isLocal() || run.getInterruptReason() != null) {
                         queuedRunsIterator.remove();
                     }
                 }
