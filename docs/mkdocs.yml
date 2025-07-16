@@ -30,6 +30,12 @@ theme:
   name: material
   logo: assets/galasa-icon-white.svg
   favicon: assets/galasa-icon-white.svg
+
+  # Saying there is no font theme, turns off access to the googleapi fonts which could be used
+  # to track personal activity. See https://github.com/galasa-dev/projectmanagement/issues/2342
+  font:
+    false
+
   icon:
     repo: fontawesome/brands/github
   custom_dir: overrides
