@@ -47,7 +47,7 @@ public class Etcd3DynamicStatusStoreRegistration implements IDynamicStatusStoreR
         if (isEtcdUri(dss)) {
             try {
                 URI uri = new URI(dss.toString().substring(5));
-                int maxgRPCMessageSize = getEnvironmentVariableOrDefault(MAX_GRPC_MESSAGE_SIZE_ENV_VAR, DEFAULT_MAX_GRPC_MESSAGE_SIZE);
+                int maxgRPCMessageSize = getEnvironmentVariableAsIntOrDefault(MAX_GRPC_MESSAGE_SIZE_ENV_VAR, DEFAULT_MAX_GRPC_MESSAGE_SIZE);
                 frameworkInitialisation.registerDynamicStatusStore(new Etcd3DynamicStatusStore(uri, maxgRPCMessageSize));
             } catch (URISyntaxException e) {
                 throw new DynamicStatusStoreException("Could not create URI", e);
@@ -65,11 +65,17 @@ public class Etcd3DynamicStatusStoreRegistration implements IDynamicStatusStoreR
         return "etcd".equals(uri.getScheme());
     }
 
-    protected int getEnvironmentVariableOrDefault(String envVar, int defaultValue) {
+    private int getEnvironmentVariableAsIntOrDefault(String envVar, int defaultValue) {
         String value = System.getenv(envVar);
         if (value == null || value.isBlank()) {
             return defaultValue;
         }
-        return Integer.valueOf(value.trim());
+
+        try {
+            int intValue = Integer.valueOf(value.trim());
+            return intValue;
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }
