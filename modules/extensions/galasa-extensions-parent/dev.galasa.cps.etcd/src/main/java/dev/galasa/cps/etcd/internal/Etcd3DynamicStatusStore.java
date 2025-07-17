@@ -309,12 +309,10 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
 
         List<KeyValue> kvs = getPropertiesFromETCDWithPrefix(keyPrefix, false);
 
-        if (kvs.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        for (KeyValue kv : kvs) {
-            keyValues.put(kv.getKey().toString(UTF_8), kv.getValue().toString(UTF_8));
+        if (!kvs.isEmpty()) {
+            for (KeyValue kv : kvs) {
+                keyValues.put(kv.getKey().toString(UTF_8), kv.getValue().toString(UTF_8));
+            }
         }
         return keyValues;
     }
@@ -333,15 +331,12 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
 
         List<KeyValue> keyValues = getPropertiesFromETCDWithPrefix(keyPrefix, true);
 
-        if (keyValues.isEmpty()) {
-            return new ArrayList<String>();
+        if (!keyValues.isEmpty()) {
+            for (KeyValue kv : keyValues) {
+                String key = kv.getKey().toString(UTF_8);
+                keysWithPrefix.add(key);
+            }
         }
-
-        for (KeyValue kv : keyValues) {
-            String key = kv.getKey().toString(UTF_8);
-            keysWithPrefix.add(key);
-        }
-
         return keysWithPrefix;
     }
 
