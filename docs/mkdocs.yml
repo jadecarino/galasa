@@ -151,7 +151,7 @@ extra:
   consent:
     title: Cookie consent
     description: >- 
-      We use cookies to recognize your repeated visits and preferences, and to enhance the experience interracting with Github.
+      We use cookies to recognize your repeated visits and preferences, and to enhance the experience when interacting with Github.
       For more detail see our notes on <a href="https://github.com/galasa-dev/galasa/blob/main/docs/privacy.md">cookie usage</a>.
 
   generator: false
