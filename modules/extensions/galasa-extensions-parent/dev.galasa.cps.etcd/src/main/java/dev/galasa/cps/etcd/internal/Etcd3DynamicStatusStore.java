@@ -9,6 +9,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,8 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
     private Log logger = LogFactory.getLog(Etcd3DynamicStatusStore.class);
 
     private final HashMap<UUID, PassthroughWatcher> watchers = new HashMap<>();
+
+    private final static boolean GET_KEYS_ONLY = true;
 
     /**
      * The constructure sets up a private KVClient that can be used by this class to
@@ -307,7 +310,7 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
 
         Map<String, String> keyValues = new HashMap<>();
 
-        List<KeyValue> kvs = getPropertiesFromETCDWithPrefix(keyPrefix, false);
+        List<KeyValue> kvs = getPropertiesFromETCDWithPrefix(keyPrefix, !GET_KEYS_ONLY);
 
         if (!kvs.isEmpty()) {
             for (KeyValue kv : kvs) {
@@ -318,18 +321,18 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
     }
 
     /**
-     * A get of all keys that start with a specified prefix. They are returned in a list.
+     * A get of all keys that start with a specified prefix. They are returned in a collection.
      * 
      * @param keyPrefix - the prefix for any key(s)
-     * @return A list of keys
+     * @return A collection of keys
      * @throws DynamicStatusStoreException A failure occurred.
      */
     @Override
-    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
 
-        List<String> keysWithPrefix = new ArrayList<String>();
+        Collection<String> keysWithPrefix = new ArrayList<String>();
 
-        List<KeyValue> keyValues = getPropertiesFromETCDWithPrefix(keyPrefix, true);
+        List<KeyValue> keyValues = getPropertiesFromETCDWithPrefix(keyPrefix, GET_KEYS_ONLY);
 
         if (!keyValues.isEmpty()) {
             for (KeyValue kv : keyValues) {

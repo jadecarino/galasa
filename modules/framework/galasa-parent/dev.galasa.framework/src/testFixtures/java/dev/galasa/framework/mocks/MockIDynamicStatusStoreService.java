@@ -106,7 +106,7 @@ public class MockIDynamicStatusStoreService implements IDynamicStatusStoreServic
     }
 
     @Override
-    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
                 throw new UnsupportedOperationException("Unimplemented method 'getPrefixKeysOnly'");
     }
 

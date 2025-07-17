@@ -5,7 +5,7 @@
  */
 package dev.galasa.framework.spi;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -117,10 +117,10 @@ public interface IDynamicStatusStoreKeyAccess {
      * Retrieve all keys with this key prefix
      * 
      * @param keyPrefix - the prefix of all the keys to use.
-     * @return A list of keys that start with the specified prefix.
+     * @return A collection of keys that start with the specified prefix.
      * @throws DynamicStatusStoreException
      */
-    List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException;
+    Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException;
 
     /**
      * Delete the key

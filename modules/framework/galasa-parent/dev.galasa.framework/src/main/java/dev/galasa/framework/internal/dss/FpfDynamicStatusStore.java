@@ -7,7 +7,7 @@ package dev.galasa.framework.internal.dss;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -168,7 +168,7 @@ public class FpfDynamicStatusStore implements IDynamicStatusStore {
      * @throws DynamicStatusStoreException
      */
     @Override
-    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
         try {
             return fpf.getPrefixKeysOnly(keyPrefix);
         } catch (Exception e) {

@@ -6,8 +6,8 @@
 package dev.galasa.framework.mocks;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -90,8 +90,8 @@ public class MockDSSStore implements IDynamicStatusStore, IDynamicStatusStoreSer
     }
 
     @Override
-    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
-        List<String> results = new ArrayList<>();
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        Collection<String> results = new ArrayList<>();
         for (String key : valueMap.keySet()){
             if (key.startsWith(keyPrefix)) {
                 results.add(key);

@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -119,7 +120,7 @@ public class FrameworkRuns implements IFrameworkRuns {
         HashMap<String, IRun> runs = new HashMap<>();
 
         logger.trace("Fetching all run keys from DSS");
-        List<String> runPropertiesKeys = dss.getPrefixKeysOnly(RUN_PREFIX);
+        Collection<String> runPropertiesKeys = dss.getPrefixKeysOnly(RUN_PREFIX);
         logger.trace("Fetched all run keys from DSS");
         for (String key : runPropertiesKeys) {
             Matcher matcher = runPattern.matcher(key);
@@ -591,7 +592,7 @@ public class FrameworkRuns implements IFrameworkRuns {
 
     private boolean isRunInDss(String runName) throws DynamicStatusStoreException {
         String prefix = getRunDssPrefix(runName);
-        List<String> properties = this.dss.getPrefixKeysOnly(prefix);
+        Collection<String> properties = this.dss.getPrefixKeysOnly(prefix);
         return !properties.isEmpty();
     }
 
