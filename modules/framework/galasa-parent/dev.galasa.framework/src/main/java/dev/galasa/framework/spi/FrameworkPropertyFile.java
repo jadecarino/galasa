@@ -127,6 +127,26 @@ public class FrameworkPropertyFile implements FileAlterationListener {
 
     /**
      * <p>
+     * This method retrieves a list of keys from the properties file that have a common prefix.
+     * </p>
+     * 
+     * @param keyPrefix A common key prefix to a number of keys in the property store.
+     * @return A list of any size or null of keys which start with the specified prefix.
+     */
+    public synchronized List<String> getPrefixKeysOnly(String keyPrefix) {
+        List<String> keys = new ArrayList<>();
+        observer.checkAndNotify();
+        for (Object k : currentProperties.keySet()) {
+            String key = (String) k;
+            if (key.startsWith(keyPrefix)) {
+                keys.add(key);
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * <p>
      * This method retrieves a List of namespaces which have properties set
      * in the properties file.
      * </p>

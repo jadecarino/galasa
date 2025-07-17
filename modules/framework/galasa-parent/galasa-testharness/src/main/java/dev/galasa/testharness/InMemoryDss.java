@@ -7,6 +7,7 @@ package dev.galasa.testharness;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -209,6 +210,11 @@ public class InMemoryDss implements IDynamicStatusStore {
     public void performActions(IDssAction... actions) throws DynamicStatusStoreException {
         throw new DynamicStatusStoreException("Need to add support for actions");
         
+    }
+
+    @Override
+    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'getPrefixKeysOnly'");
     }
 
 

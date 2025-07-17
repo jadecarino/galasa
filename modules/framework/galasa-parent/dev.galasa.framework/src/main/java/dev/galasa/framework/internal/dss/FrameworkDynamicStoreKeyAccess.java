@@ -5,8 +5,10 @@
  */
 package dev.galasa.framework.internal.dss;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -167,6 +169,29 @@ public class FrameworkDynamicStoreKeyAccess implements IDynamicStatusStoreKeyAcc
         }
 
         return returnSet;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * dev.galasa.framework.spi.IDynamicStatusStoreKeyAccess#getPrefixKeysOnly(java.lang.String)
+     */
+    @Override
+    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        final List<String> gotList = this.dssStore.getPrefixKeysOnly(prefixKey(keyPrefix));
+        final ArrayList<String> returnList = new ArrayList<>();
+
+        for (String key : gotList) {
+            if (key.startsWith(this.prefix)) {
+                key = key.substring(this.prefix.length());
+                returnList.add(key);
+            } else {
+                throw new DynamicStatusStoreException("Somehow we got keys with the wrong prefix");
+            }
+        }
+
+        return returnList;
     }
 
     /*

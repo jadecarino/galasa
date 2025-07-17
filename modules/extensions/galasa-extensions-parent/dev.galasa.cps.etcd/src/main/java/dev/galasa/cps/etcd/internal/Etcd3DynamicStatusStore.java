@@ -305,31 +305,66 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
     @Override
     public @NotNull Map<String, String> getPrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException {
 
-        logger.debug("Etcd extension getting property with a prefix of "+keyPrefix);
+        Map<String, String> keyValues = new HashMap<>();
+
+        List<KeyValue> kvs = getPropertiesFromETCDWithPrefix(keyPrefix, false);
+
+        if (kvs.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        for (KeyValue kv : kvs) {
+            keyValues.put(kv.getKey().toString(UTF_8), kv.getValue().toString(UTF_8));
+        }
+        return keyValues;
+    }
+
+    /**
+     * A get of all keys that start with a specified prefix. They are returned in a list.
+     * 
+     * @param keyPrefix - the prefix for any key(s)
+     * @return A list of keys
+     * @throws DynamicStatusStoreException A failure occurred.
+     */
+    @Override
+    public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+
+        List<String> keysWithPrefix = new ArrayList<String>();
+
+        List<KeyValue> keyValues = getPropertiesFromETCDWithPrefix(keyPrefix, true);
+
+        if (keyValues.isEmpty()) {
+            return new ArrayList<String>();
+        }
+
+        for (KeyValue kv : keyValues) {
+            String key = kv.getKey().toString(UTF_8);
+            keysWithPrefix.add(key);
+        }
+
+        return keysWithPrefix;
+    }
+
+    private List<KeyValue> getPropertiesFromETCDWithPrefix(String keyPrefix, boolean keysOnly) throws DynamicStatusStoreException {
+
+        logger.debug("Etcd extension getting all keys with a prefix of " + keyPrefix);
         ByteSequence bsPrefix = ByteSequence.from(keyPrefix, UTF_8);
 
         ByteSequence prefixEnd = OptionsUtil.prefixEndOf(bsPrefix);
-        GetOption options = GetOption.builder().withRange(prefixEnd).build();
+        GetOption options = GetOption.builder().withRange(prefixEnd).withKeysOnly(keysOnly).build();
 
         CompletableFuture<GetResponse> getFuture = kvClient.get(bsPrefix, options);
-        Map<String, String> keyValues = new HashMap<>();
 
+        List<KeyValue> kvs = new ArrayList<>();
         try {
             GetResponse response = getFuture.get();
-            List<KeyValue> kvs = response.getKvs();
-
-            if (kvs.isEmpty()) {
-                return new HashMap<>();
-            }
-
-            for (KeyValue kv : kvs) {
-                keyValues.put(kv.getKey().toString(UTF_8), kv.getValue().toString(UTF_8));
-            }
-            return keyValues;
+            kvs = response.getKvs();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new DynamicStatusStoreException("Could not retrieve key.", e);
         }
+
+        return kvs;
     }
 
     /**

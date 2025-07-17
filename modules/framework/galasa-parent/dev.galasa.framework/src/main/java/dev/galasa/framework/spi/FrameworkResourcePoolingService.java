@@ -468,6 +468,13 @@ public class FrameworkResourcePoolingService implements IResourcePoolingService 
         /**
          * Commenting as unused, but required from IDynamicStatusStore implementation.
          */
+        public List<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+            return new ArrayList<>();
+        }
+
+        /**
+         * Commenting as unused, but required from IDynamicStatusStore implementation.
+         */
         public String get(@NotNull String key) throws DynamicStatusStoreException {
             return null;
         }
