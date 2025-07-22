@@ -104,7 +104,7 @@ publishing {
                 description = 'The documentation for the galasactl open source project'
                 groupId = "dev.galasa"
                 artifactId = 'dev.galasa.docs' // Artifact ID for the zip
-                version = version
+                version = version + "-SNAPSHOT" // -SNAPSHOT required so this can be published to GitHub Packages multiple times
             }
         }
     }
@@ -119,9 +119,29 @@ publishing {
                 }
             }
         }
+        // publishToGithub flag needed so build does not attempt to publish
+        // to GitHub Packages during a local or Pull Request build.
+        if (project.hasProperty("publishToGithub")) {
+            maven {
+                name = 'githubPackages'
+                url = 'https://maven.pkg.github.com/galasa-dev/galasa'
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
     }
 }
 
 tasks.named('publishMavenPublicationToMavenRepository') {
     dependsOn buildDocsZip
+}
+
+// publishToGithub flag needed so build does not attempt to publish
+// to GitHub Packages during a local or Pull Request build.
+if (project.hasProperty("publishToGithub")) {
+    tasks.named('publishMavenPublicationToGithubPackagesRepository') {
+        dependsOn buildDocsZip
+    }
 }
