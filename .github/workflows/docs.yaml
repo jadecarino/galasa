@@ -75,6 +75,11 @@ jobs:
 
       - name: Build and package the docs
         working-directory: ./docs
+        env:
+          # These are picked up by the build.gradle and used to
+          # publish dev.galasa.docs to GitHub's Maven Registry.
+          GITHUB_USERNAME: ${{ vars.WRITE_GITHUB_PACKAGES_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.WRITE_GITHUB_PACKAGES_TOKEN }}
         run : |
           set -o pipefail
           gradle -b build.gradle publish --info --warning-mode all \

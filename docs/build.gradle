@@ -104,7 +104,7 @@ publishing {
                 description = 'The documentation for the galasactl open source project'
                 groupId = "dev.galasa"
                 artifactId = 'dev.galasa.docs' // Artifact ID for the zip
-                version = version
+                version = version + "-SNAPSHOT"
             }
         }
     }
@@ -117,6 +117,14 @@ publishing {
                     username System.getenv("GITHUB_ACTOR")
                     password System.getenv("GITHUB_TOKEN")
                 }
+            }
+        }
+        maven {
+            name = 'github.packages'
+            url = 'https://maven.pkg.github.com/jadecarino/galasa'
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
