@@ -135,7 +135,6 @@ function check_if_detect_secrets_is_installed() {
             info "detect-secrets was installed correctly"
         else
             error "Failed to install detect-secrets"
-            # deactivate
             exit 1
         fi
     fi
