@@ -11,7 +11,7 @@ This is the main source code repository for the Galasa open source project.
 
 ### Pre-reqs
 
-These are the versions of code we know work for sure:
+These are the versions of software which are known to work:
 - Python v3.11.0
 - Gradle 8.9
 - Apache Maven 3.9.0
