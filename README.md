@@ -16,7 +16,7 @@ These are the versions of code we know work for sure:
 - Gradle 8.9
 - Apache Maven 3.9.0
 - openjdk 17.0.12
-- go1.23.5
+- go 1.23.5
 
 ### To build...
 Use the `./tools/build-locally.sh` script. `--help` shows you the options.
