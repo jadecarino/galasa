@@ -17,9 +17,9 @@ import dev.galasa.Before;
 import dev.galasa.ContinueOnTestFailure;
 import dev.galasa.framework.internal.runner.InterruptedMonitor;
 import dev.galasa.framework.internal.runner.InterruptedMonitorImpl;
-import dev.galasa.framework.mocks.MockFramework;
 import dev.galasa.framework.mocks.MockIConfigurationPropertyStoreService;
 import dev.galasa.framework.mocks.MockIDynamicStatusStoreService;
+import dev.galasa.framework.mocks.MockIResultArchiveStore;
 import dev.galasa.framework.mocks.MockLog;
 import dev.galasa.framework.mocks.MockRASStoreService;
 import dev.galasa.framework.mocks.MockRun;
@@ -28,6 +28,7 @@ import dev.galasa.framework.mocks.MockTestRunnerDataProvider;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
+import dev.galasa.framework.spi.IResultArchiveStore;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.Result;
 import dev.galasa.framework.spi.teststructure.TestStructure;
@@ -67,8 +68,8 @@ public class TestTestClassWrapper {
     public static class TestWrapperWhichDoesNothing extends TestClassWrapper{
 
         public TestWrapperWhichDoesNothing(String testBundle,
-                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, Framework framework, InterruptedMonitor interruptedMonitor , Log logger ) throws ConfigurationPropertyStoreException {
-            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , framework, interruptedMonitor , logger );
+                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, IResultArchiveStore ras, InterruptedMonitor interruptedMonitor , Log logger ) throws ConfigurationPropertyStoreException {
+            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , ras, interruptedMonitor , logger );
         }
         
         // runTestMethods should throw a fake exception so we can check that other methods get called despite the exception.
@@ -92,8 +93,8 @@ public class TestTestClassWrapper {
         private String fakeExceptionMessage;
 
         public TestClassWrapperWhichThrowsExceptionInRunTestMethod(String testBundle,
-                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, Framework framework, InterruptedMonitor interruptedMonitor , Log logger, String fakeExceptionMessage ) throws ConfigurationPropertyStoreException {
-            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , framework, interruptedMonitor , logger );
+                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, IResultArchiveStore ras, InterruptedMonitor interruptedMonitor , Log logger, String fakeExceptionMessage ) throws ConfigurationPropertyStoreException {
+            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , ras, interruptedMonitor , logger );
             this.fakeExceptionMessage = fakeExceptionMessage;
         }
         
@@ -111,7 +112,6 @@ public class TestTestClassWrapper {
     public void testClassAnnotatedWithContinueOnTestFailureReturnsTrue() throws Exception {
         // Given...
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
         MockIDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
@@ -128,7 +128,8 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
         
-        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithContinueOnTestFailure.class, testStructure, isContinueOnTestFailureFromCPS, mockFramework, interruptedMonitor);
+        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithContinueOnTestFailure.class, testStructure, 
+        isContinueOnTestFailureFromCPS, new MockIResultArchiveStore() , interruptedMonitor);
         // When...
         boolean isContinueOnTestFailure = testClassWrapper.isContinueOnTestFailureSet();
 
@@ -140,7 +141,6 @@ public class TestTestClassWrapper {
     public void testClassWithoutContinueOnTestFailureReturnsFalse() throws Exception {
         // Given...
         boolean isContinueOnTestFailureFromCPS = false ;
-        Framework mockFramework = new MockFramework();
 
         IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
         MockIDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
@@ -157,7 +157,8 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
 
-        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithoutContinueOnTestFailure.class, testStructure, isContinueOnTestFailureFromCPS, mockFramework, interruptedMonitor);
+        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithoutContinueOnTestFailure.class, 
+            testStructure, isContinueOnTestFailureFromCPS, new MockIResultArchiveStore(), interruptedMonitor);
 
         // When...
         boolean isContinueOnTestFailure = testClassWrapper.isContinueOnTestFailureSet();
@@ -170,7 +171,6 @@ public class TestTestClassWrapper {
     public void testClassWithCPSContinueOnTestFailureReturnsTrue() throws Exception {
         // Given...
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
         cps.setProperty("continue.on.test.failure", "true");
@@ -189,7 +189,8 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
 
-        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithoutContinueOnTestFailure.class, testStructure, isContinueOnTestFailureFromCPS, mockFramework, interruptedMonitor );
+        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithoutContinueOnTestFailure.class, testStructure, 
+        isContinueOnTestFailureFromCPS, new MockIResultArchiveStore(), interruptedMonitor );
 
         // When...
         boolean isContinueOnTestFailure = testClassWrapper.isContinueOnTestFailureSet();
@@ -202,7 +203,6 @@ public class TestTestClassWrapper {
     public void testClassWithCPSContinueOnTestFailureSetToFalseReturnsFalse() throws Exception {
         // Given...
         boolean isContinueOnTestFailureFromCPS = false ;
-        Framework mockFramework = new MockFramework();
 
         IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
         cps.setProperty("continue.on.test.failure", "false");
@@ -222,7 +222,9 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
 
-        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithoutContinueOnTestFailure.class, testStructure, isContinueOnTestFailureFromCPS, mockFramework, interruptedMonitor);
+        TestClassWrapper testClassWrapper = new TestClassWrapper(
+            testBundle, MockTestClassWithoutContinueOnTestFailure.class, 
+            testStructure, isContinueOnTestFailureFromCPS, new MockIResultArchiveStore(), interruptedMonitor);
 
         // When...
         boolean isContinueOnTestFailure = testClassWrapper.isContinueOnTestFailureSet();
@@ -235,7 +237,6 @@ public class TestTestClassWrapper {
     public void testClassWithAnnotationAndCPSContinueOnTestFailureSetToFalseReturnsTrue() throws Exception {
         // Given...
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
         cps.setProperty("continue.on.test.failure", "false");
@@ -254,7 +255,9 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
 
-        TestClassWrapper testClassWrapper = new TestClassWrapper(testBundle, MockTestClassWithContinueOnTestFailure.class, testStructure, isContinueOnTestFailureFromCPS, mockFramework, interruptedMonitor);
+        TestClassWrapper testClassWrapper = new TestClassWrapper(
+            testBundle, MockTestClassWithContinueOnTestFailure.class, testStructure, 
+            isContinueOnTestFailureFromCPS, new MockIResultArchiveStore() , interruptedMonitor);
 
         // When...
         boolean isContinueOnTestFailure = testClassWrapper.isContinueOnTestFailureSet();
@@ -283,14 +286,14 @@ public class TestTestClassWrapper {
         Class<?> testClass = new MockTestClassWithoutContinueOnTestFailure().getClass();
         TestStructure testStructure = new TestStructure();
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
         MockLog logger = new MockLog();
         String testRunName = "U12346";
         MockIDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
 
         TestClassWrapperWhichThrowsExceptionInRunTestMethod wrapper = new TestClassWrapperWhichThrowsExceptionInRunTestMethod(
-            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , mockFramework , interruptedMonitor, logger , fakeExceptionMessage);
+            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , new MockIResultArchiveStore() , 
+            interruptedMonitor, logger , fakeExceptionMessage);
 
         ITestRunManagers managers = new MockTestRunManagers(isContinueOnTestFailureFromCPS, null);
 
@@ -324,7 +327,6 @@ public class TestTestClassWrapper {
         Class<?> testClass = new MockTestClassWithoutContinueOnTestFailure().getClass();
         TestStructure testStructure = new TestStructure();
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         MockLog logger = new MockLog();
         String testRunName = "U12346";
@@ -332,7 +334,8 @@ public class TestTestClassWrapper {
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
         
         TestClassWrapperWhichThrowsExceptionInRunTestMethod wrapper = new TestClassWrapperWhichThrowsExceptionInRunTestMethod(
-            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , mockFramework , interruptedMonitor, (Log)logger, fakeExceptionMessage );
+            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , new MockIResultArchiveStore() , 
+            interruptedMonitor, (Log)logger, fakeExceptionMessage );
 
         MockTestRunManagers managers = new MockTestRunManagers(isContinueOnTestFailureFromCPS, null);
 
@@ -395,17 +398,16 @@ public class TestTestClassWrapper {
         Class<?> testClass = FakeTestThatCanBeRun.class;
         TestStructure testStructure = new TestStructure();
         boolean isContinueOnTestFailureFromCPS = true;
-        MockFramework mockFramework = new MockFramework();
 
         MockRASStoreService ras = new MockRASStoreService(null);
-        mockFramework.setMockRas(ras);
+   
 
         MockIDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
         
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,runName);
         MockLog logger = new MockLog();
         TestClassWrapper wrapper = new TestClassWrapper(
-            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , mockFramework, interruptedMonitor, (Log)logger);
+            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , ras , interruptedMonitor, (Log)logger);
 
         ITestRunManagers managers = new MockTestRunManagers(isContinueOnTestFailureFromCPS, null);
 
@@ -452,7 +454,6 @@ public class TestTestClassWrapper {
         Class<?> testClass = new MockTestClassWithoutContinueOnTestFailure().getClass();
         TestStructure testStructure = new TestStructure();
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         MockLog logger = new MockLog();
         String testRunName = "U12346";
@@ -464,7 +465,7 @@ public class TestTestClassWrapper {
         // If asked, the interrupted monitor will say "we have been interrupted"
         
         TestWrapperWhichDoesNothing wrapper = new TestWrapperWhichDoesNothing(
-            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , mockFramework , interruptedMonitor, (Log)logger );
+            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , new MockIResultArchiveStore() , interruptedMonitor, (Log)logger );
 
         MockTestRunManagers managers = new MockTestRunManagers(isContinueOnTestFailureFromCPS, null);
 
@@ -482,7 +483,8 @@ public class TestTestClassWrapper {
     public static class TestClassWhichGetsInterrupted {
         String testRunName ;
         MockIDynamicStatusStoreService dss;
-        public int thirdMethodCalledCounter = 0 ;
+        public int thirdMethodCalledCounter  ;
+        public int firstMethodCalledCounter ;
 
 
         public TestClassWhichGetsInterrupted() {
@@ -495,6 +497,7 @@ public class TestTestClassWrapper {
 
         @dev.galasa.Test
         public void firstMethodDoesNothing() {
+            firstMethodCalledCounter +=1 ;
         }
 
         @dev.galasa.Test
@@ -513,8 +516,8 @@ public class TestTestClassWrapper {
     public static class TestWrapperWhichAllowsTestMethodsToRun extends TestClassWrapper{
 
         public TestWrapperWhichAllowsTestMethodsToRun(String testBundle,
-                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, Framework framework, InterruptedMonitor interruptedMonitor , Log logger ) throws ConfigurationPropertyStoreException {
-            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , framework, interruptedMonitor , logger );
+                Class<?> testClass, TestStructure testStructure, boolean isContinueOnTestFailureFromCPS, IResultArchiveStore ras, InterruptedMonitor interruptedMonitor , Log logger ) throws ConfigurationPropertyStoreException {
+            super(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , ras, interruptedMonitor , logger );
         }
         
         protected void runBeforeClassMethods( @NotNull ITestRunManagers managers ) throws TestRunException {
@@ -545,7 +548,6 @@ public class TestTestClassWrapper {
         Class<?> testClass = TestClassWhichGetsInterrupted.class;
         TestStructure testStructure = new TestStructure();
         boolean isContinueOnTestFailureFromCPS = true ;
-        Framework mockFramework = new MockFramework();
 
         MockLog logger = new MockLog();
 
@@ -553,7 +555,7 @@ public class TestTestClassWrapper {
         // If asked, the interrupted monitor will say "we have been interrupted"
         
         TestWrapperWhichAllowsTestMethodsToRun wrapper = new TestWrapperWhichAllowsTestMethodsToRun(
-            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , mockFramework , interruptedMonitor, (Log)logger );
+            testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS , new MockIResultArchiveStore() , interruptedMonitor, (Log)logger );
 
         MockTestRunManagers managers = new MockTestRunManagers(isContinueOnTestFailureFromCPS, null);
 
@@ -569,7 +571,8 @@ public class TestTestClassWrapper {
         wrapper.runMethods( managers, dss, runName);
 
         // Then...
-        assertThat(testClassInstance.thirdMethodCalledCounter).isEqualTo(0);
+        assertThat(testClassInstance.firstMethodCalledCounter).as("Expected the first test method to have been called").isEqualTo(1);
+        assertThat(testClassInstance.thirdMethodCalledCounter).as("Expected the last method to be skipped as the test was simulated to be cancelled").isEqualTo(0);
 
         Result result = wrapper.getResult();
         assertThat(result.isCancelled()).isTrue();

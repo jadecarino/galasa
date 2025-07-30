@@ -68,7 +68,7 @@ public class TestClassWrapper {
     private final boolean       continueOnTestFailure;
 
     private final boolean isContinueOnTestFailureFromCPS;
-    private final IFramework framework;
+    private final IResultArchiveStore ras;
     private final InterruptedMonitor interruptedMonitor;
 
     /**
@@ -81,10 +81,10 @@ public class TestClassWrapper {
         Class<?> testClass, 
         TestStructure testStructure,
         boolean isContinueOnTestFailureFromCPS,
-        IFramework framework,
+        IResultArchiveStore ras,
         InterruptedMonitor interruptedMonitor
     ) throws ConfigurationPropertyStoreException {
-        this(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS, framework, interruptedMonitor, LogFactory.getLog(TestClassWrapper.class));
+        this(testBundle, testClass, testStructure, isContinueOnTestFailureFromCPS, ras, interruptedMonitor, LogFactory.getLog(TestClassWrapper.class));
     }
     
 
@@ -93,14 +93,14 @@ public class TestClassWrapper {
         Class<?> testClass, 
         TestStructure testStructure,
         boolean isContinueOnTestFailureFromCPS,
-        IFramework framework,
+        IResultArchiveStore ras,
         InterruptedMonitor interruptedMonitor,
         Log logger
     ) throws ConfigurationPropertyStoreException {
         this.testClass = testClass;
         this.testStructure = testStructure;
         this.isContinueOnTestFailureFromCPS = isContinueOnTestFailureFromCPS;
-        this.framework = framework;
+        this.ras = ras;
         this.logger = logger ;
         this.interruptedMonitor = interruptedMonitor;
 
@@ -540,14 +540,9 @@ public class TestClassWrapper {
         }
         return isContinueOnTestFailureSet;
     }
-    
-    protected IFramework getFramework() {
-        return this.framework;
-    }
 
     protected long getRunLogLineCount() {
-        IResultArchiveStore ras = getFramework().getResultArchiveStore();
-        long runLogLineCount = ras.retrieveRunLogLineCount();
+        long runLogLineCount = this.ras.retrieveRunLogLineCount();
         return runLogLineCount;
     }
 
