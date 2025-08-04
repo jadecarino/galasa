@@ -21,25 +21,25 @@ public class TestSleep {
     @Test
     public void sleep() throws Exception {
         logger.info("Sleeping for 30 seconds.");
-        Thread.sleep(60000);
+        Thread.sleep(30000);
     }
 
     @Test
     public void sleep2() throws Exception {
         logger.info("Sleeping for another 30 seconds");
-        Thread.sleep(60000);
+        Thread.sleep(30000);
     }
 
     @Test
     public void sleep3() throws Exception {
         logger.info("Sleeping for yet another 30 seconds");
-        Thread.sleep(60000);
+        Thread.sleep(30000);
     }
 
     @Test
     public void sleep4() throws Exception {
         logger.info("Sleeping for a final 30 seconds");
-        Thread.sleep(60000);
+        Thread.sleep(30000);
     }
 
 }
