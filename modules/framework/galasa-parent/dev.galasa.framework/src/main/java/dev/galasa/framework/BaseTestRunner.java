@@ -19,6 +19,7 @@ import javax.validation.constraints.NotNull;
 
 import dev.galasa.ResultArchiveStoreContentType;
 import dev.galasa.framework.beans.Property;
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.internal.runner.ITestRunnerEventsProducer;
 import dev.galasa.framework.internal.runner.InterruptedMonitor;
 import dev.galasa.framework.internal.runner.InterruptedMonitorImpl;
@@ -319,7 +320,7 @@ public class BaseTestRunner {
             if (this.testStructure.getResult() == null) {
                 this.testStructure.setResult("UNKNOWN");
             }
-            this.dss.put("run." + run.getName() + ".result", this.testStructure.getResult());
+            this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RESULT, this.testStructure.getResult());
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update result", e);
         }
@@ -371,7 +372,7 @@ public class BaseTestRunner {
 
     protected void storeRasRunIdInDss(IDynamicStatusStoreService dss, String rasRunId) throws TestRunException {
         try {
-            this.dss.put("run." + run.getName() + ".rasrunid", rasRunId);
+            this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update rasrunid", e);
         }

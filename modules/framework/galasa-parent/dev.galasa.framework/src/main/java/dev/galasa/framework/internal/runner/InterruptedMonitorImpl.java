@@ -5,7 +5,11 @@
  */
 package dev.galasa.framework.internal.runner;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import dev.galasa.framework.TestRunException;
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 
@@ -14,7 +18,7 @@ import dev.galasa.framework.spi.IDynamicStatusStoreService;
  * every time the isInterrupted() call is made.
  */
 public class InterruptedMonitorImpl implements InterruptedMonitor {
-    
+    private Log logger = LogFactory.getLog(InterruptedMonitorImpl.class);
     private final IDynamicStatusStoreService dss;
     private final String testRunName;
 
@@ -35,14 +39,17 @@ public class InterruptedMonitorImpl implements InterruptedMonitor {
         // The DSS has two properties set. 
         // "run."+testRunName+".interruptReason" - The reason for the test being interrupted.
         // "run."+testRunName+".rasActions" - A list of things which need to happen to clean up the RAS, and move this test to the correct state.
-        String dssKey = "run."+testRunName+".interruptedReason";
+        String dssKey = "run."+testRunName+"."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON;
+        logger.debug("Checking to see if this run has been interrupted using dss key "+dssKey);
         try {
             String interruptedReason = dss.get(dssKey);
 
             if ( interruptedReason==null || interruptedReason.isBlank() ) {
                 isInterrupted = false ;
+                logger.info("Run "+testRunName+" has not been interrupted.");
             } else {
                 isInterrupted = true ;
+                logger.info("Run "+testRunName+" has been interrupted.");
             }
         } catch( DynamicStatusStoreException ex) {
             throw new TestRunException("Could not find out if test run "+testRunName+" is interrupted or not.");

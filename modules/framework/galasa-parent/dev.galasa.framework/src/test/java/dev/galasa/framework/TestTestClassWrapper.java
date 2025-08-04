@@ -15,6 +15,7 @@ import org.junit.Test;
 import dev.galasa.After;
 import dev.galasa.Before;
 import dev.galasa.ContinueOnTestFailure;
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.internal.runner.InterruptedMonitor;
 import dev.galasa.framework.internal.runner.InterruptedMonitorImpl;
 import dev.galasa.framework.mocks.MockIConfigurationPropertyStoreService;
@@ -459,7 +460,7 @@ public class TestTestClassWrapper {
         String testRunName = "U12346";
 
         MockIDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
-        String dssKey = "run."+testRunName+".interruptedReason";
+        String dssKey = "run."+testRunName+"."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON;
         dss.put(dssKey,"Cancelled");
         InterruptedMonitorImpl interruptedMonitor = new InterruptedMonitorImpl(dss,testRunName);
         // If asked, the interrupted monitor will say "we have been interrupted"
@@ -502,7 +503,7 @@ public class TestTestClassWrapper {
 
         @dev.galasa.Test
         public void secondMethodCausesInterrupt() throws Exception {
-            String dssKey = "run."+testRunName+".interruptedReason";
+            String dssKey = "run."+testRunName+"." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON;
             dss.put(dssKey,"Cancelled");
         }
 

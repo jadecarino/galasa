@@ -7,6 +7,8 @@ package dev.galasa.framework.internal.runner;
 
 import static org.assertj.core.api.Assertions.*;
 import org.junit.Test;
+
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.mocks.*;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 
@@ -45,7 +47,7 @@ public class TestInterruptedMonitorImpl {
         // Given...
         IDynamicStatusStoreService dss = new MockIDynamicStatusStoreService();
         String testRunName = "U12345";
-        dss.put("run."+testRunName+".interruptedReason", "UserCancelled");
+        dss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, "UserCancelled");
 
         // This run has been marked as interrupted in the DSS, so the monitor should return true.
         InterruptedMonitorImpl monitor = new InterruptedMonitorImpl(dss, testRunName);
@@ -67,7 +69,7 @@ public class TestInterruptedMonitorImpl {
         InterruptedMonitorImpl monitor = new InterruptedMonitorImpl(dss, testRunName);
 
         // Now, after everything else is initialised, lets simulate the test run being told to cancel.
-        dss.put("run."+testRunName+".interruptedReason", "UserCancelled");
+        dss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, "UserCancelled");
 
         // When...
         boolean isInterrupted = monitor.isInterrupted();

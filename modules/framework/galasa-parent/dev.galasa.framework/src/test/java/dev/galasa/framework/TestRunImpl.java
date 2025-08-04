@@ -12,6 +12,7 @@ import java.util.*;
 
 import org.junit.Test;
 
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.mocks.*;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.teststructure.TestStructure;
@@ -62,11 +63,11 @@ public class TestRunImpl {
         String tagsAsJsonString = gson.toJson(tagsValueGoingIn);
         dssProps.put("run.U1234"+".tags", tagsAsJsonString);
 
-        dssProps.put("run.U1234"+".test", "bundle/package.testclass");
-        dssProps.put("run.U1234"+".group", "my-test-group");
-        dssProps.put("run.U1234"+".submissionId", "my-submission-id");
-        dssProps.put("run.U1234"+".queued", queuedTimeAsString);
-        dssProps.put("run.U1234"+".requestor", "duck");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.REQUESTOR, "bundle/package.testclass");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.GROUP, "my-test-group");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.SUBMISSION_ID, "my-submission-id");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.QUEUED, queuedTimeAsString);
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.REQUESTOR, "duck");
 
         IDynamicStatusStoreService dss = new MockDSSStore(dssProps);
         RunImpl run = new RunImpl(name,dss);
@@ -106,7 +107,7 @@ public class TestRunImpl {
         dssProps.put("run.U1234"+".group", "my-test-group");
         dssProps.put("run.U1234"+".submissionId", "my-submission-id");
         dssProps.put("run.U1234"+".queued", queuedTimeAsString);
-        dssProps.put("run.U1234"+".requestor", "duck");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.REQUESTOR, "duck");
 
         IDynamicStatusStoreService dss = new MockDSSStore(dssProps);
         RunImpl run = new RunImpl(name,dss);

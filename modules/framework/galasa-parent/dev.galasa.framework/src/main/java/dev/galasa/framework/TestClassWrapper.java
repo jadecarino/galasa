@@ -514,14 +514,21 @@ public class TestClassWrapper {
     }
 
     protected void setResultWithoutTellingManagers(@Null Result newResult) {
-        String from;
-        if (this.resultData == null) {
-            from = "null";
-        } else {
-            from = this.resultData.getName();
+
+        // Log something if the state changes from what it was before.
+        if (newResult != null) {
+            String from;
+            if (this.resultData == null) {
+                from = "null";
+            } else {
+                from = this.resultData.getName();
+            }
+            if( from.equals(newResult.getName())) {
+                logger.info("Result in test class wrapper changed from " + from + " to " + newResult.getName());
+            }
         }
-        logger.info("Result in test class wrapper changed from " + from + " to " + newResult.getName());
         
+        // Make the state change so we remember it.
         this.resultData = newResult;
     }
 

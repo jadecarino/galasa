@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.api.run.Run;
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
@@ -86,7 +87,7 @@ public class RunImpl implements IRun {
         group = runProperties.get(prefix + "group");
         submissionId = runProperties.get(prefix + "submissionId");
         rasRunId = runProperties.get(prefix + "rasrunid");
-        interruptReason = runProperties.get(prefix + "interruptReason");
+        interruptReason = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.INTERRUPT_REASON);
         local = Boolean.parseBoolean(runProperties.get(prefix + "local"));
         trace = Boolean.parseBoolean(runProperties.get(prefix + "trace"));
         sharedEnvironment = Boolean.parseBoolean(runProperties.get(prefix + "shared.environment"));

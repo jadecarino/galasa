@@ -19,6 +19,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
 import dev.galasa.framework.spi.Environment;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
@@ -191,9 +192,9 @@ public class TestPodScheduler implements Runnable {
             Instant expire = now.plus(15, ChronoUnit.MINUTES);
             HashMap<String, String> props = new HashMap<>();
             props.put("run." + runName + ".controller", settings.getPodName());
-            props.put("run." + runName + ".allocated", now.toString());
+            props.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.ALLOCATED, now.toString());
             props.put("run." + runName + ".allocate.timeout", expire.toString());
-            if (!this.dss.putSwap("run." + runName + ".status", "queued", "allocated", props)) {
+            if (!this.dss.putSwap("run." + runName + "."+DssPropertyKeyRunNameSuffix.STATUS, "queued", "allocated", props)) {
                 logger.info("run allocated by another controller");
                 return;
             }
@@ -207,10 +208,10 @@ public class TestPodScheduler implements Runnable {
                 launchAttemptCount+=1;
                 if( launchAttemptCount > maxLaunchAttempts ) {
                     // Mark the test run as finished due to environment failure.
-                    this.dss.put("run." + run.getName() + ".result", "EnvFail" );
-                    this.dss.put("run." + run.getName() + ".status", "finished");
+                    this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RESULT, "EnvFail" );
+                    this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.STATUS, "finished");
                     Instant finishedTimeStamp = timeService.now();
-                    this.dss.put("run." + run.getName() + ".finished" , finishedTimeStamp.toString());
+                    this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.FINISHED_DATETIME , finishedTimeStamp.toString());
 
                     String msg = "Engine Pod " + newPodDefinition.getMetadata().getName() + " could not be started. Giving up. Retry count "+Integer.toString(launchAttemptCount)+"exceeded!";
                     logger.error(msg);
