@@ -12,8 +12,8 @@ import java.util.*;
 
 import org.junit.Test;
 
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.mocks.*;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.teststructure.TestStructure;
 import dev.galasa.framework.spi.utils.GalasaGson;
@@ -61,9 +61,9 @@ public class TestRunImpl {
         String queuedTimeAsString = Instant.now().toString();
 
         String tagsAsJsonString = gson.toJson(tagsValueGoingIn);
-        dssProps.put("run.U1234"+".tags", tagsAsJsonString);
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.TAGS, tagsAsJsonString);
 
-        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.REQUESTOR, "bundle/package.testclass");
+        dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.TEST, "bundle/package.testclass");
         dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.GROUP, "my-test-group");
         dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.SUBMISSION_ID, "my-submission-id");
         dssProps.put("run.U1234"+"."+DssPropertyKeyRunNameSuffix.QUEUED, queuedTimeAsString);

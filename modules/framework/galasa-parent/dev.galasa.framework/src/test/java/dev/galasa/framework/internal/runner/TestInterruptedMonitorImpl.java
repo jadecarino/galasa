@@ -8,8 +8,8 @@ package dev.galasa.framework.internal.runner;
 import static org.assertj.core.api.Assertions.*;
 import org.junit.Test;
 
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.mocks.*;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 
 public class TestInterruptedMonitorImpl {

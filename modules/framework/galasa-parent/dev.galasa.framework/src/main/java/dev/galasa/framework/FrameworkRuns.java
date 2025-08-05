@@ -31,9 +31,9 @@ import com.google.gson.JsonArray;
 
 import dev.galasa.framework.beans.Property;
 import dev.galasa.framework.beans.SubmitRunRequest;
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;

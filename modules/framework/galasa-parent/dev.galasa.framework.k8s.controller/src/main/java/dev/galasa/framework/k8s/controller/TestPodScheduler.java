@@ -19,8 +19,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.Environment;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
@@ -191,9 +191,9 @@ public class TestPodScheduler implements Runnable {
             Instant now = timeService.now();
             Instant expire = now.plus(15, ChronoUnit.MINUTES);
             HashMap<String, String> props = new HashMap<>();
-            props.put("run." + runName + ".controller", settings.getPodName());
-            props.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.ALLOCATED, now.toString());
-            props.put("run." + runName + ".allocate.timeout", expire.toString());
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.CONTROLLER, settings.getPodName());
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.ALLOCATED, now.toString());
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.ALLOCATE_TIMEOUT, expire.toString());
             if (!this.dss.putSwap("run." + runName + "."+DssPropertyKeyRunNameSuffix.STATUS, "queued", "allocated", props)) {
                 logger.info("run allocated by another controller");
                 return;

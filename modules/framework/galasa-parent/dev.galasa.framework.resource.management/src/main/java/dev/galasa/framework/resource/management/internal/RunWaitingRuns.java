@@ -12,7 +12,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.framework.TestRunLifecycleStatus;
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;

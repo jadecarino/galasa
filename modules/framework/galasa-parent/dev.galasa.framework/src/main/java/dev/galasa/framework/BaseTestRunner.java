@@ -19,12 +19,12 @@ import javax.validation.constraints.NotNull;
 
 import dev.galasa.ResultArchiveStoreContentType;
 import dev.galasa.framework.beans.Property;
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.internal.runner.ITestRunnerEventsProducer;
 import dev.galasa.framework.internal.runner.InterruptedMonitor;
 import dev.galasa.framework.internal.runner.InterruptedMonitorImpl;
 import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
@@ -186,7 +186,7 @@ public class BaseTestRunner {
         try {
             // The overrides DSS property contains a JSON array of overrides in the form:
             // dss.framework.run.X.overrides=[{ "key1": "value1" }, { "key2", "value2" }]
-            String runOverridesProp = "run." + run.getName() + ".overrides";
+            String runOverridesProp = "run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.OVERRIDES;
             String runOverrides = dss.get(runOverridesProp);
             if (runOverrides != null && !runOverrides.isBlank()) {
                 Property[] properties = gson.fromJson(runOverrides, Property[].class);
@@ -265,7 +265,7 @@ public class BaseTestRunner {
         }
 
         try {
-            dss.delete("run." + run.getName() + ".heartbeat");
+            dss.delete("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.HEARTBEAT);
         } catch (DynamicStatusStoreException e) {
             logger.error("Unable to delete heartbeat", e);
         }
@@ -306,8 +306,8 @@ public class BaseTestRunner {
         until = until.plus(totalDelay, ChronoUnit.SECONDS);
 
         HashMap<String, String> properties = new HashMap<>();
-        properties.put(getDSSKeyString("status"), "waiting");
-        properties.put(getDSSKeyString("wait.until"), until.toString());
+        properties.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.STATUS.toString()), "waiting");
+        properties.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.WAIT_UNTIL.toString()), until.toString());
         try {
             this.dss.put(properties);
         } catch (DynamicStatusStoreException e) {
@@ -320,7 +320,7 @@ public class BaseTestRunner {
             if (this.testStructure.getResult() == null) {
                 this.testStructure.setResult("UNKNOWN");
             }
-            this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RESULT, this.testStructure.getResult());
+            this.dss.put("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.RESULT, this.testStructure.getResult());
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update result", e);
         }
@@ -346,7 +346,7 @@ public class BaseTestRunner {
         writeTestStructure();
 
         try {
-            this.dss.put(getDSSKeyString("status"), status.toString());
+            this.dss.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.STATUS.toString()), status.toString());
             if (dssTimePropSuffix != null) {
                 this.dss.put(getDSSKeyString(dssTimePropSuffix), time.toString());
             }
@@ -372,7 +372,7 @@ public class BaseTestRunner {
 
     protected void storeRasRunIdInDss(IDynamicStatusStoreService dss, String rasRunId) throws TestRunException {
         try {
-            this.dss.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
+            this.dss.put("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update rasrunid", e);
         }

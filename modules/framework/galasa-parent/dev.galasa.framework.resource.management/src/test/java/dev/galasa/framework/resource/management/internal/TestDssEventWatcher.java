@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.junit.Test;
 
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreWatcher.Event;
 

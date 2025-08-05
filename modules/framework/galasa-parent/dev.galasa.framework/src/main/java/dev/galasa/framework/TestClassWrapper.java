@@ -25,6 +25,7 @@ import dev.galasa.ContinueOnTestFailure;
 import dev.galasa.framework.GenericMethodWrapper.Type;
 import dev.galasa.framework.internal.runner.InterruptedMonitor;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
@@ -370,7 +371,7 @@ public class TestClassWrapper {
      */
     protected void runTestMethods(@NotNull ITestRunManagers managers, IDynamicStatusStoreService dss, String runName) throws TestRunException {
         try {
-            dss.put("run." + runName + ".method.total", Integer.toString(this.testMethods.size()));
+            dss.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_TOTAL, Integer.toString(this.testMethods.size()));
 
             int actualMethod = 0;
             for (TestMethodWrapper testMethod : this.testMethods) {
@@ -382,8 +383,8 @@ public class TestClassWrapper {
                 } 
 
                 actualMethod++;
-                dss.put("run." + runName + ".method.current", Integer.toString(actualMethod));
-                dss.put("run." + runName + ".method.name", testMethod.getName());
+                dss.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_CURRENT, Integer.toString(actualMethod));
+                dss.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_NAME, testMethod.getName());
                 // Run @Test method
                 testMethod.invoke(managers, this.testClassObject, this.continueOnTestFailure, this);
                 // Setting the result so far after every @Test 
@@ -392,9 +393,9 @@ public class TestClassWrapper {
                     break;
                 }
             }
-            dss.delete("run." + runName + ".method.name");
-            dss.delete("run." + runName + ".method.total");
-            dss.delete("run." + runName + ".method.current");
+            dss.delete("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_NAME);
+            dss.delete("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_TOTAL);
+            dss.delete("run." + runName + "." + DssPropertyKeyRunNameSuffix.METHOD_CURRENT);
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update the run status", e);
         }

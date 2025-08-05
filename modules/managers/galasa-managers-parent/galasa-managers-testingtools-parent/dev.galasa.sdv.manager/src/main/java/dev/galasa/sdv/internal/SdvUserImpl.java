@@ -136,7 +136,7 @@ public class SdvUserImpl implements ISdvUser {
     private void waitForLoggedOnText(ICicsTerminal cicsTerminal) throws CicstsManagerException {
 
         String[] pass = {"Sign-on is complete"};
-        String[] fail = {"Your password has expired. Please type your new password.",
+        String[] fail = {"Your password has expired. Type your new password.",
                          "Invalid credentials entered", "userid has been revoked"};
 
         try {

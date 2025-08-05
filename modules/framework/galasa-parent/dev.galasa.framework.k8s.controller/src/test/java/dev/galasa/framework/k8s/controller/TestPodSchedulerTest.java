@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.junit.After;
 
 import dev.galasa.framework.TestRunLifecycleStatus;
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
 import dev.galasa.framework.k8s.controller.mocks.MockISettings;
 import dev.galasa.framework.k8s.controller.mocks.MockKubernetesApiClient;
@@ -28,6 +27,7 @@ import dev.galasa.framework.mocks.MockIDynamicStatusStoreService;
 import dev.galasa.framework.mocks.MockRun;
 import dev.galasa.framework.mocks.MockTimeService;
 import dev.galasa.framework.mocks.MockFrameworkRuns;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.Result;
 import dev.galasa.framework.spi.creds.FrameworkEncryptionService;

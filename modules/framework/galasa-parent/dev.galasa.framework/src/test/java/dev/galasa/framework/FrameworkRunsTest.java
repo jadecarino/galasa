@@ -23,12 +23,12 @@ import org.junit.Test;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.mocks.MockCPSStore;
 import dev.galasa.framework.mocks.MockDSSStore;
 import dev.galasa.framework.mocks.MockFramework;
 import dev.galasa.framework.mocks.MockRun;
 import dev.galasa.framework.mocks.MockTimeService;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.Result;

@@ -134,7 +134,7 @@ public class CicstsDefaultLogonProvider implements ICicsRegionLogonProvider {
 
         String[] pass = { "Sign-on is complete" };
         String[] fail = { 
-            "Your password has expired. Please type your new password.",
+            "Your password has expired. Type your new password.",
             "Invalid credentials entered",
             "userid has been revoked"
         };

@@ -9,7 +9,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.framework.TestRunException;
-import dev.galasa.framework.internal.dss.DssPropertyKeyRunNameSuffix;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 
@@ -40,7 +40,7 @@ public class InterruptedMonitorImpl implements InterruptedMonitor {
         // "run."+testRunName+".interruptReason" - The reason for the test being interrupted.
         // "run."+testRunName+".rasActions" - A list of things which need to happen to clean up the RAS, and move this test to the correct state.
         String dssKey = "run."+testRunName+"."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON;
-        logger.debug("Checking to see if this run has been interrupted using dss key "+dssKey);
+        
         try {
             String interruptedReason = dss.get(dssKey);
 
