@@ -80,6 +80,11 @@ public class TestMethodWrapper {
                 runBeforeMethods(managers, testClassObject, testClassWrapper);
 
                 if (this.result == null) {
+                    // Failures like an exception being thrown from the testcase method itself don't get thrown up to this point, 
+                    // they normally result in the test being marked as failed and execution continues.
+                    // A runtimeException or something bad will float up here though, or some Framework exception coming from a manager.
+                    // If there is a bad framework issue such as the dss being unavailable or something. In which case all bets are probably off anyway.
+                    // Managers will be invited to clean up even if we throw an exception out of this method.
                     runTestMethod(managers, testClassObject, testClassWrapper, continueOnTestFailure);
                 }
 
