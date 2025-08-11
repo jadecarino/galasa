@@ -20,6 +20,7 @@ import dev.galasa.framework.spi.IFrameworkRuns.SharedEnvironmentPhase;
 import dev.galasa.framework.spi.IResultArchiveStore;
 import dev.galasa.api.runs.ScheduleRequest;
 import dev.galasa.api.runs.ScheduleStatus;
+import dev.galasa.framework.TestRunLifecycleStatus;
 import dev.galasa.framework.api.common.InternalServletException;
 import dev.galasa.framework.api.common.ProtectedRoute;
 import dev.galasa.framework.api.common.ResponseBuilder;
@@ -150,7 +151,7 @@ public class GroupRuns extends ProtectedRoute {
 
     protected void createRunRasRecord(IRun newRun, IResultArchiveStore rasStore, ITimeService timeService) throws InternalServletException {
         TestStructure newTestStructure = newRun.toTestStructure();
-        newTestStructure.setStatus("queued");
+        newTestStructure.setStatus(TestRunLifecycleStatus.QUEUED.toString());
         newTestStructure.setQueued(timeService.now());
         String runId = newRun.getRasRunId();
 
