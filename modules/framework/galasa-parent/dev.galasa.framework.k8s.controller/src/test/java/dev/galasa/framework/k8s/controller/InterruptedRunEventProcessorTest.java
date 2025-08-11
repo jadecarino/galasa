@@ -39,7 +39,7 @@ public class InterruptedRunEventProcessorTest {
 
     private MockKubernetesPodTestUtils mockKubeTestUtils = new MockKubernetesPodTestUtils();
 
-    private MockRun createMockRun(String runName, String status, String interruptReason) {
+    private MockRun createMockRun(String runName, TestRunLifecycleStatus status, String interruptReason) {
         // We only care about the run's name, status, and interrupt reason
         MockRun mockRun = new MockRun(
             "bundle",
@@ -53,16 +53,16 @@ public class InterruptedRunEventProcessorTest {
         );
 
         mockRun.setInterruptReason(interruptReason);
-        mockRun.setStatus(status);
+        mockRun.setStatus(status.toString());
         return mockRun;
     }
 
-    private MockRunResult createMockRunResult(String rasRunId, String status) {
+    private MockRunResult createMockRunResult(String rasRunId, TestRunLifecycleStatus status) {
         Path artifactRoot = null;
         String log = null;
 
         TestStructure testStructure = new TestStructure();
-        testStructure.setStatus(status);
+        testStructure.setStatus(status.toString());
 
         MockRunResult mockRunResult = new MockRunResult(rasRunId, testStructure, artifactRoot, log);
         return mockRunResult;
@@ -73,7 +73,7 @@ public class InterruptedRunEventProcessorTest {
         // Given...
         String runId = "this-is-a-run-id";
         String runName = "RUN1";
-        String status = "running";
+        TestRunLifecycleStatus status = TestRunLifecycleStatus.RUNNING;
         String interruptReason = Result.CANCELLED;
         Instant interruptedAt = Instant.now();
 
@@ -124,7 +124,7 @@ public class InterruptedRunEventProcessorTest {
         // Given...
         String runId = "this-is-a-run-id";
         String runName = "RUN1";
-        String status = "running";
+        TestRunLifecycleStatus status = TestRunLifecycleStatus.RUNNING;
         String interruptReason = Result.REQUEUED;
         Instant interruptedAt = Instant.now();
 
@@ -174,7 +174,7 @@ public class InterruptedRunEventProcessorTest {
         // Given...
         String runId = "this-is-a-run-id";
         String runName = "RUN1";
-        String status = "running";
+        TestRunLifecycleStatus status = TestRunLifecycleStatus.RUNNING;
         String interruptReason = Result.CANCELLED;
         Instant interruptedAt = Instant.now();
 

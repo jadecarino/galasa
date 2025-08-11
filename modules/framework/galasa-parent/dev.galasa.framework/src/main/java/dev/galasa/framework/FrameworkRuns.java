@@ -238,7 +238,7 @@ public class FrameworkRuns implements IFrameworkRuns {
         // *** Set up the otherRunProperties that will go with the Run number
         HashMap<String, String> otherRunProperties = new HashMap<>();
         otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.RAS_RUN_ID), runId);
-        otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.STATUS), "queued");
+        otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.STATUS), TestRunLifecycleStatus.QUEUED.toString());
         otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.QUEUED), Instant.now().toString());
         otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.TEST_BUNDLE), bundleName);
         otherRunProperties.put(getSuffixedRunDssKey(runName, DssPropertyKeyRunNameSuffix.TEST_CLASS), testName);
