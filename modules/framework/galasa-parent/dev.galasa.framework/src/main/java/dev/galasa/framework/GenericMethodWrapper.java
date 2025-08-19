@@ -53,6 +53,12 @@ public class GenericMethodWrapper {
         this.type = type;
     }
 
+    /**
+     * This method creates a copy of this GenericMethodWrapper which is used when creating the wrapper for
+     * a @Test method. Each @Test method should have its own copy of the test's @Befores and @Afters, instead
+     * of pointing to the same set of @Befores and @Afters. This ensures each @Before/@After has a unique test structure.
+     * @return a copy of this GenericMethodWrapper.
+     */
     public GenericMethodWrapper createCopyGenericMethodWrapper() {
         GenericMethodWrapper genericMethodWrapper = new GenericMethodWrapper(this.executionMethod, this.testClass, this.type);
         return genericMethodWrapper;
@@ -163,12 +169,22 @@ public class GenericMethodWrapper {
         }
     }
 
+    /**
+     * This initialises the test structure for this generic method.
+     * A generic method is a @BeforeClass, @Before, @After or @AfterClass
+     * so the test structure is initialised with just a name and type.
+     * It can be retrieved with getGenericMethodStructure().
+     */
     public void initialiseGenericMethodStructure() {
         this.genericMethodStructure = new TestMethod(testClass);
         this.genericMethodStructure.setMethodName(executionMethod.getName());
         this.genericMethodStructure.setType(this.type.toString());
     }
 
+    /**
+     * This returns the test structure for this generic method.
+     * @return the existing TestMethod structure for this generic method.
+     */
     public TestMethod getGenericMethodStructure() {
         return this.genericMethodStructure;
     }
