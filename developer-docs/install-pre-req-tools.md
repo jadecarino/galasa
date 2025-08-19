@@ -118,15 +118,22 @@ gradle --version | grep "Gradle" | cut -f2 -d' '
 
 You also need to make sure that gradle tells the JVM where it should find certificate
 authorities it can trust.
+
+We recommend that you change your java SSL trust store password. 
+Reflect that in an environment variable.
+```shell
+export JAVA_SSL_TRUST_STORE_PASSWORD="changeit"
+```
+
 ```shell
 cat << EOF > ~/.gradle/gradle.properties
 # This file is created by ~/.zprofile whenever it runs.
 org.gradle.java.home=${JAVA_HOME}
 systemProp.javax.net.ssl.trustStore=${JAVA_HOME}/lib/security/cacerts
-systemProp.javax.net.ssl.trustStorePassword=changeit
+systemProp.javax.net.ssl.trustStorePassword=${JAVA_SSL_TRUST_STORE_PASSWORD}
 EOF
 ```
-> I put the above code in my .zprofile so that even if I change/upgrade JDKs, it should still work.
+> Put the above code in my .zprofile so that even if I change/upgrade JDKs, it should still work.
 
 ## Maven
 List the available versions of maven
