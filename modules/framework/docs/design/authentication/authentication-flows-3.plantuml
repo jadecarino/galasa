@@ -1,0 +1,18 @@
+@startuml
+actor "Toby (Tester)" as toby
+participant "CLI tool" as cli
+participant "Environment" as env
+participant "Auth Service" as auth
+
+
+toby-> cli: login(personal access token)
+cli-> auth : authenticate(personal access token) 
+auth-> Dex : Is this personal access tokeb valid>
+auth <--Dex:OK
+auth-> Dex : Allocate a JWT token
+auth <-- Dex :OK (JWT token,refresh token)
+cli<-- auth:OK (JWT token, refresh token)
+cli-> env: set GALASA_BEARER_TOKEN
+cli-> env: set GALASA_BEARER_REFRESH_TOKEN
+toby<-- cli: OK
+@enduml

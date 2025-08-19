@@ -1,0 +1,14 @@
+@startuml
+
+actor "Toby (Tester)" as toby
+participant "Galasa Web UI" as webUI
+participant "Auth Service" as auth
+participant Dex as Dex
+
+toby -> webUI: Add personal access token
+        webUI -> auth : Add personal access token 
+                auth -> Dex : Add personal acces token as valid
+                auth<-- Dex : OK
+        webUI <-- auth: OK
+toby <-- webUI: Personal Access Token appears on panel
+@enduml
