@@ -3174,7 +3174,7 @@ components:
           description: A uuid created to identify this test run. Useful until this run has been allocated a test name, which is allocated once the test is launched.
         requestor:
           type: string
-          description: The Gaalasa user who requested this test to be executed.
+          description: The Galasa user who requested this test to be executed.
         status:
           type: string
         result:
