@@ -54,24 +54,24 @@ sequenceDiagram
     participant AuthAPI as "Auth API"
     participant Dex
 
-    User -> WebUI: Requests personal access token
+    User ->> WebUI: Requests personal access token
     activate WebUI
 
-    WebUI -> AuthAPI: POST /auth/clients with "Authorization: Bearer <JWT>" header
+    WebUI ->> AuthAPI: POST /auth/clients with "Authorization: Bearer <JWT>" header
     activate AuthAPI
-    AuthAPI -> AuthAPI: Check "Authorization" header contains a valid JWT
-    AuthAPI -> Dex: gRPC call to createClient()
+    AuthAPI ->> AuthAPI: Check "Authorization" header contains a valid JWT
+    AuthAPI ->> Dex: gRPC call to createClient()
     activate Dex
     Dex --> AuthAPI: Success response (client_id, client_secret)
     deactivate Dex
     AuthAPI --> WebUI: Success response (client_id, client_secret)
     deactivate AuthAPI
 
-    WebUI -> AuthAPI: GET /auth?client_id=myclient&callback_url=http://webui-hostname/callback
+    WebUI ->> AuthAPI: GET /auth?client_id=myclient&callback_url=http://webui-hostname/callback
     activate AuthAPI
     note left of User : The following is identical to the initial authentication flow, but the client_id used will be the ID of the newly created Dex client.
 
-    AuthAPI -> Dex: GET /auth?client_id=myclient&scope=...&state=somestate&redirect_uri=http://galasa-api/auth/callback
+    AuthAPI ->> Dex: GET /auth?client_id=myclient&scope=...&state=somestate&redirect_uri=http://galasa-api/auth/callback
     activate Dex
     Dex --> AuthAPI: Redirect to /auth/callback?code=someauthcode&state=somestate
     deactivate Dex
@@ -79,9 +79,9 @@ sequenceDiagram
     deactivate AuthAPI
     note left of User : The redirect's location is the same "callback_url" provided in the GET /auth request.
 
-    WebUI -> AuthAPI: POST /auth (client_id, client_secret, code)
+    WebUI ->> AuthAPI: POST /auth (client_id, client_secret, code)
     activate AuthAPI
-    AuthAPI -> Dex: POST /token (client_id, client_secret, code)
+    AuthAPI ->> Dex: POST /token (client_id, client_secret, code)
     activate Dex
     Dex --> AuthAPI: Success response (JWT, refresh token)
     deactivate Dex
@@ -103,13 +103,13 @@ sequenceDiagram
     participant AuthAPI as "Auth API"
     participant Dex
 
-    User -> GalasaCLI: Runs "galasactl auth login"
+    User ->> GalasaCLI: Runs "galasactl auth login"
     activate GalasaCLI
 
-    GalasaCLI -> AuthAPI: POST /auth (client_id, client_secret, refresh_token)
+    GalasaCLI ->> AuthAPI: POST /auth (client_id, client_secret, refresh_token)
     activate AuthAPI
 
-    AuthAPI -> Dex: POST /token (client_id, client_secret, refresh_token)
+    AuthAPI ->> Dex: POST /token (client_id, client_secret, refresh_token)
     activate Dex
     Dex --> AuthAPI: Success response (JWT, refresh token)
     deactivate Dex
