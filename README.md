@@ -49,8 +49,9 @@ When using vscode to develop this code, we recommend the following settings are 
 ## How to contribute to the Galasa project
 See our [contribution guidelines](./CONTRIBUTING.md) on how to contribute to the Galasa project.
 
-## Notes about the code and sysyem for contributors
-We have some notes [here](./developer-docs/README.md) which may help understand the code more.
+## Notes about the codebase and Galasa system for contributors
+We have some notes [here](./developer-docs/README.md) which may help you understand the codebase,
+should you wish to contribute to the project.
 
 ## Legal
 Galasa is developed under this [license](./LICENSE)
