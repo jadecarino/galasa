@@ -23,7 +23,7 @@ The following diagram shows the relationship between the test code, test catalog
 ## Creating and retrieving a test stream
 
 The components of the `test.stream` property are set by using `galasactl resources apply -f {yaml-filename}` command.
-The `apply` sub-command will update the stream if it already exists, but you could use the `create` or `update` sub-command as an alternative
+The `apply` sub-command will update the stream if it already exists, but you could use the `create` or `update` sub-command as an alternative.
 
 See [the command reference](/docs/content/docs/reference/cli-syntax/galasactl_resources_apply.md) for specific syntax help.
 
