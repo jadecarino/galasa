@@ -49,7 +49,7 @@ public class InterruptedMonitorImpl implements InterruptedMonitor {
                 logger.info("Run "+testRunName+" has not been interrupted.");
             } else {
                 isInterrupted = true ;
-                logger.info("Run "+testRunName+" has been interrupted.");
+                logger.info("Run "+testRunName+" has been interrupted. Reason:"+interruptedReason);
             }
         } catch( DynamicStatusStoreException ex) {
             throw new TestRunException("Could not find out if test run "+testRunName+" is interrupted or not.");
