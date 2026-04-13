@@ -11,6 +11,7 @@ import java.util.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.DynamicStatusStoreMatchException;
 import dev.galasa.framework.spi.IDssAction;
@@ -50,7 +51,7 @@ public class MockIDynamicStatusStoreService implements IDynamicStatusStoreServic
         // Don't record heartbeat events in the history. They are random how many there would be 
         // based on the speed of the heartbeat thread. So make it hard for unit tests to check
         // results.
-        if (!key.endsWith(".heartbeat")) {
+        if (!key.endsWith("."+DssPropertyKeyRunNameSuffix.HEARTBEAT)) {
             history.add( new DssHistoryRecord(DssHistoryRecordType.PUT, key , newValue));
         }
         data.put(key,newValue);
@@ -82,6 +83,16 @@ public class MockIDynamicStatusStoreService implements IDynamicStatusStoreServic
     }
 
     @Override
+    public void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException {
+        data.putAll(keyValues);
+    }
+
+    @Override
+    public void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs) throws DynamicStatusStoreException {
+        put(keyValues);
+    }
+
+    @Override
     public boolean putSwap(@NotNull String key, String oldValue, @NotNull String newValue,
             @NotNull Map<String, String> others) throws DynamicStatusStoreException {
         String currentValue = get(key);
@@ -93,12 +104,22 @@ public class MockIDynamicStatusStoreService implements IDynamicStatusStoreServic
         return isOk ;
     }
 
-    // ------------------- un-implemented methods follow --------------------
-
     @Override
-    public void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException {
-               throw new UnsupportedOperationException("Unimplemented method 'put'");
+    public void deletePrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        List<String> keysToDelete = new ArrayList<>();
+
+        for (String key : data.keySet()) {
+            if (key.startsWith(keyPrefix)) {
+                keysToDelete.add(key);
+            }
+        }
+
+        for (String keyToDelete : keysToDelete) {
+            delete(keyToDelete);
+        }
     }
+
+    // ------------------- un-implemented methods follow --------------------
 
     @Override
     public @NotNull Map<String, String> getPrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException {
@@ -106,13 +127,13 @@ public class MockIDynamicStatusStoreService implements IDynamicStatusStoreServic
     }
 
     @Override
-    public void delete(@NotNull Set<String> keys) throws DynamicStatusStoreException {
-               throw new UnsupportedOperationException("Unimplemented method 'delete'");
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+                throw new UnsupportedOperationException("Unimplemented method 'getPrefixKeysOnly'");
     }
 
     @Override
-    public void deletePrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException {
-               throw new UnsupportedOperationException("Unimplemented method 'deletePrefix'");
+    public void delete(@NotNull Set<String> keys) throws DynamicStatusStoreException {
+               throw new UnsupportedOperationException("Unimplemented method 'delete'");
     }
 
     @Override

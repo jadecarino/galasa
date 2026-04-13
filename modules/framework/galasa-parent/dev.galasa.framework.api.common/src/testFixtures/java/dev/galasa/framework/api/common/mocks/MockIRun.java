@@ -13,8 +13,9 @@ import java.util.Set;
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
-public class MockIRun implements IRun{
+public class MockIRun implements IRun {
 
     private String runName;
     private String runType;
@@ -23,6 +24,7 @@ public class MockIRun implements IRun{
     private Instant finished = Instant.parse("2023-10-12T12:16:49.832925Z");
     private Instant waitUntil = Instant.parse("2023-10-12T12:16:49.832925Z");
     private String requestor;
+    private String user;
     private String test;
     private String runStatus;
     private String bundle; 
@@ -39,6 +41,7 @@ public class MockIRun implements IRun{
         String runName,
         String runType,
         String requestor,
+        String user,
         String test,
         String runStatus,
         String bundle,
@@ -50,6 +53,7 @@ public class MockIRun implements IRun{
         this.runName = runName;
         this.runType = runType;
         this.requestor = requestor;
+        this.user = user;
         this.test = test;
         this.runStatus = runStatus;
         this.bundle = bundle;
@@ -57,9 +61,36 @@ public class MockIRun implements IRun{
         this.groupName = groupName;
         this.submissionId = submissionId;
         this.tags = new HashSet<String>();
-        if( tags != null) {
+        if (tags != null) {
             this.tags.addAll(tags);
         }
+    }
+
+    public MockIRun(
+        String runName,
+        String runType,
+        String requestor,
+        String test,
+        String runStatus,
+        String bundle,
+        String testClass,
+        String groupName,
+        String submissionId,
+        Set<String> tags
+    ) {
+        this(
+            runName,
+            runType,
+            requestor,
+            requestor, // user defaults to requestor if not provided.
+            test,
+            runStatus,
+            bundle,
+            testClass,
+            groupName,
+            submissionId,
+            tags
+        );
     }
 
     @Override
@@ -90,6 +121,11 @@ public class MockIRun implements IRun{
     @Override
     public String getRequestor() {
         return this.requestor;
+    }
+
+    @Override
+    public String getUser() {
+        return this.user;
     }
 
     @Override
@@ -150,7 +186,7 @@ public class MockIRun implements IRun{
     @Override
     public Run getSerializedRun() {
         return new Run(runName, heartbeat, runType, groupName, testClass, bundle, test, runStatus, result, queued,
-                finished, waitUntil, requestor, stream, repo, obr, false, false, "cdb-"+runName, submissionId, tags);
+                finished, waitUntil, requestor, user, stream, repo, obr, false, false, "cdb-"+runName, submissionId, tags);
     }
 
     @Override
@@ -169,6 +205,36 @@ public class MockIRun implements IRun{
     }
 
     @Override
+    public String getRasRunId() {
+        return "cdb-" + runName;
+    }
+
+    public Set<String> getTags() {
+        Set<String> tagsToReturn = new HashSet<String>();
+        tagsToReturn.addAll(this.tags);
+        return tagsToReturn;
+    }
+
+    @Override
+    public TestStructure toTestStructure() {
+        TestStructure testStructure = new TestStructure();
+
+        testStructure.setBundle(bundle);
+        testStructure.setTestName(testClass);
+        testStructure.setRunName(runName);
+        testStructure.setRequestor(requestor);
+        testStructure.setUser(user);
+        testStructure.setSubmissionId(submissionId);
+        testStructure.setGroup(groupName);
+
+        for (String tag : tags) {
+            testStructure.addTag(tag);
+        }
+
+        return testStructure;
+    }
+
+    @Override
     public String getInterruptReason() {
         throw new UnsupportedOperationException("Unimplemented method 'getInterruptReason'");
     }
@@ -179,18 +245,22 @@ public class MockIRun implements IRun{
     }
 
     @Override
-    public String getRasRunId() {
-        throw new UnsupportedOperationException("Unimplemented method 'getRasRunId'");
-    }
-
-    @Override
     public List<RunRasAction> getRasActions() {
         throw new UnsupportedOperationException("Unimplemented method 'getRasActions'");
     }
-    public Set<String> getTags() {
-        Set<String> tagsToReturn = new HashSet<String>();
-        tagsToReturn.addAll(this.tags);
-        return tagsToReturn;
+
+    @Override
+    public Instant getInterruptedAt() {
+        throw new UnsupportedOperationException("Unimplemented method 'getInterruptedAt'");
     }
-    
+
+    @Override
+    public Instant getAllocatedTimeout() {
+        throw new UnsupportedOperationException("Unimplemented method 'getAllocatedTimeout'");
+    }
+
+    @Override
+    public List<String> getRequestedTestMethods() {
+        throw new UnsupportedOperationException("Unimplemented method 'getRequestedTestMethods'");
+    }
 }

@@ -13,7 +13,6 @@ import java.util.Base64;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -21,11 +20,16 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.gson.reflect.TypeToken;
+
 import dev.galasa.api.run.Run;
+import dev.galasa.framework.spi.AbstractManager;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 import dev.galasa.framework.spi.utils.GalasaGson;
 
 public class RunImpl implements IRun {
@@ -45,6 +49,7 @@ public class RunImpl implements IRun {
     private final Instant finished;
     private final Instant waitUntil;
     private final String  requestor;
+    private final String  user;
     private final String  stream;
     private final String  repo;
     private final String  obr;
@@ -53,8 +58,11 @@ public class RunImpl implements IRun {
     private final boolean sharedEnvironment;
     private final String  rasRunId;
     private final String  interruptReason;
+    private final Instant interruptedAt;
+    private final Instant allocatedTimeout;
     private List<RunRasAction> rasActions = new ArrayList<>();
     private final Set<String> tags;
+    private final List<String> requestedTestMethods;
 
     private static final Log logger = LogFactory.getLog(RunImpl.class);
     private static final GalasaGson gson = new GalasaGson();
@@ -66,37 +74,41 @@ public class RunImpl implements IRun {
 
         Map<String, String> runProperties = dss.getPrefix("run." + this.name);
 
-        String sHeartbeat = runProperties.get(prefix + "heartbeat");
+        String sHeartbeat = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.HEARTBEAT);
         if (sHeartbeat != null) {
             this.heartbeat = Instant.parse(sHeartbeat);
         } else {
             this.heartbeat = null;
         }
 
-        type = runProperties.get(prefix + "request.type");
-        test = runProperties.get(prefix + "test");
-        status = runProperties.get(prefix + "status");
-        result = runProperties.get(prefix + "result");
-        requestor = runProperties.get(prefix + "requestor");
-        stream = runProperties.get(prefix + "stream");
-        repo = runProperties.get(prefix + "repository");
-        obr = runProperties.get(prefix + "obr");
-        group = runProperties.get(prefix + "group");
-        submissionId = runProperties.get(prefix + "submissionId");
-        rasRunId = runProperties.get(prefix + "rasrunid");
-        interruptReason = runProperties.get(prefix + "interruptReason");
-        local = Boolean.parseBoolean(runProperties.get(prefix + "local"));
-        trace = Boolean.parseBoolean(runProperties.get(prefix + "trace"));
-        sharedEnvironment = Boolean.parseBoolean(runProperties.get(prefix + "shared.environment"));
-        gherkin = runProperties.get(prefix + "gherkin");
+        type = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.REQUEST_TYPE);
+        test = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.TEST);
+        status = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.STATUS);
+        result = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.RESULT);
+        requestor = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.REQUESTOR);
+        user = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.USER);
+        stream = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.STREAM);
+        repo = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.REPOSITORY);
+        obr = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.OBR);
+        group = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.GROUP);
+        submissionId = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.SUBMISSION_ID);
+        rasRunId = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.RAS_RUN_ID);
+        interruptReason = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.INTERRUPT_REASON);
+        local = Boolean.parseBoolean(runProperties.get(prefix + DssPropertyKeyRunNameSuffix.LOCAL));
+        trace = Boolean.parseBoolean(runProperties.get(prefix + DssPropertyKeyRunNameSuffix.TRACE));
+        sharedEnvironment = Boolean.parseBoolean(runProperties.get(prefix + DssPropertyKeyRunNameSuffix.SHARED_ENVIRONMENT));
+        gherkin = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.GHERKIN);
         tags = getTagsFromDss(runProperties, prefix);
+        interruptedAt = getInterruptedAtTimeFromDss(runProperties, prefix);
+        allocatedTimeout = getAllocatedTimeoutFromDss(runProperties, prefix);
+        requestedTestMethods = getRequestedTestMethodsFromDss(runProperties, prefix);
 
-        String encodedRasActions = runProperties.get(prefix + "rasActions");
+        String encodedRasActions = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.RAS_ACTIONS);
         if (encodedRasActions != null) {
             this.rasActions = getRasActionsFromEncodedString(encodedRasActions);
         }
 
-        String sQueued = runProperties.get(prefix + "queued");
+        String sQueued = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.QUEUED);
         if (sQueued != null) {
             this.queued = Instant.parse(sQueued);
         } else {
@@ -107,14 +119,14 @@ public class RunImpl implements IRun {
             }
         }
 
-        String sFinished = runProperties.get(prefix + "finished");
+        String sFinished = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.FINISHED_DATETIME);
         if (sFinished != null) {
             this.finished = Instant.parse(sFinished);
         } else {
             this.finished = null;
         }
 
-        String sWaitUntil = runProperties.get(prefix + "wait.until");
+        String sWaitUntil = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.WAIT_UNTIL);
         if (sWaitUntil != null) {
             this.waitUntil = Instant.parse(sWaitUntil);
         } else {
@@ -138,10 +150,27 @@ public class RunImpl implements IRun {
         logger.info("RunImpl created: "+this.toString());
     }
 
+    private Instant getInterruptedAtTimeFromDss(Map<String, String> runProperties, String prefix) {
+        return getTimeValueFromDss(runProperties, prefix + DssPropertyKeyRunNameSuffix.INTERRUPTED_AT);
+    }
+
+    private Instant getAllocatedTimeoutFromDss(Map<String, String> runProperties, String prefix) {
+        return getTimeValueFromDss(runProperties, prefix + DssPropertyKeyRunNameSuffix.ALLOCATE_TIMEOUT);
+    }
+
+    private Instant getTimeValueFromDss(Map<String, String> runProperties, String propertyKey) {
+        Instant timeToReturn = null;
+        String timeAsStr = runProperties.get(propertyKey);
+        if (timeAsStr != null) {
+            timeToReturn = Instant.parse(timeAsStr);
+        }
+        return timeToReturn;
+    }
+
     private Set<String> getTagsFromDss(Map<String, String> runProperties, String prefix) {
         Set<String> tags = new HashSet<String>();
         try {
-            String tagsAsString = runProperties.get(prefix + "tags");
+            String tagsAsString = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.TAGS);
             if (tagsAsString!= null && !tagsAsString.trim().isEmpty()) {
                 HashSet<?> tagSetOfObj = gson.fromJson(tagsAsString, HashSet.class);
                 for( Object entry : tagSetOfObj) {
@@ -159,6 +188,23 @@ public class RunImpl implements IRun {
         }
         logger.info("test tags retrieved from dss: "+tags.toString());
         return tags;
+    }
+
+    private List<String> getRequestedTestMethodsFromDss(Map<String, String> runProperties, String prefix) {
+        List<String> requestedTestMethods = new ArrayList<>();
+        String requestedTestMethodsAsString = runProperties.get(prefix + DssPropertyKeyRunNameSuffix.TEST_METHODS);
+
+        if (requestedTestMethodsAsString != null && !requestedTestMethodsAsString.isBlank()) {
+            try {
+                TypeToken<List<String>> listTypeToken = new TypeToken<List<String>>(){};
+                List<String> testMethodsFromJson = gson.fromJson(requestedTestMethodsAsString, listTypeToken.getType());
+                requestedTestMethods.addAll(testMethodsFromJson);
+            } catch (Exception e) {
+                // Don't fail the test run, fall back to running all tests
+                logger.error("Failed to de-serialise test methods to run from dss. ", e);
+            }
+        }
+        return requestedTestMethods;
     }
 
     private List<RunRasAction> getRasActionsFromEncodedString(String encodedRasActions) {
@@ -196,6 +242,11 @@ public class RunImpl implements IRun {
     @Override
     public String getRequestor() {
         return requestor;
+    }
+
+    @Override
+    public String getUser() {
+        return user;
     }
 
     @Override
@@ -266,7 +317,7 @@ public class RunImpl implements IRun {
     @Override
     public Run getSerializedRun() {
         return new Run(name, heartbeat, type, group, test, bundleName, testName, status, result, queued,
-                finished, waitUntil, requestor, stream, repo, obr, local, trace, rasRunId, submissionId, tags);
+                finished, waitUntil, requestor, user, stream, repo, obr, local, trace, rasRunId, submissionId, tags);
     }
 
     @Override
@@ -294,9 +345,25 @@ public class RunImpl implements IRun {
     }
 
     @Override
+    public Instant getInterruptedAt() {
+        return this.interruptedAt;
+    }
+
+    @Override
+    public Instant getAllocatedTimeout() {
+        return allocatedTimeout;
+    }
+
+    @Override
     public List<RunRasAction> getRasActions() {
         return this.rasActions;
     }
+
+    @Override
+    public List<String> getRequestedTestMethods() {
+        return this.requestedTestMethods;
+    }
+
     public String toString() {
         ByteArrayOutputStream buffArray = new ByteArrayOutputStream();
         PrintWriter buff = new PrintWriter(buffArray);
@@ -346,7 +413,15 @@ public class RunImpl implements IRun {
             buff.append(" waitUntil: "+waitUntil.toString());
         }
 
+        if (this.interruptedAt == null) {
+            buff.append(" interruptedAt: null");
+        } else {
+            buff.append(" interruptedAt: "+interruptedAt.toString());
+        }
+
+        buff.append(" interruptReason: "+interruptReason);
         buff.append(" requestor: "+requestor);
+        buff.append(" user: "+user);
         buff.append(" stream: "+stream);
         buff.append(" repo: "+repo);
         buff.append(" obr: "+obr);
@@ -372,4 +447,49 @@ public class RunImpl implements IRun {
         return buffArray.toString();
     }
 
+    /**
+     * Create a new test structure, and populate it with as much information as we can from the run.
+     * @return A TestStructure which is written into the RAS eventually.
+     */
+    @Override
+    public TestStructure toTestStructure() {
+        TestStructure testStructure = new TestStructure();
+
+        String bundleName = getTestBundleName();
+        String testName = getTestClassName();
+        String runName = getName();
+        String group = getGroup();
+        String submissionId = getSubmissionId();
+        Instant queuedAt = getQueued();
+        String requestor = AbstractManager.defaultString(getRequestor(), "unknown");
+        String user = AbstractManager.defaultString(getUser(), "unknown");
+
+        if (testName != null) {
+            // The test name is in the form "package.class", so get the class after the last "."
+            String trimmedTestName = testName.trim();
+            int lastDotIndex = trimmedTestName.lastIndexOf(".");
+            if (lastDotIndex != -1 && (lastDotIndex + 1) < trimmedTestName.length()) {
+                String testShortName = testName.substring(lastDotIndex + 1);
+                testStructure.setTestShortName(testShortName);
+            }
+        }
+
+        testStructure.setBundle(bundleName);
+        testStructure.setTestName(testName);
+        testStructure.setQueued(queuedAt);
+        testStructure.setRunName(runName);
+        testStructure.setRequestor(requestor);
+        testStructure.setUser(user);
+        testStructure.setGroup(group);
+        testStructure.setSubmissionId(submissionId);
+        testStructure.setLogRecordIds(new ArrayList<>());
+        testStructure.setArtifactRecordIds(new ArrayList<>());
+        testStructure.normalise();
+
+        for (String tag : getTags()) {
+            testStructure.addTag(tag);
+        }
+
+        return testStructure;
+    }
 }

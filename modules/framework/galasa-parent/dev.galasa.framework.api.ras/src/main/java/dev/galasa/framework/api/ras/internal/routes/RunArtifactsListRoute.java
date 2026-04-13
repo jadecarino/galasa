@@ -21,7 +21,6 @@ import com.google.gson.JsonArray;
 
 import dev.galasa.framework.IFileSystem;
 import dev.galasa.framework.api.ras.internal.common.ArtifactsJson;
-import dev.galasa.framework.api.ras.internal.common.ArtifactsProperties;
 import dev.galasa.framework.api.ras.internal.common.IRunRootArtifact;
 import dev.galasa.framework.api.ras.internal.common.RunLogArtifact;
 import dev.galasa.framework.api.ras.internal.common.StructureJsonArtifact;
@@ -47,7 +46,7 @@ public class RunArtifactsListRoute extends RunArtifactsRoute {
     //  Regex to match endpoint: /ras/runs/{runId}/artifacts
     protected static final String path = "\\/runs\\/" + RUN_ID_PATTERN + "\\/artifacts\\/?";
 
-    private List<IRunRootArtifact> rootArtifacts = new ArrayList<>();
+    private List<IRunRootArtifact> virtualRootArtifacts = new ArrayList<>();
 
     public RunArtifactsListRoute(
         ResponseBuilder responseBuilder,
@@ -55,10 +54,9 @@ public class RunArtifactsListRoute extends RunArtifactsRoute {
         IFramework framework
     ) throws RBACException {
         super(responseBuilder, path, fileSystem, framework);
-        rootArtifacts = Arrays.asList(
+        virtualRootArtifacts = Arrays.asList(
             new RunLogArtifact(),
             new StructureJsonArtifact(),
-            new ArtifactsProperties(this),
             new ArtifactsJson(this)
         );
     }
@@ -78,7 +76,6 @@ public class RunArtifactsListRoute extends RunArtifactsRoute {
         JsonArray artifacts = new JsonArray();
         try {
             run = getRunByRunId(runId);
-            run.loadArtifacts();
         } catch (ResultArchiveStoreException e) {
             ServletError error = new ServletError(GAL5002_INVALID_RUN_ID, runId);
             throw new InternalServletException(error, HttpServletResponse.SC_NOT_FOUND, e);
@@ -97,7 +94,7 @@ public class RunArtifactsListRoute extends RunArtifactsRoute {
 
     private JsonArray getRootArtifacts(IRunResult run) throws ResultArchiveStoreException, IOException {
         JsonArray artifactRecords = new JsonArray();
-        for (IRunRootArtifact rootArtifact : rootArtifacts) {
+        for (IRunRootArtifact rootArtifact : virtualRootArtifacts) {
             byte[] content = rootArtifact.getContent(run);
             if (content != null) {
                 artifactRecords.add(getArtifactAsJsonObject(rootArtifact.getPathName(), rootArtifact.getContentType(), content.length));

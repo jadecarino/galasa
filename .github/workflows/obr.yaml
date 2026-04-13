@@ -279,7 +279,20 @@ jobs:
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/galasa-dev/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name obr-${{ env.BRANCH }} --server argocd.galasa.dev --grpc-web
+          for i in {1..10}; do
+            docker run \
+            --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} \
+            --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main \
+            app actions run ${{ env.BRANCH }}-maven-repos restart \
+            --kind Deployment \
+            --resource-name obr-${{ env.BRANCH }} \
+            --server argocd.galasa.dev \
+            --grpc-web \
+            && exit 0 || sleep 10
+          done
+
+          echo "ArgoCD still uncontactable after 10 attempts."
+          exit 1
 
       - name: Wait for OBR application health in ArgoCD
         # Skip this job for forks
@@ -287,7 +300,20 @@ jobs:
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/galasa-dev/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:obr-${{ env.BRANCH }} --health --server argocd.galasa.dev --grpc-web
+          for i in {1..10}; do
+            docker run \
+            --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} \
+            --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main \
+            app wait ${{ env.BRANCH }}-maven-repos \
+            --resource apps:Deployment:obr-${{ env.BRANCH }} \
+            --health \
+            --server argocd.galasa.dev \
+            --grpc-web \
+            && exit 0 || sleep 10
+          done
+
+          echo "ArgoCD still uncontactable after 10 attempts."
+          exit 1
 
       # Here we remove the artifacts built by the other modules (everything
       # other than dev.galasa.uber.obr and galasa-bom) as otherwise when
@@ -361,7 +387,7 @@ jobs:
             platform=linux-amd64
 
   build-obr-javadocs:
-    name: Build OBR javadocs using galasabld image and maven
+    name: Build galasa-uber-javadoc using galasabld image and maven
     runs-on: ubuntu-latest
 
     steps:
@@ -488,7 +514,7 @@ jobs:
       #     restore-keys: |
       #         cache-obr-javadoc-
 
-      - name: Build javadoc site using maven
+      - name: Build galasa-uber-javadoc and deploy into temporary location
         working-directory: modules/obr/javadocs
         env:
           GPG_KEYID: ${{ secrets.GPG_KEYID }}
@@ -509,7 +535,7 @@ jobs:
 
       # Note: We publish from a different repository, so the maven comand can't find the javadoc's pom.xml,
       # as we want it to create a new one.
-      - name: Publish the javadoc site using maven, so that the maven bundle contains no dependencies.
+      - name: Publish galasa-uber-javadoc ZIP to local Maven repository
         working-directory: modules/obr
         env:
           GPG_KEYID: ${{ secrets.GPG_KEYID }}
@@ -535,11 +561,11 @@ jobs:
           --batch-mode --errors --fail-at-end \
           --settings ${{ github.workspace }}/modules/obr/settings.xml 2>&1 | tee -a javadocs/build.log
       
-      - name: Upload Javadoc site build log
+      - name: Upload Javadoc build log
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: javadoc-site-build-log
+          name: javadoc-build-log
           path: modules/obr/javadocs/build.log
           retention-days: 7
 
@@ -558,39 +584,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.WRITE_GITHUB_PACKAGES_USERNAME }}
           password: ${{ env.WRITE_GITHUB_PACKAGES_TOKEN }}
-    
-      - name: Extract metadata for Javadoc site image
-        id: metadata-javadoc-site
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/javadoc-site
-  
-      - name: Build and push Javadoc site image 
-        id: build-javadoc-site
-        uses: docker/build-push-action@v5
-        with:
-          context: modules/obr
-          file: modules/obr/dockerfiles/dockerfile.javadocsite
-          push: true
-          tags: ${{ steps.metadata-javadoc-site.outputs.tags }}
-          labels: ${{ steps.metadata-javadoc-site.outputs.labels }}
-      
-      - name: Recycle javadocsite application in ArgoCD
-        # Skip this job for forks
-        if: ${{ github.repository_owner == 'galasa-dev' }}
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-        run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name javadocsite-${{ env.BRANCH }} --server argocd.galasa.dev --grpc-web
-      
-      - name: Wait for javadocsite application health in ArgoCD
-        # Skip this job for forks
-        if: ${{ github.repository_owner == 'galasa-dev' }}
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
-        run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:javadocsite-${{ env.BRANCH }} --health --server argocd.galasa.dev --grpc-web
-      
+
       - name: Extract metadata for Javadoc Maven repo image
         id: metadata
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
@@ -616,7 +610,20 @@ jobs:
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app actions run ${{ env.BRANCH }}-maven-repos restart --kind Deployment --resource-name javadoc-${{ env.BRANCH }} --server argocd.galasa.dev --grpc-web
+          for i in {1..10}; do
+            docker run \
+            --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} \
+            --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main \
+            app actions run ${{ env.BRANCH }}-maven-repos restart \
+            --kind Deployment \
+            --resource-name javadoc-${{ env.BRANCH }} \
+            --server argocd.galasa.dev \
+            --grpc-web \
+            && exit 0 || sleep 10
+          done
+
+          echo "ArgoCD still uncontactable after 10 attempts."
+          exit 1
 
       - name: Wait for javadoc application health in ArgoCD
         # Skip this job for forks
@@ -624,7 +631,20 @@ jobs:
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
         run: |
-          docker run --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main app wait ${{ env.BRANCH }}-maven-repos --resource apps:Deployment:javadoc-${{ env.BRANCH }} --health --server argocd.galasa.dev --grpc-web
+          for i in {1..10}; do
+            docker run \
+            --env ARGOCD_AUTH_TOKEN=${{ env.ARGOCD_AUTH_TOKEN }} \
+            --rm ghcr.io/${{ env.NAMESPACE }}/argocdcli:main \
+            app wait ${{ env.BRANCH }}-maven-repos \
+            --resource apps:Deployment:javadoc-${{ env.BRANCH }} \
+            --health \
+            --server argocd.galasa.dev \
+            --grpc-web \
+            && exit 0 || sleep 10
+          done
+
+          echo "ArgoCD still uncontactable after 10 attempts."
+          exit 1
 
   build-obr-generic:
     name: Build OBR embedded and boot images using galasabld and maven
@@ -841,26 +861,6 @@ jobs:
             dockerRepository=${{ env.REGISTRY }}
             jdkImage=ghcr.io/galasa-dev/openjdk:17
 
-      - name: Extract metadata for Galasa IBM boot embedded image
-        id: metadata-ibm-boot-embedded
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/galasa-ibm-boot-embedded
-  
-      - name: Build and push Galasa IBM boot embedded image
-        id: build-ibm-boot-embedded
-        uses: docker/build-push-action@v5
-        with:
-          context: modules/obr
-          file: modules/obr/dockerfiles/dockerfile.ibmbootembedded
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.metadata-ibm-boot-embedded.outputs.tags }}
-          labels: ${{ steps.metadata-ibm-boot-embedded.outputs.labels }}
-          build-args: |
-            tag=${{ env.BRANCH }}
-            dockerRepository=${{ env.REGISTRY }}
-
   trigger-next-workflows:
     # Skip this job for forks
     if: ${{ github.repository_owner == 'galasa-dev' }}
@@ -885,9 +885,15 @@ jobs:
 
       - name: Triggering simplatform build
         env:
-            GH_TOKEN: ${{ secrets.GALASA_TEAM_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GALASA_TEAM_GITHUB_TOKEN }}
         run: |
           gh workflow run build.yaml --repo https://github.com/galasa-dev/simplatform --ref ${{ env.BRANCH }}
+
+      - name: Triggering webui build
+        env:
+          GH_TOKEN: ${{ secrets.GALASA_TEAM_GITHUB_TOKEN }}
+        run: |
+          gh workflow run build.yaml --repo https://github.com/galasa-dev/webui --ref ${{ env.BRANCH }}
 
   report-failure:
     # Skip this job for forks

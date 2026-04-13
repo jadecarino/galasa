@@ -1,5 +1,5 @@
 plugins {
-    id 'biz.aQute.bnd.builder' version '5.3.0' apply false
+    id 'biz.aQute.bnd.builder' version '7.1.0' apply false
     id 'jacoco'
     id 'maven-publish'
     id 'signing'
@@ -9,11 +9,11 @@ plugins {
 // It is used as the version number of the managers bundle, which contains a yaml
 // file which is in a release.yaml, but published to maven, so that the OBR build 
 // can pick it up later.
-version = "0.43.0"
+version = "0.48.0"
 
 allprojects {
     group = 'dev.galasa'
-    version = "0.43.0"
+    version = "0.48.0"
 }
 
 // A configuration to publish the merge exec into
@@ -229,7 +229,7 @@ publishing {
                 name = "Manifest for managers bundle versions"
                 artifactId = "dev.galasa.managers.manifest"
                 groupId = 'dev.galasa'
-				version = "0.43.0"
+				version = "0.48.0"
                 description = "Conveys bundle version information to OBR builds."
                 licenses {
                     license {
@@ -241,7 +241,7 @@ publishing {
                 developers {
                     developer {
                         name = 'Galasa Developer'
-                        email = 'galasadelivery@ibm.com'
+                        email = 'galasa-maintainers@lists.openmainframeproject.org'
                         organization = 'IBM'
                         organizationUrl = 'https://www.ibm.com'
                     }

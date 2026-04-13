@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.framework.FileSystem;
 import dev.galasa.framework.IFileSystem;
+import dev.galasa.framework.api.ras.internal.routes.RasHealthRoute;
 import dev.galasa.framework.api.ras.internal.routes.RequestorRoute;
 import dev.galasa.framework.api.ras.internal.routes.ResultNamesRoute;
 import dev.galasa.framework.api.ras.internal.routes.RunArtifactsDownloadRoute;
@@ -61,10 +62,11 @@ public class RasServlet extends BaseServlet {
 		super.init();
 
 		try {
-			addRoute(new RunDetailsRoute(getResponseBuilder(), framework));
+			addRoute(new RasHealthRoute(getResponseBuilder(), framework));
+			addRoute(new RunDetailsRoute(getResponseBuilder(), framework, env));
 			addRoute(new RunLogRoute(getResponseBuilder(), framework));
 			addRoute(new RunArtifactsListRoute(getResponseBuilder(), fileSystem, framework));
-			addRoute(new RunQueryRoute(getResponseBuilder(), framework));
+			addRoute(new RunQueryRoute(getResponseBuilder(), framework, env));
 			addRoute(new RunArtifactsDownloadRoute(getResponseBuilder(), fileSystem, framework));
 			addRoute(new ResultNamesRoute(getResponseBuilder(), framework));
 			addRoute(new RequestorRoute(getResponseBuilder(), framework));

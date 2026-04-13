@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import dev.galasa.api.run.Run;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public interface IRun {
 
@@ -25,11 +26,15 @@ public interface IRun {
 
     String getRequestor();
 
+    String getUser();
+
     String getStream();
 
     String getTestBundleName();
 
     String getTestClassName();
+
+    List<String> getRequestedTestMethods();
 
     boolean isLocal();
 
@@ -59,8 +64,14 @@ public interface IRun {
 
     String getInterruptReason();
 
+    Instant getInterruptedAt();
+
+    Instant getAllocatedTimeout();
+
     String getRasRunId();
 
     List<RunRasAction> getRasActions();
     public Set<String> getTags();
+
+    TestStructure toTestStructure();
 }

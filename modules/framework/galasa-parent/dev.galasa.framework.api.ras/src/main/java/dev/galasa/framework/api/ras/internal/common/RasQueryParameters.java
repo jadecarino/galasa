@@ -28,8 +28,19 @@ import static dev.galasa.framework.api.common.ServletErrorMessage.*;
 
 public class RasQueryParameters {
 
-	public static final int DEFAULT_PAGE_NUMBER = 1;
 	public static final int DEFAULT_NUMBER_RECORDS_PER_PAGE = 100;
+
+    public static final Set<String> SUPPORTED_SORT_KEYS = Set.of(
+        "from",
+        "to",
+        "testclass",
+        "result",
+        "results",
+        "requestor",
+        "resultnames",
+        "runname"
+    );
+
     private final Map<String, Boolean> sortDirectionMap = new HashMap<String,Boolean>(){{
         put("asc",true);
         put("ascending",true);
@@ -68,11 +79,6 @@ public class RasQueryParameters {
 
 
 
-    public int getPageNumber() throws InternalServletException {
-        int pageNumber = generalQueryParams.getSingleInt("page", DEFAULT_PAGE_NUMBER);
-        return pageNumber;
-    }
-
     public int getPageSize() throws InternalServletException {
         return generalQueryParams.getSingleInt("size", DEFAULT_NUMBER_RECORDS_PER_PAGE);
     }
@@ -87,6 +93,10 @@ public class RasQueryParameters {
 
     public String getRequestor() throws InternalServletException {
         return generalQueryParams.getSingleString("requestor", null);
+    }
+
+    public String getUser() throws InternalServletException {
+        return generalQueryParams.getSingleString("user", null);
     }
 
     public String getGroup() throws InternalServletException {
@@ -115,10 +125,6 @@ public class RasQueryParameters {
 
     public String getPageCursor() throws InternalServletException {
         return generalQueryParams.getSingleString("cursor", null);
-    }
-
-    public boolean getIncludeCursor() throws InternalServletException {
-        return generalQueryParams.getSingleBoolean("includeCursor", false);
     }
 
     public RasSortField getSortValue() throws InternalServletException {
@@ -209,7 +215,10 @@ public class RasQueryParameters {
     private RasSortField getValidatedSortValue(String sortValue) throws InternalServletException {
         String[] sortValueParts = sortValue.split(":");
 
-        if (sortValueParts.length != 2 || !sortDirectionMap.containsKey(sortValueParts[1].toLowerCase())) {
+        if (sortValueParts.length != 2
+            || !SUPPORTED_SORT_KEYS.contains(sortValueParts[0].toLowerCase())
+            || !sortDirectionMap.containsKey(sortValueParts[1].toLowerCase())
+        ) {
             ServletError error = new ServletError(GAL5011_SORT_VALUE_NOT_RECOGNIZED, sortValue);
             throw new InternalServletException(error, HttpServletResponse.SC_BAD_REQUEST);
         }

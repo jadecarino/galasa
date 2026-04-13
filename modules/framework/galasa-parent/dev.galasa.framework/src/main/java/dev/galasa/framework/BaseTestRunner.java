@@ -20,22 +20,31 @@ import javax.validation.constraints.NotNull;
 import dev.galasa.ResultArchiveStoreContentType;
 import dev.galasa.framework.beans.Property;
 import dev.galasa.framework.internal.runner.ITestRunnerEventsProducer;
+import dev.galasa.framework.internal.runner.InterruptedMonitor;
+import dev.galasa.framework.internal.runner.InterruptedMonitorImpl;
 import dev.galasa.framework.spi.AbstractManager;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IFramework;
+import dev.galasa.framework.spi.IFrameworkRuns;
 import dev.galasa.framework.spi.IResultArchiveStore;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.IShuttableFramework;
+import dev.galasa.framework.spi.Result;
 import dev.galasa.framework.spi.ResultArchiveStoreException;
 import dev.galasa.framework.spi.teststructure.TestStructure;
 import dev.galasa.framework.spi.utils.DssUtils;
 import dev.galasa.framework.spi.utils.GalasaGson;
+import dev.galasa.framework.spi.utils.ITimeService;
+import dev.galasa.framework.spi.utils.SystemTimeService;
 
 public class BaseTestRunner {
+
+    private static final long THREAD_SHUTDOWN_TIMEOUT_MS = 2000;
 
     private Log logger = LogFactory.getLog(BaseTestRunner.class);
 
@@ -53,6 +62,7 @@ public class BaseTestRunner {
     protected TestStructure testStructure ;
 
     protected TestRunHeartbeat heartbeat;
+    protected TestRunTimeoutMonitor timeoutMonitor;
 
     protected boolean isRunOK = true;
     protected boolean isResourcesAvailable = true;
@@ -61,10 +71,13 @@ public class BaseTestRunner {
 
     protected RunRasActionProcessor rasActionProcessor;
 
+    protected ITimeService timeService = new SystemTimeService();
 
     protected Properties overrideProperties;
 
     protected static final GalasaGson gson = new GalasaGson();
+
+    private InterruptedMonitor interruptedMonitor;
 
     protected void init(ITestRunnerDataProvider dataProvider) throws TestRunException {
         this.run = dataProvider.getRun() ;
@@ -83,6 +96,12 @@ public class BaseTestRunner {
         checkRunIsSet(this.run);
 
         loadOverrideProperties(this.overrideProperties, this.run, this.dss);
+
+        this.interruptedMonitor = new InterruptedMonitorImpl( dss, this.run.getName());
+    }
+
+    protected InterruptedMonitor getInterruptedMonitor() {
+        return this.interruptedMonitor; 
     }
 
     protected void shutdownFramework(IShuttableFramework framework) {
@@ -175,7 +194,7 @@ public class BaseTestRunner {
         try {
             // The overrides DSS property contains a JSON array of overrides in the form:
             // dss.framework.run.X.overrides=[{ "key1": "value1" }, { "key2", "value2" }]
-            String runOverridesProp = "run." + run.getName() + ".overrides";
+            String runOverridesProp = "run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.OVERRIDES;
             String runOverrides = dss.get(runOverridesProp);
             if (runOverrides != null && !runOverrides.isBlank()) {
                 Property[] properties = gson.fromJson(runOverrides, Property[].class);
@@ -194,24 +213,8 @@ public class BaseTestRunner {
      * @return A TestStructure which is written into the RAS eventually.
      */
     protected TestStructure createNewTestStructure(IRun run) {
-        TestStructure testStructure = new TestStructure();
-
-        String runName = run.getName();
-        String group = run.getGroup();
-        String submissionId = run.getSubmissionId();
-        Instant queuedAt = run.getQueued();
-        String requestor = AbstractManager.defaultString(run.getRequestor(), "unknown");         
-
-        testStructure.setQueued(queuedAt);
+        TestStructure testStructure = run.toTestStructure();
         testStructure.setStartTime(Instant.now());
-        testStructure.setRunName(runName);
-        testStructure.setRequestor(requestor);
-        testStructure.setGroup(group);
-        testStructure.setSubmissionId(submissionId);
-        
-        for( String tag : run.getTags()) {
-            testStructure.addTag(tag);
-        }
 
         return testStructure;
     }
@@ -249,12 +252,12 @@ public class BaseTestRunner {
 
         heartbeat.shutdown();
         try {
-            heartbeat.join(2000);
+            heartbeat.join(THREAD_SHUTDOWN_TIMEOUT_MS);
         } catch (Exception e) {
         }
 
         try {
-            dss.delete("run." + run.getName() + ".heartbeat");
+            dss.delete("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.HEARTBEAT);
         } catch (DynamicStatusStoreException e) {
             logger.error("Unable to delete heartbeat", e);
         }
@@ -263,6 +266,19 @@ public class BaseTestRunner {
             this.eventsProducer.produceTestHeartbeatStoppedEvent(framework.getTestRunName());
         } catch (TestRunException e) {
             logger.error("Unable to produce a test heartbeat stopped event to the Events Service", e);
+        }
+    }
+
+    protected void stopTimeoutMonitor() {
+        if (this.timeoutMonitor == null) {
+            return;
+        }
+
+        timeoutMonitor.shutdown();
+        try {
+            timeoutMonitor.join(THREAD_SHUTDOWN_TIMEOUT_MS);
+        } catch (Exception e) {
+            logger.error("Error occurred while stopping timeout monitor", e);
         }
     }
 
@@ -295,8 +311,8 @@ public class BaseTestRunner {
         until = until.plus(totalDelay, ChronoUnit.SECONDS);
 
         HashMap<String, String> properties = new HashMap<>();
-        properties.put(getDSSKeyString("status"), "waiting");
-        properties.put(getDSSKeyString("wait.until"), until.toString());
+        properties.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.STATUS.toString()), "waiting");
+        properties.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.WAIT_UNTIL.toString()), until.toString());
         try {
             this.dss.put(properties);
         } catch (DynamicStatusStoreException e) {
@@ -309,7 +325,7 @@ public class BaseTestRunner {
             if (this.testStructure.getResult() == null) {
                 this.testStructure.setResult("UNKNOWN");
             }
-            this.dss.put("run." + run.getName() + ".result", this.testStructure.getResult());
+            this.dss.put("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.RESULT, this.testStructure.getResult());
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update result", e);
         }
@@ -326,6 +342,10 @@ public class BaseTestRunner {
     protected void updateStatus(TestRunLifecycleStatus status, String dssTimePropSuffix) throws TestRunException {
         Instant time = Instant.now();
 
+        // If the test runner wants to update the status of a run but the run has already been marked as "Hung",
+        // we should clear this interrupt as the run has progressed and is no longer hanging.
+        clearRunHungInterruptIfSet();
+
         this.testStructure.setStatus(status.toString());
         if ("finished".equals(status.toString())) {
             updateResult();
@@ -335,15 +355,33 @@ public class BaseTestRunner {
         writeTestStructure();
 
         try {
-            this.dss.put(getDSSKeyString("status"), status.toString());
+            Map<String, String> propertiesToSet = new HashMap<>();
+            propertiesToSet.put(getDSSKeyString(DssPropertyKeyRunNameSuffix.STATUS.toString()), status.toString());
             if (dssTimePropSuffix != null) {
-                this.dss.put(getDSSKeyString(dssTimePropSuffix), time.toString());
+                propertiesToSet.put(getDSSKeyString(dssTimePropSuffix), time.toString());
             }
+
+            this.dss.put(propertiesToSet);
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update status", e);
         }
 
         this.eventsProducer.produceTestRunLifecycleStatusChangedEvent(framework.getTestRunName(), status);
+    }
+
+    protected void clearRunHungInterruptIfSet() throws TestRunException {
+        try {
+            String runName = this.run.getName();
+            IFrameworkRuns frameworkRuns = framework.getFrameworkRuns();
+            IRun currentRunInDss = frameworkRuns.getRun(runName);
+            String interruptReason = currentRunInDss.getInterruptReason();
+
+            if (interruptReason != null && interruptReason.equals(Result.HUNG)) {
+                frameworkRuns.clearRunInterrupt(runName);
+            }
+        } catch (FrameworkException e) {
+            throw new TestRunException("Failed to clear run interrupt", e);
+        }
     }
 
     
@@ -361,7 +399,7 @@ public class BaseTestRunner {
 
     protected void storeRasRunIdInDss(IDynamicStatusStoreService dss, String rasRunId) throws TestRunException {
         try {
-            this.dss.put("run." + run.getName() + ".rasrunid", rasRunId);
+            this.dss.put("run." + run.getName() + "." + DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
         } catch (DynamicStatusStoreException e) {
             throw new TestRunException("Failed to update rasrunid", e);
         }
@@ -377,6 +415,36 @@ public class BaseTestRunner {
             throw new TestRunException("Unable to initialise the heartbeat. "+ex.getMessage(), ex);
         }
         return heartbeat;
+    }
+
+    protected TestRunTimeoutMonitor createTimeoutMonitor(IFramework framework) throws TestRunException {
+        Long timeoutMinutes = getTestRunTimeoutMinutesFromCPS();
+        TestRunTimeoutMonitor monitor = null;
+
+        if (timeoutMinutes != null && timeoutMinutes > 0) {
+            try {
+                monitor = new TestRunTimeoutMonitor(framework, timeoutMinutes, this.timeService);
+                monitor.start();
+                logger.info("Test run timeout monitor started with timeout of " + timeoutMinutes + " minute(s)");
+            } catch (FrameworkException ex) {
+                throw new TestRunException("Unable to initialise the timeout monitor", ex);
+            }
+        }
+        return monitor;
+    }
+
+    protected Long getTestRunTimeoutMinutesFromCPS() {
+        Long timeoutMinutes = null;
+        try {
+            IConfigurationPropertyStoreService cps = getCPS();
+            String timeoutValue = AbstractManager.nulled(cps.getProperty("test.run.timeout", "minutes"));
+            if (timeoutValue != null) {
+                timeoutMinutes = Long.parseLong(timeoutValue);
+            }
+        } catch (NumberFormatException | ConfigurationPropertyStoreException ex) {
+            logger.error("Failed to get the CPS property 'framework.test.run.timeout.minutes'", ex);
+        }
+        return timeoutMinutes;
     }
 
     protected boolean getContinueOnTestFailureFromCPS() {

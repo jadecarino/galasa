@@ -29,7 +29,7 @@ import java.util.Set;
 
 public class MockFileSystemProvider extends FileSystemProvider {
 
-
+    private String scheme = "file";
     public static class MockDirectoryStream implements DirectoryStream<Path> {
 
         private MockFileSystem mockFS;
@@ -67,6 +67,11 @@ public class MockFileSystemProvider extends FileSystemProvider {
 
     public MockFileSystemProvider(MockFileSystem mockFS){
         this.mockFS = mockFS ;
+    }
+
+    @Override
+    public Path getPath(URI uri) {
+        return mockFS.getPath(uri.getPath());
     }
 
     @Override
@@ -137,7 +142,7 @@ public class MockFileSystemProvider extends FileSystemProvider {
 
     @Override
     public String getScheme() {
-        throw new UnsupportedOperationException("Unimplemented method 'getScheme'");
+        return this.scheme;
     }
 
     @Override
@@ -148,11 +153,6 @@ public class MockFileSystemProvider extends FileSystemProvider {
     @Override
     public FileSystem getFileSystem(URI uri) {
         throw new UnsupportedOperationException("Unimplemented method 'getFileSystem'");
-    }
-
-    @Override
-    public Path getPath(URI uri) {
-        throw new UnsupportedOperationException("Unimplemented method 'getPath'");
     }
 
     @Override

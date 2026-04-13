@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,13 +22,20 @@ import dev.galasa.framework.TestRunLifecycleStatus;
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
 import dev.galasa.framework.k8s.controller.mocks.MockISettings;
 import dev.galasa.framework.k8s.controller.mocks.MockKubernetesApiClient;
+import dev.galasa.framework.k8s.controller.scheduling.IPrioritySchedulingService;
+import dev.galasa.framework.k8s.controller.scheduling.PrioritySchedulingService;
+import dev.galasa.framework.mocks.FilledMockRBACService;
 import dev.galasa.framework.mocks.MockCPSStore;
 import dev.galasa.framework.mocks.MockEnvironment;
 import dev.galasa.framework.mocks.MockIDynamicStatusStoreService;
+import dev.galasa.framework.mocks.MockRBACService;
 import dev.galasa.framework.mocks.MockRun;
+import dev.galasa.framework.mocks.MockTagsService;
 import dev.galasa.framework.mocks.MockTimeService;
 import dev.galasa.framework.mocks.MockFrameworkRuns;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.IRun;
+import dev.galasa.framework.spi.Result;
 import dev.galasa.framework.spi.creds.FrameworkEncryptionService;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -64,20 +72,31 @@ public class TestPodSchedulerTest {
 
     private void assertPodDetailsAreCorrect(
         V1Pod pod,
+        String expectedGalasaServiceName,
         String expectedRunName,
         String expectedPodName,
         String expectedEncryptionKeysMountPath,
         ISettings settings
     ) {
-        checkPodMetadata(pod, expectedRunName, expectedPodName, settings);
+        checkPodMetadata(pod, expectedGalasaServiceName, expectedRunName, expectedPodName, settings);
         checkPodContainer(pod, expectedEncryptionKeysMountPath, settings);
         checkPodVolumes(pod, settings);
         checkPodSpec(pod, settings);
     }
 
-    private void checkPodMetadata(V1Pod pod, String expectedRunName, String expectedPodName, ISettings settings) {
+    private void checkPodMetadata(
+        V1Pod pod,
+        String expectedGalasaServiceName,
+        String expectedRunName,
+        String expectedPodName,
+        ISettings settings
+    ) {
         V1ObjectMeta expectedMetadata = new V1ObjectMeta()
-            .labels(Map.of("galasa-run", expectedRunName, "galasa-engine-controller", settings.getEngineLabel()))
+            .labels(Map.of(
+                TestPodKubeLabels.GALASA_RUN.toString(), expectedRunName,
+                TestPodKubeLabels.ENGINE_CONTROLLER.toString(), settings.getEngineLabel(),
+                TestPodKubeLabels.GALASA_SERVICE_NAME.toString(), expectedGalasaServiceName
+            ))
             .name(expectedPodName);
 
         // Check the pod's metadata is as expected
@@ -97,16 +116,29 @@ public class TestPodSchedulerTest {
         V1PreferredSchedulingTerm preferred = new V1PreferredSchedulingTerm();
         preferred.setWeight(1);
 
-        V1NodeSelectorTerm selectorTerm = new V1NodeSelectorTerm();
+        V1NodeSelectorTerm selectorTerm = buildNodeSelectorTerm(nodePreferredAffinitySplit[0], nodePreferredAffinitySplit[1]);
         preferred.setPreference(selectorTerm);
+
+        return preferred;
+    }
+
+    private V1NodeSelectorTerm createNodeSelectorTerm(String nodeAffinity) {
+        String[] nodeAffinitySplit = nodeAffinity.split("=");
+        V1NodeSelectorTerm selectorTerm = buildNodeSelectorTerm(nodeAffinitySplit[0], nodeAffinitySplit[1]);
+
+        return selectorTerm;
+    }
+
+    private V1NodeSelectorTerm buildNodeSelectorTerm(String key, String value) {
+        V1NodeSelectorTerm selectorTerm = new V1NodeSelectorTerm();
 
         V1NodeSelectorRequirement requirement = new V1NodeSelectorRequirement();
         selectorTerm.addMatchExpressionsItem(requirement);
-        requirement.setKey(nodePreferredAffinitySplit[0]);
+        requirement.setKey(key);
         requirement.setOperator("In");
-        requirement.addValuesItem(nodePreferredAffinitySplit[1]);
+        requirement.addValuesItem(value);
 
-        return preferred;
+        return selectorTerm;
     }
 
     private void checkPodSpec(V1Pod pod, ISettings settings) {
@@ -116,10 +148,20 @@ public class TestPodSchedulerTest {
         assertThat(podSpec).isNotNull();
 
         // Check the podspec's node affinity is as expected
-        V1PreferredSchedulingTerm preferredSchedulingTerm = createSchedulingTerm(settings.getNodePreferredAffinity());
-        List<V1PreferredSchedulingTerm> terms = podSpec.getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution();
+        String nodePreferredAffinity = settings.getNodePreferredAffinity();
+        String nodeRequiredAffinity = settings.getNodeRequiredAffinity();
+        if (nodePreferredAffinity != null) {
+            V1PreferredSchedulingTerm preferredSchedulingTerm = createSchedulingTerm(settings.getNodePreferredAffinity());
+            List<V1PreferredSchedulingTerm> terms = podSpec.getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution();
+            assertThat(terms.contains(preferredSchedulingTerm));
+        }
 
-        assertThat(terms.contains(preferredSchedulingTerm));
+        if (nodeRequiredAffinity != null) {
+            V1NodeSelectorTerm requiredNodeSelectorTerm = createNodeSelectorTerm(settings.getNodeRequiredAffinity());
+            List<V1NodeSelectorTerm> requiredAffinityTerms = podSpec.getAffinity().getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms();
+            assertThat(requiredAffinityTerms.contains(requiredNodeSelectorTerm));
+        }
+
 
         // Check the podspec's node tolerances are as expected
         String[] nodeTolerationsStringList = settings.getNodeTolerations().split(",");
@@ -186,7 +228,15 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));;
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         String runName = "run1";
         String podName = settings.getEngineLabel() + "-" + runName;
@@ -197,7 +247,125 @@ public class TestPodSchedulerTest {
 
         // Then...
         String expectedEncryptionKeysMountPath = "/encryption";
-        assertPodDetailsAreCorrect(pod, runName, podName, expectedEncryptionKeysMountPath, settings);
+        assertPodDetailsAreCorrect(pod, galasaServiceInstallName, runName, podName, expectedEncryptionKeysMountPath, settings);
+    }
+
+    @Test
+    public void testCanCreateTestPodWithoutNodeRequiredAffinity() throws Exception {
+        // Given...
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        String encryptionKeysMountPath = "/encryption/encryption-keys.yaml";
+        mockEnvironment.setenv(FrameworkEncryptionService.ENCRYPTION_KEYS_PATH_ENV, encryptionKeysMountPath);
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
+
+        MockISettings settings = new MockISettings();
+        settings.setNodeRequiredAffinity(null);
+
+        MockCPSStore mockCPS = new MockCPSStore(null);
+
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
+
+        String runName = "run1";
+        String podName = settings.getEngineLabel() + "-" + runName;
+        boolean isTraceEnabled = false;
+
+        // When...
+        V1Pod pod = runPoll.createTestPodDefinition(runName, podName, isTraceEnabled);
+
+        // Then...
+        String expectedEncryptionKeysMountPath = "/encryption";
+        assertPodDetailsAreCorrect(pod, galasaServiceInstallName, runName, podName, expectedEncryptionKeysMountPath, settings);
+        assertThat(pod.getSpec().getAffinity().getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution()).isNull();
+    }
+
+    @Test
+    public void testCanCreateTestPodWithoutNodePreferredAffinity() throws Exception {
+        // Given...
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        String encryptionKeysMountPath = "/encryption/encryption-keys.yaml";
+        mockEnvironment.setenv(FrameworkEncryptionService.ENCRYPTION_KEYS_PATH_ENV, encryptionKeysMountPath);
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
+
+        MockISettings settings = new MockISettings();
+        settings.setNodePreferredAffinity(null);
+
+        MockCPSStore mockCPS = new MockCPSStore(null);
+
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
+
+        String runName = "run1";
+        String podName = settings.getEngineLabel() + "-" + runName;
+        boolean isTraceEnabled = false;
+
+        // When...
+        V1Pod pod = runPoll.createTestPodDefinition(runName, podName, isTraceEnabled);
+
+        // Then...
+        String expectedEncryptionKeysMountPath = "/encryption";
+        assertPodDetailsAreCorrect(pod, galasaServiceInstallName, runName, podName, expectedEncryptionKeysMountPath, settings);
+        assertThat(pod.getSpec().getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution()).isEmpty();
+    }
+
+    @Test
+    public void testCanCreateTestPodWithoutAffinity() throws Exception {
+        // Given...
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        String encryptionKeysMountPath = "/encryption/encryption-keys.yaml";
+        mockEnvironment.setenv(FrameworkEncryptionService.ENCRYPTION_KEYS_PATH_ENV, encryptionKeysMountPath);
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
+
+        MockISettings settings = new MockISettings();
+        settings.setNodePreferredAffinity(null);
+        settings.setNodeRequiredAffinity(null);
+
+        MockCPSStore mockCPS = new MockCPSStore(null);
+
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
+
+        String runName = "run1";
+        String podName = settings.getEngineLabel() + "-" + runName;
+        boolean isTraceEnabled = false;
+
+        // When...
+        V1Pod pod = runPoll.createTestPodDefinition(runName, podName, isTraceEnabled);
+
+        // Then...
+        String expectedEncryptionKeysMountPath = "/encryption";
+        assertPodDetailsAreCorrect(pod, galasaServiceInstallName, runName, podName, expectedEncryptionKeysMountPath, settings);
+        assertThat(pod.getSpec().getAffinity()).isNull();
     }
 
     @Test
@@ -216,7 +384,15 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         String runName = "run1";
         String podName = settings.getEngineLabel() + "-" + runName;
@@ -251,7 +427,15 @@ public class TestPodSchedulerTest {
 
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         String runName = "run1";
         String podName = settings.getEngineLabel() + "-" + runName;
@@ -286,7 +470,16 @@ public class TestPodSchedulerTest {
 
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         String runName = "run1";
         String podName = settings.getEngineLabel() + "-" + runName;
@@ -320,7 +513,16 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         String runName = "run1";
         String podName = settings.getEngineLabel() + "-" + runName;
@@ -356,7 +558,16 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, null, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
 
         // When...
         ArrayList<String> args = podScheduler.createCommandLineArgs(settings, "myRunName", TRACE_IS_ENABLED);
@@ -398,7 +609,7 @@ public class TestPodSchedulerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
 
         MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
-        mockDss.put("run."+testRunName+".status","queued");
+        mockDss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS,"queued");
 
         MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
 
@@ -410,14 +621,20 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
     
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
         
         // When...
         podScheduler.startPod(run);
 
         // Then...
         assertThat(api.podsLaunched).hasSize(1);
-        assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("allocated");
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("allocated");
     }
 
     @Test
@@ -429,7 +646,7 @@ public class TestPodSchedulerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
 
         MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
-        mockDss.put("run."+testRunName+".status","queued");
+        mockDss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS,"queued");
 
         MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
 
@@ -446,7 +663,13 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
         
         // When...
         podScheduler.startPod(run);
@@ -458,7 +681,7 @@ public class TestPodSchedulerTest {
         // The code should have re-tried the launch, successfully launching the pod with a -1 suffix.
         assertThat(api.podsFailedToLaunch.get(0).getMetadata().getName()).isEqualTo("myEngineLabel-u12345");
         assertThat(api.podsLaunched.get(0).getMetadata().getName()).isEqualTo("myEngineLabel-u12345-1");
-        assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("allocated");
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("allocated");
     }
 
     @Test
@@ -470,7 +693,7 @@ public class TestPodSchedulerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
 
         MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
-        mockDss.put("run."+testRunName+".status","queued");
+        mockDss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS,"queued");
 
         MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
 
@@ -488,7 +711,13 @@ public class TestPodSchedulerTest {
         settings.maxTestPodRetriesLimit = 5;
         MockCPSStore mockCPS = new MockCPSStore(null);
 
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
         
         // When...
         podScheduler.startPod(run);
@@ -500,8 +729,8 @@ public class TestPodSchedulerTest {
         // The code should have re-tried the launch, successfully launching the pod with a -1 suffix.
         assertThat(api.podsFailedToLaunch.get(0).getMetadata().getName()).isEqualTo("myEngineLabel-u12345");
         assertThat(api.podsFailedToLaunch.get(1).getMetadata().getName()).isEqualTo("myEngineLabel-u12345-1");
-        assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("finished");
-        assertThat(mockDss.get("run."+testRunName+".result")).isEqualTo("EnvFail");
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("finished");
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.RESULT)).isEqualTo("EnvFail");
     }
 
     @Test
@@ -529,7 +758,13 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
     
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
         
         // When...
         podScheduler.run();
@@ -549,7 +784,60 @@ public class TestPodSchedulerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
 
         MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
-        mockDss.put("run."+testRunName+".status",queuedStatus);
+        mockDss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS,queuedStatus);
+
+        List<IRun> runs = new ArrayList<>();
+        runs.add(run);
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(runs);
+
+        List<V1Pod> mockPods = new ArrayList<V1Pod>();
+
+        String galasaServiceInstallName = "myGalasaService";
+        boolean isPodReady = true;
+        V1Pod etcdPod = createPodWithReadiness(galasaServiceInstallName + "-etcd", isPodReady);
+        V1Pod rasPod = createPodWithReadiness(galasaServiceInstallName + "-ras", isPodReady);
+
+        mockPods.add(etcdPod);
+        mockPods.add(rasPod);
+
+        MockKubernetesApiClient api = new MockKubernetesApiClient(mockPods);
+        KubernetesEngineFacade kubeEngineFacade = new KubernetesEngineFacade(api, "myNamespace", galasaServiceInstallName);
+
+        MockISettings settings = new MockISettings();
+        MockCPSStore mockCPS = new MockCPSStore(new HashMap<>());
+    
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
+        
+        // When...
+        podScheduler.run();
+
+        // Then...
+        assertThat(api.podsLaunched).hasSize(1);
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("allocated");
+    }
+
+    @Test
+    public void testThatInterruptedQueuedRunDoesNotGetScheduled() throws Exception {
+        // Given...
+        String testRunName = "U12345";
+        MockRun run = createMockRun(testRunName);
+        String queuedStatus = TestRunLifecycleStatus.QUEUED.toString();
+        String interruptReason = Result.CANCELLED;
+        run.setStatus(queuedStatus);
+        run.setInterruptReason(interruptReason);
+
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        // Set a "queued" state and an interrupt reason of "cancelled" for this test run
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        mockDss.put("run."+testRunName+"." +DssPropertyKeyRunNameSuffix.STATUS,queuedStatus);
+        mockDss.put("run."+testRunName+"." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, interruptReason);
 
         List<IRun> runs = new ArrayList<>();
         runs.add(run);
@@ -571,13 +859,207 @@ public class TestPodSchedulerTest {
         MockISettings settings = new MockISettings();
         MockCPSStore mockCPS = new MockCPSStore(null);
     
-        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, mockCPS, settings, kubeEngineFacade, mockFrameworkRuns, new MockTimeService(Instant.now()));
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
+        
+        // When...
+        podScheduler.run();
+
+        // Then...
+        assertThat(api.podsLaunched).hasSize(0);
+        assertThat(mockDss.get("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
+    }
+
+    @Test
+    public void testCanCreateTestPodWithCustomCertificatesOk() throws Exception {
+        // Given...
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        String encryptionKeysMountPath = "/encryption/encryption-keys.yaml";
+        mockEnvironment.setenv(FrameworkEncryptionService.ENCRYPTION_KEYS_PATH_ENV, encryptionKeysMountPath);
+
+        String cacertsMountPath = "/galasa/certificates/cacerts";
+        mockEnvironment.setenv(TestPodScheduler.CACERTS_FILE_PATH_ENV_VAR, cacertsMountPath);
+
+        String javaOptions = "-Djavax.net.ssl.trustStore=" + cacertsMountPath;
+        mockEnvironment.setenv(TestPodScheduler.JAVA_OPTIONS_ENV_VAR, javaOptions);
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(new ArrayList<>());
+
+        MockISettings settings = new MockISettings();
+        MockCPSStore mockCPS = new MockCPSStore(null);
+
+        String galasaServiceInstallName = "myGalasaService";
+        KubernetesEngineFacade facade = new KubernetesEngineFacade(null, "mynamespace", galasaServiceInstallName);
+
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler runPoll = new TestPodScheduler(mockEnvironment, mockDss, settings, facade, mockTimeService, prioritySchedulingService);
+
+        String runName = "run1";
+        String podName = settings.getEngineLabel() + "-" + runName;
+        boolean isTraceEnabled = false;
+
+        // When...
+        V1Pod pod = runPoll.createTestPodDefinition(runName, podName, isTraceEnabled);
+
+        // Then...
+        String expectedEncryptionKeysMountPath = "/encryption";
+        checkPodMetadata(pod, galasaServiceInstallName, runName, podName, settings);
+        checkPodSpec(pod, settings);
+
+        // Check the volumes have been added
+        V1PodSpec actualPodSpec = pod.getSpec();
+        List<V1Volume> actualVolumes = actualPodSpec.getVolumes();
+        assertThat(actualVolumes).hasSize(2);
+
+        V1Volume encryptionKeysVolume = actualVolumes.get(0);
+        assertThat(encryptionKeysVolume.getName()).isEqualTo(TestPodScheduler.ENCRYPTION_KEYS_VOLUME_NAME);
+        assertThat(encryptionKeysVolume.getSecret().getSecretName()).isEqualTo(settings.getEncryptionKeysSecretName());
+
+        V1Volume cacertsVolume = actualVolumes.get(1);
+        assertThat(cacertsVolume.getName()).isEqualTo(TestPodScheduler.CACERTS_VOLUME_NAME);
+        assertThat(cacertsVolume.getConfigMap().getName()).isEqualTo(galasaServiceInstallName + "-cacerts");
+
+        // Check that test container has been added
+        List<V1Container> actualContainers = actualPodSpec.getContainers();
+        assertThat(actualContainers).hasSize(1);
+
+        V1Container testContainer = actualContainers.get(0);
+        assertThat(testContainer.getCommand()).containsExactly("java");
+        assertThat(testContainer.getArgs()).contains("-jar", "boot.jar", "--run");
+
+        V1EnvVar javaOptionsEnvVar = new V1EnvVar();
+        javaOptionsEnvVar.setName(TestPodScheduler.JAVA_OPTIONS_ENV_VAR);
+        javaOptionsEnvVar.setValue(javaOptions);
+        assertThat(testContainer.getEnv()).contains(javaOptionsEnvVar);
+
+        // Check that the encryption keys have been mounted to the correct location
+        List<V1VolumeMount> testContainerVolumeMounts = testContainer.getVolumeMounts();
+        assertThat(testContainerVolumeMounts).hasSize(2);
+
+        V1VolumeMount encryptionKeysVolumeMount = testContainerVolumeMounts.get(0);
+        assertThat(encryptionKeysVolumeMount.getName()).isEqualTo(TestPodScheduler.ENCRYPTION_KEYS_VOLUME_NAME);
+        assertThat(encryptionKeysVolumeMount.getMountPath()).isEqualTo(expectedEncryptionKeysMountPath);
+        assertThat(encryptionKeysVolumeMount.getReadOnly()).isTrue();
+
+        V1VolumeMount cacertsVolumeMount = testContainerVolumeMounts.get(1);
+        assertThat(cacertsVolumeMount.getName()).isEqualTo(TestPodScheduler.CACERTS_VOLUME_NAME);
+        assertThat(cacertsVolumeMount.getMountPath()).isEqualTo(cacertsMountPath);
+        assertThat(cacertsVolumeMount.getSubPath()).isEqualTo("cacerts");
+        assertThat(cacertsVolumeMount.getReadOnly()).isTrue();
+    }
+
+    @Test
+    public void testThatPodDoesNotGetScheduledWhenEngineLimitHasBeenReached() throws Exception {
+        // Given...
+        String testRunName = "U12345";
+        MockRun run = createMockRun(testRunName);
+        String queuedStatus = TestRunLifecycleStatus.QUEUED.toString();
+        run.setStatus(queuedStatus);
+
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        mockDss.put("run."+testRunName+"."+DssPropertyKeyRunNameSuffix.STATUS,queuedStatus);
+
+        List<IRun> runs = new ArrayList<>();
+        runs.add(run);
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(runs);
+
+        List<V1Pod> mockPods = new ArrayList<V1Pod>();
+
+        String galasaServiceInstallName = "myGalasaService";
+        boolean isPodReady = true;
+        V1Pod etcdPod = createPodWithReadiness(galasaServiceInstallName + "-etcd", isPodReady);
+        V1Pod rasPod = createPodWithReadiness(galasaServiceInstallName + "-ras", isPodReady);
+
+        mockPods.add(etcdPod);
+        mockPods.add(rasPod);
+
+        MockKubernetesApiClient api = new MockKubernetesApiClient(mockPods);
+        KubernetesEngineFacade kubeEngineFacade = new KubernetesEngineFacade(api, "myNamespace", galasaServiceInstallName);
+
+        MockISettings settings = new MockISettings();
+        settings.setMaxEngines(0);
+
+        MockCPSStore mockCPS = new MockCPSStore(new HashMap<>());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
+        
+        // When...
+        podScheduler.run();
+
+        // Then...
+        assertThat(api.podsLaunched).isEmpty();
+    }
+
+    @Test
+    public void testThatSecondPodDoesNotGetScheduledWhenEngineLimitHasBeenReached() throws Exception {
+        // Given...
+        String testRunName1 = "U12345";
+        String testRunName2 = "U123456";
+        String queuedStatus = TestRunLifecycleStatus.QUEUED.toString();
+        MockRun run = createMockRun(testRunName1);
+        MockRun run2 = createMockRun(testRunName2);
+        run.setStatus(queuedStatus);
+        run2.setStatus(queuedStatus);
+
+        MockEnvironment mockEnvironment = new MockEnvironment();
+
+        MockIDynamicStatusStoreService mockDss = new MockIDynamicStatusStoreService();
+        mockDss.put("run."+testRunName1+"."+DssPropertyKeyRunNameSuffix.STATUS,queuedStatus);
+        mockDss.put("run."+testRunName2+"."+DssPropertyKeyRunNameSuffix.STATUS,queuedStatus);
+
+        List<IRun> runs = new ArrayList<>();
+        runs.add(run);
+        runs.add(run2);
+        MockFrameworkRuns mockFrameworkRuns = new MockFrameworkRuns(runs);
+
+        List<V1Pod> mockPods = new ArrayList<V1Pod>();
+
+        String galasaServiceInstallName = "myGalasaService";
+        boolean isPodReady = true;
+        V1Pod etcdPod = createPodWithReadiness(galasaServiceInstallName + "-etcd", isPodReady);
+        V1Pod rasPod = createPodWithReadiness(galasaServiceInstallName + "-ras", isPodReady);
+
+        mockPods.add(etcdPod);
+        mockPods.add(rasPod);
+
+        MockKubernetesApiClient api = new MockKubernetesApiClient(mockPods);
+        KubernetesEngineFacade kubeEngineFacade = new KubernetesEngineFacade(api, "myNamespace", galasaServiceInstallName);
+
+        MockISettings settings = new MockISettings();
+        settings.setMaxEngines(1);
+
+        MockCPSStore mockCPS = new MockCPSStore(new HashMap<>());
+        MockRBACService mockRBACService = FilledMockRBACService.createTestRBACService();
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+
+        MockTagsService mockTagsService = new MockTagsService();
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(mockFrameworkRuns, mockCPS, mockRBACService, mockTimeService, mockTagsService);
+
+        TestPodScheduler podScheduler = new TestPodScheduler(mockEnvironment, mockDss, settings, kubeEngineFacade, mockTimeService, prioritySchedulingService);
         
         // When...
         podScheduler.run();
 
         // Then...
         assertThat(api.podsLaunched).hasSize(1);
-        assertThat(mockDss.get("run."+testRunName+".status")).isEqualTo("allocated");
     }
 }

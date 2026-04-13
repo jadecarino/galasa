@@ -28,6 +28,7 @@ public interface ISettings {
     public String getNodeArch() ;
 
     public String getNodePreferredAffinity();    
+    public String getNodeRequiredAffinity();    
     public String getNodeTolerations();
 
 
@@ -49,5 +50,9 @@ public interface ISettings {
     public long getKubeLaunchIntervalMillisecs();
 
     public int getMaxTestPodRetryLimit();
+
+    public long getInterruptedTestRunCleanupGracePeriodSeconds();
+
+    public long getAllocatedTestRunTimeoutMinutes();
 }
 

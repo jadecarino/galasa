@@ -31,7 +31,7 @@ import static dev.galasa.framework.spi.rbac.RBACRoles.*;
 
 public class RBACServiceImpl implements RBACService {
 
-    private static CacheRBAC userActionsCache;
+    private static CacheUsers usersCache;
 
     private static final List<Action> allActionsUnsorted = BuiltInAction.getActions();
 
@@ -39,9 +39,10 @@ public class RBACServiceImpl implements RBACService {
 
     private static Map<String,Action> actionsMapById ;
 
-    private static Role roleAdmin ;
+    private static Role roleAdmin;
     private static Role roleTester;
-    private static Role roleOwner ;
+    private static Role roleOwner;
+    private static Role roleViewer;
 
     private static Role roleDeactivated;
 
@@ -66,14 +67,16 @@ public class RBACServiceImpl implements RBACService {
 
         roleAdmin= ADMIN.getRole();
 
-        //The role of "owner" can not be assigned. A user can be assigned owner by a kubernetes configuration action"
+        // The role of "owner" cannot be assigned. A user can be assigned owner by a kubernetes configuration action"
         roleOwner= OWNER.getRole();
 
         roleTester = TESTER.getRole();
 
+        roleViewer = VIEWER.getRole();
+
         roleDeactivated = DEACTIVATED.getRole();
 
-        List<Role> rolesUnsorted = List.of(roleAdmin, roleTester, roleDeactivated, roleOwner);
+        List<Role> rolesUnsorted = List.of(roleAdmin, roleTester, roleDeactivated, roleOwner, roleViewer);
 
 
         rolesSortedByName = new ArrayList<Role>(rolesUnsorted);
@@ -97,7 +100,7 @@ public class RBACServiceImpl implements RBACService {
         IAuthStoreService authStoreService,
         @NotNull Environment env 
     ) {
-        userActionsCache = new CacheRBACImpl(dssService, authStoreService, this);
+        usersCache = new CacheUsersImpl(dssService, authStoreService, this);
         this.env = env ;
         owners = getOwnerLoginIdSet();
     }
@@ -215,13 +218,18 @@ public class RBACServiceImpl implements RBACService {
             // The service owner can always do everything.
             isPermitted = true ;
         } else {
-            isPermitted = userActionsCache.isActionPermitted(loginId, actionId);
+            isPermitted = usersCache.isActionPermitted(loginId, actionId);
         }
         return isPermitted ;
     }
 
     @Override
     public void invalidateUser(String loginId) throws RBACException {
-        userActionsCache.invalidateUser(loginId);
+        usersCache.invalidateUser(loginId);
+    }
+
+    @Override
+    public int getUserPriority(String loginId) throws RBACException {
+        return usersCache.getUserPriority(loginId);
     }
 }

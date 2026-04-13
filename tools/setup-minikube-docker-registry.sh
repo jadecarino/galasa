@@ -149,7 +149,7 @@ function build_galasa_modules_and_images {
     h2 "Building Galasa modules and Docker images used for the Galasa service..."
 
     info "Building Galasa modules for the galasa-boot-embedded Docker image..."
-    ${BASEDIR}/build-locally.sh --module wrapping --docker
+    ${BASEDIR}/build-locally.sh --module platform --docker
 
     rc=$?
     check_exit_code ${rc} "Failed to build the Galasa modules for the galasa-boot-embedded Docker image"
@@ -216,18 +216,21 @@ function setup_local_registry_for_minikube {
         check_exit_code ${rc} "Failed to start minikube cluster"
     fi
 
-    # See https://minikube.sigs.k8s.io/docs/handbook/registry
+    info "Enabling the minikube registry addons... see https://minikube.sigs.k8s.io/docs/handbook/registry"
+    
     minikube addons enable registry
 
-    # Check if the socat container is running
+    info "Checking if the socat container is running..."
     socat_container_name="docker-to-minikube-socat"
     container_count=$(docker ps -a | grep ${socat_container_name} | wc -l | xargs)
     if [[ "${container_count}" == "1" ]]; then
+        info "It is, so stop and start it..."
         docker stop ${socat_container_name}
         docker start ${socat_container_name}
         rc=$?
         check_exit_code ${rc} "Failed to restart the existing docker-to-minikube registry mapping container"
     else
+        info "It isn't, so start it..."
         docker run --name ${socat_container_name} -d --network=host alpine sh -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
         rc=$?
         check_exit_code ${rc} "Failed to start a container that exposes the local docker registry to minikube"

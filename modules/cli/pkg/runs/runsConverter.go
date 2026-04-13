@@ -115,9 +115,12 @@ func getTestStructureData(run galasaapi.Run, apiServerUrl string) runsformatter.
 	newFormattableTest.EndTimeUTC = run.TestStructure.GetEndTime()
 	newFormattableTest.QueuedTimeUTC = run.TestStructure.GetQueued()
 	newFormattableTest.Requestor = run.TestStructure.GetRequestor()
+	newFormattableTest.User = run.TestStructure.GetUser()
 	newFormattableTest.Bundle = run.TestStructure.GetBundle()
 	newFormattableTest.Methods = run.TestStructure.GetMethods()
 	newFormattableTest.Group = run.TestStructure.GetGroup()
+	newFormattableTest.WebUiUrl = *run.WebUiUrl
+	newFormattableTest.RestApiUrl = *run.RestApiUrl
 
 	// Get the tags, and sort them alphabetically. Order shouldn't matter, but the output will be more
 	// consistent across runs this way.
@@ -168,6 +171,8 @@ func getTestRunData(run TestRun, isLost bool) runsformatter.FormattableTest {
 	newFormattableTest.Lost = isLost
 	newFormattableTest.Group = run.Group
 	newFormattableTest.Tags = run.Tags
+	newFormattableTest.IsLocal = run.IsLocal
+	newFormattableTest.WebUiUrl = run.WebUiUrl
 
 	return newFormattableTest
 }

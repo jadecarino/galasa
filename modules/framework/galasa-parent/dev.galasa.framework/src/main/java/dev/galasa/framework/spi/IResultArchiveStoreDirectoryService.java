@@ -33,7 +33,7 @@ public interface IResultArchiveStoreDirectoryService {
     RasRunResultPage getRunsPage(int maxResults, RasSortField primarySort, String pageCursor, @NotNull IRasSearchCriteria... searchCriteria) throws ResultArchiveStoreException;
 
     /**
-     * Get requestors
+     * Get requestors. These are the login names associated with personal access tokens used to submit runs.
      * 
      * @return 
      * @throws ResultArchiveStoreException if there are errors accessing the RAS
@@ -53,5 +53,12 @@ public interface IResultArchiveStoreDirectoryService {
     List<IRunResult> getRunsByRunName(@NotNull String runName) throws ResultArchiveStoreException;
 
     List<IRunResult> getRunsByGroupName(@NotNull String groupName) throws ResultArchiveStoreException;
+    
+    /**
+     * Check the health status of the RAS.
+     * 
+     * @return true if the RAS is healthy and available, false otherwise
+     */
+    boolean isHealthy() throws ResultArchiveStoreException;
     
 }

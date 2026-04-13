@@ -47,7 +47,7 @@ To find out how to initialise your local environment, see [Initialising your loc
 As an example, to run the `CoreManagerIVT` locally, run the following command:
 ```
 galasactl runs submit local \
---obr mvn:dev.galasa/dev.galasa.ivts.obr/0.43.0/obr \
+--obr mvn:dev.galasa/dev.galasa.ivts.obr/0.48.0/obr \
 --class dev.galasa.ivts/dev.galasa.ivts.core.CoreManagerIVT \
 --log -
 ```
@@ -56,7 +56,7 @@ galasactl runs submit local \
 
 For more information on Test streams, see the [Test streams page](https://galasa.dev/docs/manage-ecosystem/test-streams) on our website.
 
-For more information on running tests locally or remotely with `galasactl`, see our [command-line interface documentation](https://github.com/galasa-dev/cli/blob/main/README.md) on GitHub.
+For more information on running tests locally or remotely with `galasactl`, see our [command-line interface documentation](https://github.com/galasa-dev/galasa/blob/main/modules/cli/README.md) on GitHub.
 
 
 ## How to contribute to this module

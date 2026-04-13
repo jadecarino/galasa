@@ -55,6 +55,8 @@ import dev.galasa.ras.couchdb.internal.pojos.TestStructureCouchdb;
 
 public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryService {
 
+    public static final int COUCHDB_RESULTS_LIMIT_PER_QUERY = 100;
+
     private final Log logger;
     private final LogFactory logFactory;
     private final HttpRequestFactory requestFactory;
@@ -64,7 +66,6 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
     private final CouchdbRasStore store;
     private final GalasaGson gson;
 
-    private static final int COUCHDB_RESULTS_LIMIT_PER_QUERY = 100;
     private final CouchdbRasQueryBuilder rasQueryBuilder = new CouchdbRasQueryBuilder();
 
     public CouchdbDirectoryService(CouchdbRasStore store, LogFactory logFactory, HttpRequestFactory requestFactory) {
@@ -91,53 +92,95 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
     }
 
     public Path getRunArtifactPath(TestStructureCouchdb ts) throws CouchdbRasException {
+        return getRunArtifactPath(ts, null);
+    }
+
+    public Path getRunArtifactPath(TestStructureCouchdb ts, String artifactPath) throws CouchdbRasException {
         CouchdbRasFileSystemProvider runProvider = createFileSystemProvider();
+
         if (ts.getArtifactRecordIds() == null || ts.getArtifactRecordIds().isEmpty()) {
             return runProvider.getRoot();
         }
 
+        boolean loadAllArtifacts = (artifactPath == null);
+
         for (String artifactRecordId : ts.getArtifactRecordIds()) {
-            HttpGet httpGet = requestFactory
-                    .getHttpGetRequest(store.getCouchdbUri() + "/galasa_artifacts/" + artifactRecordId);
-
-            try (CloseableHttpResponse response = store.getHttpClient().execute(httpGet)) {
-                StatusLine statusLine = response.getStatusLine();
-                if (statusLine.getStatusCode() == HttpStatus.SC_NOT_FOUND) { // TODO Ignore it for now
-                    continue;
-                }
-                if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CouchdbRasException("Unable to find artifacts - " + statusLine.toString());
-                }
-
-                HttpEntity entity = response.getEntity();
-                String responseEntity = EntityUtils.toString(entity);
-                JsonObject artifactRecord = gson.fromJson(responseEntity, JsonObject.class);
-
-                JsonElement attachmentsElement = artifactRecord.get("_attachments");
-
-                if (attachmentsElement != null) {
-                    if (attachmentsElement instanceof JsonObject) {
-                        JsonObject attachments = (JsonObject) attachmentsElement;
-                        Set<Entry<String, JsonElement>> entries = attachments.entrySet();
-                        if (entries != null) {
-                            for (Entry<String, JsonElement> entry : entries) {
-                                JsonElement elem = entry.getValue();
-                                if (elem instanceof JsonObject) {
-                                    runProvider.addPath(new CouchdbArtifactPath(runProvider.getActualFileSystem(),
-                                            entry.getKey(), (JsonObject) elem, artifactRecordId));
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (CouchdbRasException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new CouchdbRasException("Unable to find runs", e);
+            boolean isArtifactFound = loadArtifactsFromRecord(runProvider, artifactRecordId, artifactPath, loadAllArtifacts);
+            if (!loadAllArtifacts && isArtifactFound) {
+                break;
             }
         }
 
         return runProvider.getRoot();
+    }
+
+    private boolean loadArtifactsFromRecord(CouchdbRasFileSystemProvider runProvider, String artifactRecordId,
+            String artifactPath, boolean loadAllArtifacts) throws CouchdbRasException {
+
+        boolean hasLoadedArtifactsFromRecord = false;
+        JsonObject artifactRecord = fetchArtifactRecord(artifactRecordId);
+        if (artifactRecord != null) {
+            JsonElement attachmentsElement = artifactRecord.get("_attachments");
+
+            if (attachmentsElement != null && (attachmentsElement instanceof JsonObject)) {
+                JsonObject attachments = (JsonObject) attachmentsElement;
+                hasLoadedArtifactsFromRecord = processAttachments(runProvider, attachments, artifactRecordId, artifactPath, loadAllArtifacts);
+            }
+        }
+        return hasLoadedArtifactsFromRecord;
+    }
+
+    private JsonObject fetchArtifactRecord(String artifactRecordId) throws CouchdbRasException {
+        HttpGet httpGet = requestFactory.getHttpGetRequest(store.getCouchdbUri() + "/galasa_artifacts/" + artifactRecordId);
+
+        JsonObject artifactRecordJson;
+        try (CloseableHttpResponse response = store.getHttpClient().execute(httpGet)) {
+            StatusLine statusLine = response.getStatusLine();
+
+            if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+                HttpEntity entity = response.getEntity();
+                String responseEntity = EntityUtils.toString(entity);
+                artifactRecordJson = gson.fromJson(responseEntity, JsonObject.class);
+
+            } else if (statusLine.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                // Artifact record not found, skip it
+                artifactRecordJson = null;
+            } else {
+                throw new CouchdbRasException("Unable to find artifacts - " + statusLine.toString());
+            }
+        } catch (CouchdbRasException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CouchdbRasException("Unable to find runs", e);
+        }
+        return artifactRecordJson;
+    }
+
+    private boolean processAttachments(CouchdbRasFileSystemProvider runProvider, JsonObject attachments,
+            String artifactRecordId, String artifactPath, boolean loadAllArtifacts) {
+
+        Set<Entry<String, JsonElement>> entries = attachments.entrySet();
+        if (entries == null) {
+            return false;
+        }
+
+        boolean hasProcessedRequiredAttachments = false;
+        for (Entry<String, JsonElement> entry : entries) {
+            String entryKey = entry.getKey();
+
+            if (loadAllArtifacts || entryKey.equals(artifactPath)) {
+                JsonElement elem = entry.getValue();
+                if (elem instanceof JsonObject) {
+                    runProvider.addPath(new CouchdbArtifactPath(runProvider.getActualFileSystem(), entryKey, (JsonObject) elem, artifactRecordId));
+                    hasProcessedRequiredAttachments = true;
+                    if (!loadAllArtifacts) {
+                        // Found the specific artifact, no need to continue
+                        break;
+                    }
+                }
+            }
+        }
+        return hasProcessedRequiredAttachments;
     }
 
     private @NotNull List<IRunResult> getAllRuns() throws ResultArchiveStoreException {
@@ -337,18 +380,25 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
             @NotNull IRasSearchCriteria... searchCriterias)
             throws ResultArchiveStoreException {
 
-        HttpPost httpPost = requestFactory.getHttpPostRequest(store.getCouchdbUri() + "/" + RUNS_DB + "/_find");
-
-        Find find = new Find();
-        find.selector = rasQueryBuilder.buildGetRunsQuery(searchCriterias);
-        find.execution_stats = true;
-        find.limit = maxResults;
-        find.bookmark = pageToken;
-        if (primarySort != null) {
-            find.sort = buildQuerySortJson(primarySort);
+        RasRunResultPage runsPage = null;
+        if (maxResults == 0) {
+            // The user has requested for all matching runs to be returned (infinite page size)
+            runsPage = getMatchingRunsAsSinglePage(Integer.MAX_VALUE, searchCriterias);
+        } else {
+            HttpPost httpPost = requestFactory.getHttpPostRequest(store.getCouchdbUri() + "/" + RUNS_DB + "/_find");
+    
+            Find find = new Find();
+            find.selector = rasQueryBuilder.buildGetRunsQuery(searchCriterias);
+            find.execution_stats = true;
+            find.limit = maxResults;
+            find.bookmark = pageToken;
+            if (primarySort != null) {
+                find.sort = buildQuerySortJson(primarySort);
+            }
+    
+            runsPage = getRunsPageFromCouchdb(httpPost, find);
         }
-
-        return getRunsPageFromCouchdb(httpPost, find);
+        return runsPage;
     }
 
     private RasRunResultPage getRunsPageFromCouchdb(HttpPost httpPost, Find query) throws ResultArchiveStoreException {
@@ -418,19 +468,24 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
             return getAllRuns();
         }
 
-        ArrayList<IRunResult> runs = new ArrayList<>();
+        return getMatchingRunsAsSinglePage(COUCHDB_RESULTS_LIMIT_PER_QUERY, searchCriterias).getRuns();
+    }
+
+    private RasRunResultPage getMatchingRunsAsSinglePage(int queryPageSize, IRasSearchCriteria... searchCriterias) throws ResultArchiveStoreException {
+        List<IRunResult> runs = new ArrayList<>();
 
         HttpPost httpPost = requestFactory.getHttpPostRequest(store.getCouchdbUri() + "/" + RUNS_DB + "/_find");
 
         Find find = new Find();
         find.selector = rasQueryBuilder.buildGetRunsQuery(searchCriterias);
         find.execution_stats = true;
-        find.limit = COUCHDB_RESULTS_LIMIT_PER_QUERY;
+        find.limit = queryPageSize;
 
-        while (true) {
+        // Get the first page of runs, then check if we need to request for more
+        List<IRunResult> returnedRuns = new ArrayList<>();
+        do {
             RasRunResultPage runsPage = getRunsPageFromCouchdb(httpPost, find);
-
-            List<IRunResult> returnedRuns = runsPage.getRuns();
+            returnedRuns = runsPage.getRuns();
             if (!returnedRuns.isEmpty()) {
                 runs.addAll(returnedRuns);
             } else {
@@ -439,18 +494,16 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
             }
 
             find.bookmark = runsPage.getNextCursor();
-        }
+        } while (returnedRuns.size() >= queryPageSize && find.bookmark != null);
 
-        return runs;
+        return new RasRunResultPage(runs, find.bookmark);
     }
 
     @Override
     public IRunResult getRunById(@NotNull String runId) throws ResultArchiveStoreException {
-        if (!runId.startsWith("cdb-")) {
-            return null;
+        if (runId.startsWith(COUCHDB_RUN_ID_PREFIX)) {
+            runId = runId.substring(COUCHDB_RUN_ID_PREFIX.length());
         }
-
-        runId = runId.substring(4);
 
         try {
             return fetchRun(runId);
@@ -490,5 +543,16 @@ public class CouchdbDirectoryService implements IResultArchiveStoreDirectoryServ
         }
 
         return runs;
+    }
+    
+    @Override
+    public boolean isHealthy() {
+        try {
+            store.getHealth();
+            return true;
+        } catch (CouchdbException e) {
+            logger.warn("RAS health check failed", e);
+            return false;
+        }
     }
 }

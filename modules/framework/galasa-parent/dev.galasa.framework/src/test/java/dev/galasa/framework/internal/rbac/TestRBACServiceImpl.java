@@ -40,7 +40,7 @@ public class TestRBACServiceImpl {
         assertThat(roleGot.getDescription()).contains("Administrator access");
 
         assertThat(roleGot.getActionIds())
-            .hasSize(9)
+            .hasSize(11)
             .contains("USER_EDIT_OTHER")
             .contains("SECRETS_GET_UNREDACTED_VALUES")
             .contains("GENERAL_API_ACCESS")
@@ -49,7 +49,9 @@ public class TestRBACServiceImpl {
             .contains("SECRETS_SET")
             .contains("SECRETS_DELETE")
             .contains("RUNS_DELETE_OTHER_USERS")
-            .contains("TEST_RUN_LAUNCH");
+            .contains("TEST_RUN_LAUNCH")
+            .contains("TEST_RUN_SET_USER")
+            .contains("MONITORS_SET");
     }
 
     @Test
@@ -87,6 +89,24 @@ public class TestRBACServiceImpl {
 
         assertThat(roleGot.getActionIds())
         .hasSize(0);
+    }
+
+    @Test
+    public void testRolesMapByIdContainsViewerRole() throws Exception {
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockAuthStoreService mockAuthStoreService = new MockAuthStoreService(mockTimeService);
+        MockIDynamicStatusStoreService mockDssService = new MockIDynamicStatusStoreService();
+
+        RBACService service = new RBACServiceImpl(mockDssService, mockAuthStoreService, new MockEnvironment());
+        Map<String,Role> roleMap = service.getRolesMapById();
+
+        Role roleGot = roleMap.get("4");
+        assertThat(roleGot).isNotNull();
+        assertThat(roleGot.getName()).isEqualTo("viewer");
+
+        assertThat(roleGot.getActionIds())
+            .hasSize(1)
+            .contains("GENERAL_API_ACCESS");
     }
 
     @Test 
@@ -217,6 +237,17 @@ public class TestRBACServiceImpl {
         RBACService service = new RBACServiceImpl(mockDssService, mockAuthStoreService, new MockEnvironment());
         Role roleGotBack = service.getRoleById("2");
         assertThat(roleGotBack.getName()).isEqualTo("admin");
+    }
+
+    @Test
+    public void testServiceCanLookupViewerRoleById() throws Exception {
+        MockTimeService mockTimeService = new MockTimeService(Instant.now());
+        MockAuthStoreService mockAuthStoreService = new MockAuthStoreService(mockTimeService);
+        MockIDynamicStatusStoreService mockDssService = new MockIDynamicStatusStoreService();
+
+        RBACService service = new RBACServiceImpl(mockDssService, mockAuthStoreService, new MockEnvironment());
+        Role roleGotBack = service.getRoleById("4");
+        assertThat(roleGotBack.getName()).isEqualTo("viewer");
     }
 
     @Test

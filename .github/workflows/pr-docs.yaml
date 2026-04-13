@@ -111,10 +111,30 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.artifact-id }}
 
+      # We can download the framework openapi.yaml if it has changed. 
+      - name: Download openapi.yaml so we can show it in documentation
+        id: download-openapi-yaml
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: /home/runner/.m2/repository
+
+      # The cli module wasn't changed, so download artifacts
+      # from the last successful workflow.
+      - name: Download openapi.yaml from main as it wasn't changed.
+        if: ${{ steps.download-openapi-yaml.outcome == 'failure' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: framework
+          path: /home/runner/.m2/repository
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.artifact-id }}
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: 8.9
+          gradle-version: 9.0.0
           cache-disabled: true
           gradle-home-cache-excludes: |
             caches/modules-2/files-2.1/dev.galasa/**
@@ -133,7 +153,7 @@ jobs:
         working-directory: ./docs
         run : |
           set -o pipefail
-          gradle -b build.gradle publish --info --warning-mode all \
+          gradle publish --info --warning-mode all \
           --no-daemon --console plain \
           -PsourceMaven=/home/runner/.m2/repository \
           -PcentralMaven=https://repo.maven.apache.org/maven2/ \
@@ -158,3 +178,11 @@ jobs:
         with:
           name: galasa-docs-site
           path: docs/build/site
+ 
+      - name: Build galasa-docs-site image for testing
+        uses: docker/build-push-action@v5
+        with:
+          context: docs
+          file: docs/dockerfile.galasadocssite
+          load: true
+          tags: galasa-docs-site:test

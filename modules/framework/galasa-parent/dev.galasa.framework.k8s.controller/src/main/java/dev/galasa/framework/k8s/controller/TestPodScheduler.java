@@ -6,33 +6,32 @@
 package dev.galasa.framework.k8s.controller;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
+import dev.galasa.framework.k8s.controller.scheduling.IPrioritySchedulingService;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.Environment;
-import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IDynamicStatusStoreService;
-import dev.galasa.framework.spi.IFrameworkRuns;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.SystemEnvironment;
 import dev.galasa.framework.spi.creds.FrameworkEncryptionService;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1NodeAffinity;
+import io.kubernetes.client.openapi.models.V1NodeSelector;
 import io.kubernetes.client.openapi.models.V1NodeSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1NodeSelectorTerm;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -48,7 +47,10 @@ import io.prometheus.client.Counter;
 import dev.galasa.framework.spi.utils.ITimeService;
 
 public class TestPodScheduler implements Runnable {
-    public static final String GALASA_RUN_POD_LABEL = "galasa-run";
+    public static final String JAVA_OPTIONS_ENV_VAR = "JDK_JAVA_OPTIONS";
+
+    public static final String CACERTS_FILE_PATH_ENV_VAR = "GALASA_CACERTS_FILE_PATH";
+    public static final String CACERTS_VOLUME_NAME = "galasa-cacerts";
 
     private static final String RAS_TOKEN_ENV = "GALASA_RAS_TOKEN";
     private static final String EVENT_TOKEN_ENV = "GALASA_EVENT_STREAMS_TOKEN";
@@ -66,8 +68,6 @@ public class TestPodScheduler implements Runnable {
     private final ISettings                   settings;
 
     private final IDynamicStatusStoreService dss;
-    private final IFrameworkRuns             runs;
-    private final QueuedComparator           queuedComparator = new QueuedComparator();
 
     private Counter                          submittedRuns;
     private Environment                      env              = new SystemEnvironment();
@@ -76,22 +76,34 @@ public class TestPodScheduler implements Runnable {
     // A time service, meaning unit tests can pass in a service which doesn't actually wait, making unit tests run faster.
     private ITimeService timeService ;
 
+    private boolean isUsingUserSuppliedCertificates;
+    private Path cacertsFilePath;
+    private String cacertsConfigMapName;
+
+    private IPrioritySchedulingService prioritySchedulingService;
+
     public TestPodScheduler( 
         Environment env, 
         IDynamicStatusStoreService dss, 
-        IConfigurationPropertyStoreService cps, 
         ISettings settings, 
         KubernetesEngineFacade kubeEngineFacade,
-        IFrameworkRuns runs, 
-        ITimeService timeService
+        ITimeService timeService,
+        IPrioritySchedulingService prioritySchedulingService
     ) {
 
         this.env = env;
         this.settings = settings;
         this.kubeEngineFacade = kubeEngineFacade;
-        this.runs = runs;
         this.dss = dss;
         this.timeService = timeService;
+        this.prioritySchedulingService = prioritySchedulingService;
+
+        String cacertsFilePathString = env.getenv(CACERTS_FILE_PATH_ENV_VAR);
+        if (cacertsFilePathString != null && !cacertsFilePathString.isBlank()) {
+            this.isUsingUserSuppliedCertificates = true;
+            this.cacertsFilePath = Path.of(cacertsFilePathString).toAbsolutePath();
+            this.cacertsConfigMapName = this.kubeEngineFacade.getGalasaServiceInstallName() + "-cacerts";
+        }
 
         // *** Create metrics
 
@@ -104,73 +116,58 @@ public class TestPodScheduler implements Runnable {
         if (!kubeEngineFacade.isEtcdAndRasReady()) {
             logger.warn("etcd or RAS pods are not ready, waiting for them to be ready before scheduling new runs");
         } else {
-            logger.info("Looking for new runs");
-    
+            
             try {
-                // *** No we are not, get all the queued runs
-                List<IRun> queuedRuns = this.runs.getQueuedRuns();
-                // TODO filter by capability
-    
-                // *** Remove all the local runs
-                Iterator<IRun> queuedRunsIterator = queuedRuns.iterator();
-                while (queuedRunsIterator.hasNext()) {
-                    IRun run = queuedRunsIterator.next();
-                    if (run.isLocal()) {
-                        queuedRunsIterator.remove();
+                // Check we are not at max engines
+                if (isMaximumEngineLimitReached()) {
+                    logger.info("Not looking for runs, currently at maximum engines (" + settings.getMaxEngines() + ")");
+                } else {
+                    logger.info("Looking for new runs");
+                    List<IRun> prioritisedQueuedRuns = prioritySchedulingService.getPrioritisedTestRunsToSchedule();
+        
+                    while (!prioritisedQueuedRuns.isEmpty()) {    
+                        IRun selectedRun = prioritisedQueuedRuns.remove(0);
+        
+                        startPod(selectedRun);
+        
+                        if (!prioritisedQueuedRuns.isEmpty()) {
+                            // Slight delay to allow Kubernetes to catch up....
+                            //
+                            // Why do this ? 
+                            //
+                            // If we don't do this, then all the tests get scheduled on the same node, and the 
+                            // node will run out of memory.
+                            //
+                            // We assume that's because the usage statistics on a pod are not synchronized totally at
+                            // real-time, but have a lag in which they catch up. Hopefully this delay is greater
+                            // than the lag and when we actually schedule the next pod it gets evenly distributed over
+                            // the nodes which are available.
+                            //
+                            // This may or may not be necessary if the scheduling policies in the cluster are changed. Not sure.
+                            long launchIntervalMilliseconds = settings.getKubeLaunchIntervalMillisecs();
+                            timeService.sleepMillis(launchIntervalMilliseconds); 
+                        }
+
+                        if (isMaximumEngineLimitReached()) {
+                            logger.info("Not scheduling any more runs, currently at maximum engines (" + settings.getMaxEngines() + ")");
+                            break;
+                        }
                     }
-                }
-    
-                while (!queuedRuns.isEmpty()) {
-                    // *** Check we are not at max engines
-                    List<V1Pod> pods = this.kubeEngineFacade.getTestPods(settings.getEngineLabel());
-                    kubeEngineFacade.getActivePods(pods);
-    
-                    logger.info("Active runs=" + pods.size() + ",max=" + settings.getMaxEngines());
-    
-                    int currentActive = pods.size();
-                    if (currentActive >= settings.getMaxEngines()) {
-                        logger.info(
-                                "Not looking for runs, currently at maximim engines (" + settings.getMaxEngines() + ")");
-                        break;
-                    }
-    
-                    // List<IRun> activeRuns = this.runs.getActiveRuns();
-    
-                    // TODO Create the group algorithim same as the galasa scheduler
-    
-                    // *** Build pool lists
-                    // HashMap<String, Pool> queuePools = getPools(queuedRuns);
-                    // HashMap<String, Pool> activePools = getPools(activeRuns);
-    
-                    // *** cheat for the moment
-                    Collections.sort(queuedRuns, queuedComparator);
-    
-                    IRun selectedRun = queuedRuns.remove(0);
-    
-                    startPod(selectedRun);
-    
-                    if (!queuedRuns.isEmpty()) {
-                        // Slight delay to allow Kubernetes to catch up....
-                        //
-                        // Why do this ? 
-                        //
-                        // If we don't do this, then all the tests get scheduled on the same node, and the 
-                        // node will run out of memory.
-                        //
-                        // We assume that's because the usage statistics on a pod are not synchronized totally at
-                        // real-time, but have a lag in which they catch up. Hopefully this delay is greater
-                        // than the lag and when we actually schedule the next pod it gets evenly distributed over
-                        // the nodes which are available.
-                        //
-                        // This may or may not be necessary if the scheduling policies in the cluster are changed. Not sure.
-                        long launchIntervalMilliseconds = settings.getKubeLaunchIntervalMillisecs();
-                        timeService.sleepMillis(launchIntervalMilliseconds); 
-                    } 
                 }
             } catch (Exception e) {
                 logger.error("Unable to poll for new runs", e);
             }
         }
+    }
+
+    private boolean isMaximumEngineLimitReached() throws K8sControllerException {
+        List<V1Pod> pods = this.kubeEngineFacade.getTestPods();
+        pods = kubeEngineFacade.getActivePods(pods);
+
+        logger.info("Active runs=" + pods.size() + ",max=" + settings.getMaxEngines());
+
+        int currentActive = pods.size();
+        return currentActive >= settings.getMaxEngines();
     }
 
 
@@ -188,12 +185,12 @@ public class TestPodScheduler implements Runnable {
         try {
             // *** First attempt to allocate the run to this controller
             Instant now = timeService.now();
-            Instant expire = now.plus(15, ChronoUnit.MINUTES);
+            Instant allocatedTimeoutTimestamp = now.plus(settings.getAllocatedTestRunTimeoutMinutes(), ChronoUnit.MINUTES);
             HashMap<String, String> props = new HashMap<>();
-            props.put("run." + runName + ".controller", settings.getPodName());
-            props.put("run." + runName + ".allocated", now.toString());
-            props.put("run." + runName + ".allocate.timeout", expire.toString());
-            if (!this.dss.putSwap("run." + runName + ".status", "queued", "allocated", props)) {
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.CONTROLLER, settings.getPodName());
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.ALLOCATED, now.toString());
+            props.put("run." + runName + "." + DssPropertyKeyRunNameSuffix.ALLOCATE_TIMEOUT, allocatedTimeoutTimestamp.toString());
+            if (!this.dss.putSwap("run." + runName + "."+DssPropertyKeyRunNameSuffix.STATUS, "queued", "allocated", props)) {
                 logger.info("run allocated by another controller");
                 return;
             }
@@ -207,10 +204,13 @@ public class TestPodScheduler implements Runnable {
                 launchAttemptCount+=1;
                 if( launchAttemptCount > maxLaunchAttempts ) {
                     // Mark the test run as finished due to environment failure.
-                    this.dss.put("run." + run.getName() + ".result", "EnvFail" );
-                    this.dss.put("run." + run.getName() + ".status", "finished");
+                    Map<String, String> propertiesToSet = new HashMap<>();
+                    propertiesToSet.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.RESULT, "EnvFail" );
+                    propertiesToSet.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.STATUS, "finished");
                     Instant finishedTimeStamp = timeService.now();
-                    this.dss.put("run." + run.getName() + ".finished" , finishedTimeStamp.toString());
+                    propertiesToSet.put("run." + run.getName() + "."+DssPropertyKeyRunNameSuffix.FINISHED_DATETIME , finishedTimeStamp.toString());
+
+                    this.dss.put(propertiesToSet);
 
                     String msg = "Engine Pod " + newPodDefinition.getMetadata().getName() + " could not be started. Giving up. Retry count "+Integer.toString(launchAttemptCount)+"exceeded!";
                     logger.error(msg);
@@ -258,8 +258,10 @@ public class TestPodScheduler implements Runnable {
         V1ObjectMeta metadata = new V1ObjectMeta();
         newPod.setMetadata(metadata);
         metadata.setName(engineName);
-        metadata.putLabelsItem("galasa-engine-controller", this.settings.getEngineLabel());
-        metadata.putLabelsItem(GALASA_RUN_POD_LABEL, runName);
+        metadata.putLabelsItem(TestPodKubeLabels.ENGINE_CONTROLLER.toString(), this.settings.getEngineLabel());
+        metadata.putLabelsItem(TestPodKubeLabels.GALASA_RUN.toString(), runName);
+        metadata.putLabelsItem(TestPodKubeLabels.GALASA_SERVICE_NAME.toString(), kubeEngineFacade.getGalasaServiceInstallName());
+        logger.debug(metadata.toString());
 
         V1PodSpec podSpec = new V1PodSpec();
         newPod.setSpec(podSpec);
@@ -273,32 +275,7 @@ public class TestPodScheduler implements Runnable {
             podSpec.setNodeSelector(nodeSelector);
         }
 
-        String nodePreferredAffinity = this.settings.getNodePreferredAffinity();
-        if (!nodePreferredAffinity.isEmpty()) {
-            String[] selection = nodePreferredAffinity.split("=");
-            if (selection.length == 2) {
-                V1Affinity affinity = new V1Affinity();
-                podSpec.setAffinity(affinity);
-
-                V1NodeAffinity nodeAffinity = new V1NodeAffinity();
-                affinity.setNodeAffinity(nodeAffinity);
-
-                V1PreferredSchedulingTerm preferred = new V1PreferredSchedulingTerm();
-                nodeAffinity.addPreferredDuringSchedulingIgnoredDuringExecutionItem(preferred);
-                preferred.setWeight(1);
-
-                V1NodeSelectorTerm selectorTerm = new V1NodeSelectorTerm();
-                preferred.setPreference(selectorTerm);
-
-                V1NodeSelectorRequirement requirement = new V1NodeSelectorRequirement();
-                selectorTerm.addMatchExpressionsItem(requirement);
-                requirement.setKey(selection[0]);
-                requirement.setOperator("In");
-                requirement.addValuesItem(selection[1]);
-
-
-            }
-        }
+        addNodeAffinityIfRequested(podSpec);
 
         String nodeTolerations = this.settings.getNodeTolerations();
         if(!nodeTolerations.isEmpty()) {
@@ -313,6 +290,67 @@ public class TestPodScheduler implements Runnable {
         return newPod;
     }
 
+    private void addNodeAffinityIfRequested(V1PodSpec podSpec) {
+        String nodePreferredAffinity = this.settings.getNodePreferredAffinity();
+        String nodeRequiredAffinity = this.settings.getNodeRequiredAffinity();
+
+        V1NodeAffinity nodeAffinity = new V1NodeAffinity();
+
+        if (nodeRequiredAffinity != null && !nodeRequiredAffinity.isEmpty()) {
+            addNodeRequiredAffinity(nodeRequiredAffinity, nodeAffinity);
+        }
+
+        if (nodePreferredAffinity != null && !nodePreferredAffinity.isEmpty()) {
+            addNodePreferredAffinity(nodePreferredAffinity, nodeAffinity);
+        }
+
+        if (!nodeAffinity.getPreferredDuringSchedulingIgnoredDuringExecution().isEmpty() ||
+            nodeAffinity.getRequiredDuringSchedulingIgnoredDuringExecution() != null
+        ) {
+            V1Affinity affinity = new V1Affinity();
+            affinity.setNodeAffinity(nodeAffinity);
+            podSpec.setAffinity(affinity);
+        }
+    }
+
+    private void addNodePreferredAffinity(String nodePreferredAffinity, V1NodeAffinity nodeAffinity) {
+
+        // Node preferred affinity is provided in the form <label key>=<label value>
+        String[] selection = nodePreferredAffinity.split("=");
+        if (selection.length == 2) {
+            V1PreferredSchedulingTerm preferred = new V1PreferredSchedulingTerm();
+            nodeAffinity.addPreferredDuringSchedulingIgnoredDuringExecutionItem(preferred);
+            preferred.setWeight(1);
+
+            V1NodeSelectorTerm selectorTerm = buildNodeSelectorTerm(selection[0], selection[1]);
+            preferred.setPreference(selectorTerm);
+        }
+    }
+
+    private void addNodeRequiredAffinity(String nodeRequiredAffinity, V1NodeAffinity nodeAffinity) {
+
+        // Node required affinity is provided in the form <label key>=<label value>
+        String[] selection = nodeRequiredAffinity.split("=");
+        if (selection.length == 2) {
+            V1NodeSelector nodeSelector = new V1NodeSelector();
+            nodeAffinity.setRequiredDuringSchedulingIgnoredDuringExecution(nodeSelector);
+
+            V1NodeSelectorTerm selectorTerm = buildNodeSelectorTerm(selection[0], selection[1]);
+            nodeSelector.addNodeSelectorTermsItem(selectorTerm);
+        }
+    }
+
+    private V1NodeSelectorTerm buildNodeSelectorTerm(String key, String value) {
+        V1NodeSelectorTerm selectorTerm = new V1NodeSelectorTerm();
+
+        V1NodeSelectorRequirement requirement = new V1NodeSelectorRequirement();
+        selectorTerm.addMatchExpressionsItem(requirement);
+        requirement.setKey(key);
+        requirement.setOperator("In");
+        requirement.addValuesItem(value);
+
+        return selectorTerm;
+    }
 
     /*
     * Tolerations are supplied as a string in the form:
@@ -430,6 +468,17 @@ public class TestPodScheduler implements Runnable {
 
         encryptionKeysVolume.setSecret(encryptionKeysSecretSource);
         volumes.add(encryptionKeysVolume);
+
+        if (this.isUsingUserSuppliedCertificates) {
+            V1Volume cacertsVolume = new V1Volume();
+            cacertsVolume.setName(CACERTS_VOLUME_NAME);
+
+            V1ConfigMapVolumeSource cacertsVolumeSource = new V1ConfigMapVolumeSource();
+            cacertsVolumeSource.setName(this.cacertsConfigMapName);
+
+            cacertsVolume.setConfigMap(cacertsVolumeSource);
+            volumes.add(cacertsVolume);
+        }
         return volumes;
     }
 
@@ -438,7 +487,7 @@ public class TestPodScheduler implements Runnable {
 
         String encryptionKeysMountPath = env.getenv(ENCRYPTION_KEYS_PATH_ENV);
         if (encryptionKeysMountPath != null && !encryptionKeysMountPath.isBlank()) {
-            Path encryptionKeysDirectory = Paths.get(encryptionKeysMountPath).getParent().toAbsolutePath();
+            Path encryptionKeysDirectory = Path.of(encryptionKeysMountPath).getParent().toAbsolutePath();
 
             V1VolumeMount encryptionKeysVolumeMount = new V1VolumeMount();
             encryptionKeysVolumeMount.setName(ENCRYPTION_KEYS_VOLUME_NAME);
@@ -446,6 +495,16 @@ public class TestPodScheduler implements Runnable {
             encryptionKeysVolumeMount.setReadOnly(true);
 
             volumeMounts.add(encryptionKeysVolumeMount);
+        }
+
+        if (this.isUsingUserSuppliedCertificates) {
+            V1VolumeMount cacertsFileVolumeMount = new V1VolumeMount();
+            cacertsFileVolumeMount.setName(CACERTS_VOLUME_NAME);
+            cacertsFileVolumeMount.setMountPath(this.cacertsFilePath.toString());
+            cacertsFileVolumeMount.setSubPath("cacerts");
+            cacertsFileVolumeMount.readOnly(true);
+
+            volumeMounts.add(cacertsFileVolumeMount);
         }
         return volumeMounts;
     }
@@ -473,6 +532,8 @@ public class TestPodScheduler implements Runnable {
         addEnvVarToContainerIfPresent(CREDS_ENV_VAR, envs);
         addEnvVarToContainerIfPresent(EXTRA_BUNDLES_ENV_VAR, envs);
 
+        addEnvVarToContainerIfPresent(JAVA_OPTIONS_ENV_VAR, envs);
+
         //
         // envs.add(createSecretEnv("GALASA_SERVER_USER", "galasa-secret",
         // "galasa-server-username"));
@@ -494,15 +555,6 @@ public class TestPodScheduler implements Runnable {
         if (envValue != null && !envValue.isBlank()) {
             envVarsToAddTo.add(createValueEnv(envVar, envValue));
         }
-    }
-
-    private class QueuedComparator implements Comparator<IRun> {
-
-        @Override
-        public int compare(IRun o1, IRun o2) {
-            return o1.getQueued().compareTo(o2.getQueued());
-        }
-
     }
 
     private V1EnvVar createValueEnv(String name, String value) {

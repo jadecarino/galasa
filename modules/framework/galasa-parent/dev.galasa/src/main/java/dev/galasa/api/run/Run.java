@@ -24,6 +24,7 @@ public class Run {
     private Instant finished;
     private Instant waitUntil;
     private String  requestor;
+    private String user;
     private String  stream;
     private String  repo;
     private String  obr;
@@ -31,13 +32,13 @@ public class Run {
     private boolean isTraceEnabled;
     private String  rasRunId;
     private Set<String> tags;
-
+    private String webUiUrl;
+    private String restApiUrl;
 
     public Run(String name, Instant heartbeat, String type, String group, String test, String bundleName,
             String testName, String status, String result, Instant queued, Instant finished, Instant waitUntil,
-            String requestor, String stream, String repo, String obr, boolean isLocal, boolean isTraceEnabled,
-            String rasRunId, String submissionId, Set<String> tags
-    ) {
+            String requestor, String user, String stream, String repo, String obr, boolean isLocal, boolean isTraceEnabled,
+            String rasRunId, String submissionId, Set<String> tags) {
         this.name = name;
         this.heartbeat = heartbeat;
         this.type = type;
@@ -52,6 +53,7 @@ public class Run {
         this.finished = finished;
         this.waitUntil = waitUntil;
         this.requestor = requestor;
+        this.user = user;
         this.stream = stream;
         this.repo = repo;
         this.obr = obr;
@@ -60,7 +62,7 @@ public class Run {
         this.rasRunId = rasRunId;
 
         this.tags = new HashSet<String>();
-        if( tags != null) {
+        if (tags != null) {
             this.tags.addAll(tags);
         }
     }
@@ -115,6 +117,10 @@ public class Run {
 
     public String getRequestor() {
         return requestor;
+    }
+
+    public String getUser() {
+        return user;
     }
 
     public String getStream() {
@@ -174,7 +180,23 @@ public class Run {
     }
 
     public Set<String> getTags() {
-        return this.tags; 
+        return this.tags;
+    }
+
+    public String getWebUiUrl() {
+        return this.webUiUrl;
+    }
+
+    public void setWebUiUrl(String webUiUrl) {
+        this.webUiUrl = webUiUrl;
+    }
+
+    public String getRestApiUrl() {
+        return this.restApiUrl;
+    }
+
+    public void setRestApiUrl(String restApiUrl) {
+        this.restApiUrl = restApiUrl;
     }
 
 }

@@ -25,6 +25,7 @@ func getRunIdFromRunName(runName string,
 	var runId string
 
 	requestorParameter := ""
+	userParameter := ""
 	resultParameter := ""
 	group := ""
 	fromAgeHours := 0
@@ -36,6 +37,7 @@ func getRunIdFromRunName(runName string,
 	runsQuery := NewRunsQuery(
 		runName,
 		requestorParameter,
+		userParameter,
 		resultParameter,
 		group,
 		fromAgeHours,
@@ -87,8 +89,8 @@ func getRunIdFromRunName(runName string,
 	return runId, err
 }
 
-func createUpdateRunStatusRequest(status string, result string) *galasaapi.UpdateRunStatusRequest {
-	var updateRunStatusRequest = galasaapi.NewUpdateRunStatusRequest()
+func createUpdateRunStatusRequest(status string, result string) *galasaapi.UpdateRunRequest {
+	var updateRunStatusRequest = galasaapi.NewUpdateRunRequest()
 
 	updateRunStatusRequest.SetStatus(status)
 	updateRunStatusRequest.SetResult(result)

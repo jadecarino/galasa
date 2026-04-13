@@ -1,8 +1,8 @@
 # Galasa CLI
 
-The Galasa command line interface (Galasa CLI) is used to interact with the Galasa ecosystem or local development environment.
+The Galasa command line interface (Galasa CLI) is used to interact with a deployed Galasa service or local development environment.
 
-[![Main build](https://github.com/galasa-dev/cli/actions/workflows/build.yml/badge.svg)](https://github.com/galasa-dev/cli/actions/workflows/build.yml)
+[![Main build](https://github.com/galasa-dev/galasa/actions/workflows/pushes.yaml/badge.svg)](https://github.com/galasa-dev/galasa/actions/workflows/pushes.yaml)
 
 ## Environment variables
 
@@ -99,7 +99,7 @@ If you wish the generated code to depend upon the very latest/bleeding-edge of g
 
 ## auth login
 
-Before interacting with a Galasa ecosystem using `galasactl`, you must be authenticated with it. The `auth login` command allows you to log in to an ecosystem provided by your `GALASA_BOOTSTRAP` environment variable or through the `--bootstrap` flag.
+Before interacting with a deployed Galasa service using `galasactl`, you must be authenticated with it. The `auth login` command allows you to log in to a Galasa service provided by your `GALASA_BOOTSTRAP` environment variable or through the `--bootstrap` flag.
 
 Prior to running this command, you must have a `galasactl.properties` file in your `GALASA_HOME` directory, which is automatically created when running `galasactl local init`, that contains a `GALASA_TOKEN` property with the following format:
 
@@ -263,6 +263,8 @@ Note: The `--log -` directs logging information to the stderr console.
 Omit this option if you do not want to see logging, or specify `--log myFileName.txt` if you wish 
 to capture log information in a file.
 
+When submitting runs to a Galasa ecosystem with `runs submit`, the run `requestor` will be set to the user who owns the personal access token that was used to authenticate to the Galasa ecosystem. If you wish to associate a different user with this batch of runs as the run `user`, you can use the `--user` flag. This is useful if you submit runs to a Galasa ecosystem in an automation tool or workflow and the `requestor` is a functional ID or bot account in the tool, but you wish to specify the actual user who triggered the automation, so they can query their runs later with the `runs get` command.
+
 ### Examples
 
 Getting help:-
@@ -310,14 +312,27 @@ such as cleaning up resources when things fail and arbitrating contention for li
 between competing tests. It should only be used during test development to verify that the test is 
 behaving correctly.
 
-### Example : Run a single test in the local JVM.
+### Example: Run a single test class in the local JVM.
 ```
 galasactl runs submit local --log -
           --obr mvn:dev.galasa.example.banking/dev.galasa.example.banking.obr/0.0.1-SNAPSHOT/obr
           --class dev.galasa.example.banking.account/dev.galasa.example.banking.account.TestAccount
 ```
 
-### Example : Run a single Gherkin test in the local JVM.
+### Example: Run a single test method in the local JVM.
+
+To run a single test method within a test class, supply the `--methods` flag into the `galasactl runs submit local` command.
+
+For example, to run the `testCreateAccount` method within the `TestAccount` class, use the following command:
+
+```
+galasactl runs submit local --log -
+          --obr mvn:dev.galasa.example.banking/dev.galasa.example.banking.obr/0.0.1-SNAPSHOT/obr
+          --class dev.galasa.example.banking.account/dev.galasa.example.banking.account.TestAccount
+          --methods testCreateAccount
+```
+
+### Example: Run a single Gherkin test in the local JVM.
 ```
 galasactl runs submit local --log -
           --gherkin file:///path/to/gherkin/file.feature
@@ -455,6 +470,35 @@ The run "C1234" can be cancelled using the following command:
 
 ```
 galasactl runs cancel --name C1234
+```
+
+## runs cleanup local
+
+This command can be used to run a set of resource managment providers within a local JVM to clean up resources that may have been provisioned by local test runs and were not cleaned up properly as part of the test runs' lifecycles. This could be because the test runs' JVM processes exited before the provisioned resources could be discarded.
+
+The `--obr` flag can be supplied multiple times to load additional OBRs that contain resource management provider services that you would like to run. Likewise, the `--remoteMaven` flag can also be supplied multiple times to specify the remote Maven repositories where Galasa can download the provided OBRs from.
+
+To select which resource management providers to run, you can supply a glob pattern to the `--includes-pattern` flag to tell Galasa which providers should be executed. To exclude certain resource management providers, you can supply a glob pattern to the `--excludes-pattern` flag. The `--includes-pattern` and `--excludes-pattern` flags can be supplied multiple times if you wish to supply multiple glob patterns.
+
+The following special characters can be provided within the supplied glob patterns:
+
+- `*` (wildcard) Matches zero or more characters
+- `?` matches exactly one character
+
+For example, the pattern `dev.galasa*` will match any resource management provider that includes `dev.galasa` as its prefix, so a class like `dev.galasa.core.CoreResourceMonitorClass` will be matched.
+
+A pattern like `*MyResourceMonitorClass` will match any resource management provider that ends with `MyResourceMonitorClass`, such as `my.company.monitors.MyResourceMonitorClass`.
+
+The `runs cleanup local` command also supports a set of debug flags, like `--debug` and `--debugPort`, to launch the resource cleanup JVM process in 'debug mode'. This works in the same way as the debugger support for the `runs submit local` command. See [Debugging a single test which runs in the local JVM](#debugging-a-single-test-which-runs-in-the-local-jvm).
+
+A complete list of supported parameters for the `runs cleanup local` command is available [here](./docs/generated/galasactl_runs_cleanup_local.md)
+
+### Examples
+
+The following command provides an OBR `my.company.group/my.company.group.obr/0.0.1/obr` to load resource management provider bundles from and an extra remote Maven repository `https://my-company/maven-repo` where the OBR can be downloaded from. The command then supplies an includes pattern which will match any Java classes that start with `my.company.` in their fully qualified class names and an excludes pattern to exclude any classes that end with `MyUnwantedCleanupProviderClass`:
+
+```
+galasactl runs cleanup local --obr my.company.group/my.company.group.obr/0.0.1/obr --remoteMaven https://my-company/maven-repo --includes-pattern "my.company.*" --excludes-pattern "*MyUnwantedCleanupProviderClass" --log -
 ```
 
 ## monitors set
@@ -769,6 +813,60 @@ galasactl secrets delete --name SYSTEM1
 
 For a complete list of supported parameters see [here](./docs/generated/galasactl_secrets_delete.md).
 
+## tags get
+
+This command retrieves a list of tags stored in a Galasa service's configuration property store. The retrieved tags can be displayed in different formats, including `summary` and `yaml` formats, based on the value provided by the `--format` flag. If `--format` is not provided, tags will be displayed in the `summary` format by default.
+
+### Examples
+
+All tags stored in a Galasa service can be retrieved using the following command:
+
+```
+galasactl tags get
+```
+
+To get a specific tag named `core-regression`, the `--name` flag can be provided as follows:
+
+```
+galasactl tags get --name core-regression
+```
+
+To display a tag in a different format, like YAML, the `--format` flag can be provided:
+
+```
+galasactl tags get --name core-regression --format yaml
+```
+
+For a complete list of supported parameters see [here](./docs/generated/galasactl_tags_get.md).
+
+## tags delete
+
+This command deletes a tag with the given name from the Galasa service. The name of the tag to be deleted must be provided using the `--name` flag.
+
+### Examples
+
+To delete a tag named `mytag`, run the following command:
+
+```
+galasactl tags delete --name mytag
+```
+
+For a complete list of supported parameters see [here](./docs/generated/galasactl_tags_delete.md).
+
+## tags set
+
+This command creates or updates a tag with the given name from the Galasa service. The name of the tag to be created or updated must be provided using the `--name` flag.
+
+### Examples
+
+To create a tag named `mytag` with a description of `my first tag` and a priority of 15, run the following command:
+
+```
+galasactl tags set --name mytag --description "my first tag" --priority 15
+```
+
+For a complete list of supported parameters see [here](./docs/generated/galasactl_tags_set.md).
+
 ## roles get
 To list the roles which are available on a Galasa service.
 
@@ -829,6 +927,11 @@ An administrator can change the role of a user:
 > galasactl users set --login-id user.one@mydomain.com --role tester
 ```
 
+An administrator can also change the priority of a user:
+```
+> galasactl users set --login-id user.one@mydomain.com --priority 100
+```
+
 ## Reference Material
 
 ### Syntax
@@ -858,7 +961,7 @@ Built artifacts include:
 
 Browse the following web site and download whichever built binary files you wish:
 
-- Latest (and previous) stable releases: https://github.com/galasa-dev/cli/releases
+- Latest (and previous) stable releases: https://github.com/galasa-dev/galasa/releases
 - Bleeding edge/Unstable : https://development.galasa.dev/main/binary/cli/
 
 ## Docker images containing the command-line tools

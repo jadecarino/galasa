@@ -25,6 +25,7 @@ import dev.galasa.ICredentials;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.creds.CredentialsException;
+import dev.galasa.framework.spi.creds.CredentialsKeyStore;
 import dev.galasa.framework.spi.creds.CredentialsToken;
 import dev.galasa.framework.spi.creds.CredentialsUsername;
 import dev.galasa.framework.spi.creds.CredentialsUsernamePassword;
@@ -90,7 +91,7 @@ public class Etcd3CredentialsStore extends Etcd3Store implements ICredentialsSto
     public ICredentials getCredentials(String credentialsId) throws CredentialsException {
         ICredentials credentials = null;
         try {
-            Map<String, String> credentialsProperties = getPrefix(CREDS_PROPERTY_PREFIX + credentialsId);
+            Map<String, String> credentialsProperties = getPropertiesWithPrefix(CREDS_PROPERTY_PREFIX + credentialsId);
             credentials = convertPropertiesIntoCredentials(credentialsProperties, credentialsId);
 
         } catch (InterruptedException | ExecutionException e) {
@@ -133,7 +134,7 @@ public class Etcd3CredentialsStore extends Etcd3Store implements ICredentialsSto
     @Override
     public void deleteCredentials(String credentialsId) throws CredentialsException {
         try {
-            deletePrefix(CREDS_PROPERTY_PREFIX + credentialsId);
+            deletePropertiesWithPrefix(CREDS_PROPERTY_PREFIX + credentialsId);
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new CredentialsException("Failed to delete credentials", e);
@@ -144,7 +145,7 @@ public class Etcd3CredentialsStore extends Etcd3Store implements ICredentialsSto
     public Map<String, ICredentials> getAllCredentials() throws CredentialsException {
         Map<String, ICredentials> credentials = new HashMap<>();
         try {
-            Map<String, String> credentialsKeyValues = getPrefix(CREDS_PROPERTY_PREFIX);
+            Map<String, String> credentialsKeyValues = getPropertiesWithPrefix(CREDS_PROPERTY_PREFIX);
 
             // Build a set of all credential IDs stored in etcd
             Set<Entry<String, String>> credentialsEntries = credentialsKeyValues.entrySet();
@@ -176,38 +177,53 @@ public class Etcd3CredentialsStore extends Etcd3Store implements ICredentialsSto
     }
 
     private ICredentials convertPropertiesIntoCredentials(Map<String, String> credProperties, String credentialsId) throws CredentialsException {
-        String token = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".token");
-        String username = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".username");
-        String password = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".password");
-
+        final String keyPrefix = CREDS_PROPERTY_PREFIX + credentialsId;
         ICredentials credentials = null;
 
-        // Check if the credentials are UsernameToken or Token
-        if (token != null && username != null) {
-            credentials = new CredentialsUsernameToken(key, username, token);
-        } else if (token != null) {
-            credentials = new CredentialsToken(key, token);
-        } else if (username != null) {
-            // We have a username, so check if the credentials are UsernamePassword or Username
-            if (password != null) {
-                credentials = new CredentialsUsernamePassword(key, username, password); 
-            } else {
+        String keystore = credProperties.get(keyPrefix + ".keystore");
+        if (keystore != null) {
+            String keystorePassword = credProperties.get(keyPrefix + ".password");
+            String type = credProperties.get(keyPrefix + ".type");
+            
+            credentials = new CredentialsKeyStore(key, keystore, keystorePassword, type);
+        } else {
+            String token = credProperties.get(keyPrefix + ".token");
+            String username = credProperties.get(keyPrefix + ".username");
+            String password = credProperties.get(keyPrefix + ".password");
+    
+            boolean hasToken = (token != null);
+            boolean hasUsername = (username != null);
+            boolean hasPassword = (password != null);
+    
+            if (hasToken && hasUsername) {
+                credentials = new CredentialsUsernameToken(key, username, token);
+            } else if (hasToken) {
+                credentials = new CredentialsToken(key, token);
+            } else if (hasUsername && hasPassword) {
+                credentials = new CredentialsUsernamePassword(key, username, password);
+            } else if (hasUsername) {
                 credentials = new CredentialsUsername(key, username);
             }
         }
 
         if (credentials != null) {
-            String description = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".description");
-            String lastUpdatedTime = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".lastUpdated.time");
-            String lastUpdatedUser = credProperties.get(CREDS_PROPERTY_PREFIX + credentialsId + ".lastUpdated.user");
-
-            credentials.setDescription(description);
-            credentials.setLastUpdatedByUser(lastUpdatedUser);
-            if (lastUpdatedTime != null) {
-                credentials.setLastUpdatedTime(Instant.parse(lastUpdatedTime));
-            }
+            setCredentialsMetadata(credentials, credProperties, credentialsId);
         }
+        
         return credentials;
+    }
+
+    private void setCredentialsMetadata(ICredentials credentials, Map<String, String> credProperties, String credentialsId) {
+        String keyPrefix = CREDS_PROPERTY_PREFIX + credentialsId;
+        String description = credProperties.get(keyPrefix + ".description");
+        String lastUpdatedTime = credProperties.get(keyPrefix + ".lastUpdated.time");
+        String lastUpdatedUser = credProperties.get(keyPrefix + ".lastUpdated.user");
+
+        credentials.setDescription(description);
+        credentials.setLastUpdatedByUser(lastUpdatedUser);
+        if (lastUpdatedTime != null) {
+            credentials.setLastUpdatedTime(Instant.parse(lastUpdatedTime));
+        }
     }
 
     private String getCredentialsIdFromKey(String key) {
@@ -229,7 +245,7 @@ public class Etcd3CredentialsStore extends Etcd3Store implements ICredentialsSto
             if (encryptValues) {
                 value = encryptionService.encrypt(value);
             }
-            put(key, value);
+            putProperty(key, value);
         }
     }
 }

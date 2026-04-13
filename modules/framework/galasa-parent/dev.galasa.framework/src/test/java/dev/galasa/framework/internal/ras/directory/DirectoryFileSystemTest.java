@@ -20,7 +20,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -30,6 +29,7 @@ import org.junit.Test;
 
 import dev.galasa.ResultArchiveStoreContentType;
 import dev.galasa.ResultArchiveStoreFileAttributeView;
+import dev.galasa.framework.SupportedFileAttributeName;
 
 public class DirectoryFileSystemTest {
 
@@ -230,32 +230,30 @@ public class DirectoryFileSystemTest {
         Assert.assertNotNull("Content type missing from view", type);
         Assert.assertEquals("Type not XML", ResultArchiveStoreContentType.XML, type);
 
-        Map<String, Object> attrs = Files.readAttributes(rasTestArtifact, "ras:contentType");
+        Map<String, Object> attrs = Files.readAttributes(rasTestArtifact, SupportedFileAttributeName.CONTENT_TYPE.getValue());
         Assert.assertEquals("Content type missing/incorrect from attributes map",
-                ResultArchiveStoreContentType.XML.value(), attrs.get("ras:contentType"));
+                ResultArchiveStoreContentType.XML.value(), attrs.get(SupportedFileAttributeName.CONTENT_TYPE.getValue()));
 
         attrs = Files.readAttributes(rasTestArtifact, "ras:*");
         Assert.assertEquals("Content type missing/incorrect from attributes map",
-                ResultArchiveStoreContentType.XML.value(), attrs.get("ras:contentType"));
+                ResultArchiveStoreContentType.XML.value(), attrs.get(SupportedFileAttributeName.CONTENT_TYPE.getValue()));
 
         attrs = Files.readAttributes(rasTestArtifact, "*");
         Assert.assertEquals("Content type missing/incorrect from attributes map",
-                ResultArchiveStoreContentType.XML.value(), attrs.get("ras:contentType"));
+                ResultArchiveStoreContentType.XML.value(), attrs.get(SupportedFileAttributeName.CONTENT_TYPE.getValue()));
 
-        attrs = Files.readAttributes(rasTestArtifact, "size,ras:contentType, lastAccessTime");
+        attrs = Files.readAttributes(rasTestArtifact, SupportedFileAttributeName.SIZE.getValue()+","+SupportedFileAttributeName.CONTENT_TYPE.getValue()+", lastAccessTime");
         Assert.assertEquals("Content type missing/incorrect from attributes map",
-                ResultArchiveStoreContentType.XML.value(), attrs.get("ras:contentType"));
+                ResultArchiveStoreContentType.XML.value(), attrs.get(SupportedFileAttributeName.CONTENT_TYPE.getValue()));
         Assert.assertEquals("Incorrect number of attributes return", 3, attrs.size());
     }
 
     @Test
     public void testRASFileAttributesPreload() throws IOException {
-        final Properties contentTypes = new Properties();
-        contentTypes.setProperty("/arty1.png", "image/png");
-        final Path contentTypesFile = this.runDirectory.resolve("artifacts.properties");
-        OutputStream os = Files.newOutputStream(contentTypesFile);
-        contentTypes.store(os, null);
-        os.close();
+        final Path contentTypesFile = this.runDirectory.resolve("artifacts.json");
+        String artifactsJson = "[ { \"path\": \"/arty1.png\", \"contentType\": \"image/png\" } ]";
+
+        Files.writeString(contentTypesFile, artifactsJson);
 
         final FileSystemProvider fsp = new DirectoryRASFileSystemProvider(this.runDirectory);
         final FileSystem fs = fsp.getFileSystem(this.runDirectory.toUri());

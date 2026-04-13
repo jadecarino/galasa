@@ -28,6 +28,7 @@ const (
 			 "testName": "myTestPackage.MyTestName",
 			 "testShortName": "MyTestName",
 			 "requestor": "unitTesting",
+			 "user": "unitTesting",
 			 "status": "Finished",
 			 "result": "Passed",
 			 "group": "dummyGroup",
@@ -50,7 +51,9 @@ const (
 		 "artifacts": [{
 			 "artifactPath": "myPathToArtifact1",
 			 "contentType":	"application/json"
-		 }]
+		 }],
+		 "webUiUrl": "http://example.com/test-runs/xxx876xxx",
+     "restApiUrl": "http://example.com/api/ras/runs/xxx876xxx"
 	 }`
 
 	RUN_U456_v2 = `{
@@ -61,6 +64,7 @@ const (
 			 "testName": "myTestPackage.MyTest2",
 			 "testShortName": "MyTestName22",
 			 "requestor": "unitTesting22",
+			 "user": "unitTesting22",
 			 "status" : "Finished",
 			 "result" : "LongResultString",
 			 "queued" : "2023-05-10T06:00:13.405966Z",
@@ -86,8 +90,10 @@ const (
 		 "artifacts": [{
 			 "artifactPath": "myPathToArtifact1",
 			 "contentType":	"application/json"
-			 }]
-			 }`
+		 }],
+		 "webUiUrl": "http://example.com/test-runs/xxx876xxx",
+     "restApiUrl": "http://example.com/api/ras/runs/xxx876xxx"
+	 }`
 
 	EMPTY_RUNS_RESPONSE = `
 		{
@@ -133,16 +139,17 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedSummary(t *testing.T) {
 	runName := "U456"
 	age := "2d:24h"
 	requestor := ""
+	user := ""
 	result := ""
 	group := ""
 	tags := make([]string, 0)
 	shouldGetActive := false
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -154,13 +161,13 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedSummary(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -171,7 +178,7 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedSummary(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
@@ -181,8 +188,8 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedSummary(t *testing.T) {
 		textGotBack := mockConsole.ReadText()
 		assert.Contains(t, textGotBack, runName)
 		want :=
-			"submitted-time(UTC) name requestor   status   result test-name                group      tags\n" +
-				"2023-05-10 06:00:13 U456 unitTesting Finished Passed myTestPackage.MyTestName dummyGroup \n" +
+			"submitted-time(UTC) name requestor   status   result test-name                group      tags web-ui-url\n" +
+				"2023-05-10 06:00:13 U456 unitTesting Finished Passed myTestPackage.MyTestName dummyGroup      http://example.com/test-runs/xxx876xxx\n" +
 				"\n" +
 				"Total:1 Passed:1\n"
 		assert.Equal(t, want, textGotBack)
@@ -194,14 +201,15 @@ func TestRunsGetOfRunNameWhichDoesNotExistProducesError(t *testing.T) {
 	age := "2d:24h"
 	runName := "garbage"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
-    interactions := []utils.HttpInteraction{}
+	interactions := []utils.HttpInteraction{}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	mockConsole := utils.NewMockConsole()
@@ -212,7 +220,7 @@ func TestRunsGetOfRunNameWhichDoesNotExistProducesError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
@@ -229,16 +237,17 @@ func TestRunsGetWhereRunNameExistsTwiceProducesTwoRunResultLines(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -252,13 +261,13 @@ func TestRunsGetWhereRunNameExistsTwiceProducesTwoRunResultLines(t *testing.T) {
 				"amountOfRuns": 2,
 				"runs":[ %s ]
 			}`, strings.Join(runsToReturn, ","))))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	mockConsole := utils.NewMockConsole()
@@ -268,7 +277,7 @@ func TestRunsGetWhereRunNameExistsTwiceProducesTwoRunResultLines(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
@@ -278,9 +287,9 @@ func TestRunsGetWhereRunNameExistsTwiceProducesTwoRunResultLines(t *testing.T) {
 		textGotBack := mockConsole.ReadText()
 		assert.Contains(t, textGotBack, runName)
 		want :=
-			"submitted-time(UTC) name requestor     status   result           test-name                group      tags\n" +
-				"2023-05-10 06:00:13 U456 unitTesting   Finished Passed           myTestPackage.MyTestName dummyGroup \n" +
-				"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2               anothertag,core\n" +
+			"submitted-time(UTC) name requestor     status   result           test-name                group      tags            web-ui-url\n" +
+				"2023-05-10 06:00:13 U456 unitTesting   Finished Passed           myTestPackage.MyTestName dummyGroup                 http://example.com/test-runs/xxx876xxx\n" +
+				"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2               anothertag,core http://example.com/test-runs/xxx876xxx\n" +
 				"\n" +
 				"Total:2 Passed:1\n"
 		assert.Equal(t, want, textGotBack)
@@ -299,6 +308,7 @@ func TestFailingGetRunsRequestReturnsError(t *testing.T) {
 	age := ""
 	runName := "garbage"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	tags := make([]string, 0)
@@ -310,7 +320,7 @@ func TestFailingGetRunsRequestReturnsError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	assert.Contains(t, err.Error(), "GAL1075")
@@ -331,16 +341,17 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedDetails(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -352,13 +363,13 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedDetails(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "details"
@@ -369,7 +380,7 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedDetails(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
@@ -388,10 +399,13 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedDetails(t *testing.T) {
 				"duration(ms)        : 137664\n" +
 				"test-name           : myTestPackage.MyTestName\n" +
 				"requestor           : unitTesting\n" +
+				"user                : unitTesting\n" +
 				"bundle              : myBundleId\n" +
 				"group               : dummyGroup\n" +
 				"tags                : \n" +
 				"run-log             : " + apiServerUrl + "/ras/runs/xxx876xxx/runlog\n" +
+				"web-ui-url          : http://example.com/test-runs/xxx876xxx\n" +
+				"rest-api-url        : http://example.com/api/ras/runs/xxx876xxx\n" +
 				"\n" +
 				"method           type status result  start-time(UTC)     end-time(UTC)       duration(ms)\n" +
 				"myTestMethodName test Done   Success 2023-05-10 06:00:13 2023-05-10 06:03:11 178628\n" +
@@ -418,21 +432,22 @@ func TestAPIInternalErrorIsHandledOk(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusInternalServerError)
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "details"
@@ -443,7 +458,7 @@ func TestAPIInternalErrorIsHandledOk(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
@@ -458,16 +473,17 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedRaw(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -479,13 +495,13 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedRaw(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "raw"
@@ -496,14 +512,14 @@ func TestRunsGetOfRunNameWhichExistsProducesExpectedRaw(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
 	assert.Nil(t, err)
 	textGotBack := mockConsole.ReadText()
 	assert.Contains(t, textGotBack, runName)
-	want := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog|\n"
+	want := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog||http://example.com/test-runs/xxx876xxx|http://example.com/api/ras/runs/xxx876xxx\n"
 	assert.Equal(t, textGotBack, want)
 }
 
@@ -608,13 +624,14 @@ func TestRunsGetURLQueryWithFromAndToDate(t *testing.T) {
 	age := "5d:12h"
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.NotNil(t, query.Get("from"))
 		assert.NotEqualValues(t, query.Get("from"), "")
@@ -623,13 +640,13 @@ func TestRunsGetURLQueryWithFromAndToDate(t *testing.T) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -640,7 +657,7 @@ func TestRunsGetURLQueryWithFromAndToDate(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -651,13 +668,14 @@ func TestRunsGetURLQueryJustFromAge(t *testing.T) {
 	age := "2d"
 	runName := ""
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.NotNil(t, query.Get("from"))
 		assert.NotEqualValues(t, query.Get("from"), "")
@@ -665,13 +683,13 @@ func TestRunsGetURLQueryJustFromAge(t *testing.T) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -682,7 +700,7 @@ func TestRunsGetURLQueryJustFromAge(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -693,13 +711,14 @@ func TestRunsGetURLQueryWithNoRunNameAndNoFromAgeReturnsError(t *testing.T) {
 	age := ""
 	runName := ""
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.NotNil(t, query.Get("from"))
 		assert.NotEqualValues(t, query.Get("from"), "")
@@ -707,13 +726,13 @@ func TestRunsGetURLQueryWithNoRunNameAndNoFromAgeReturnsError(t *testing.T) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -724,7 +743,7 @@ func TestRunsGetURLQueryWithNoRunNameAndNoFromAgeReturnsError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.NotNil(t, err)
@@ -736,13 +755,14 @@ func TestRunsGetURLQueryWithOlderToAgeThanFromAgeReturnsError(t *testing.T) {
 	age := "1d:1w"
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
@@ -750,13 +770,13 @@ func TestRunsGetURLQueryWithOlderToAgeThanFromAgeReturnsError(t *testing.T) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -767,7 +787,7 @@ func TestRunsGetURLQueryWithOlderToAgeThanFromAgeReturnsError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.NotNil(t, err)
@@ -779,13 +799,14 @@ func TestRunsGetURLQueryWithBadlyFormedFromAndToParameterReturnsError(t *testing
 	age := "1y:1s"
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
@@ -793,13 +814,13 @@ func TestRunsGetURLQueryWithBadlyFormedFromAndToParameterReturnsError(t *testing
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -810,7 +831,7 @@ func TestRunsGetURLQueryWithBadlyFormedFromAndToParameterReturnsError(t *testing
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.NotNil(t, err)
@@ -973,13 +994,14 @@ func TestRunsGetURLQueryWithRequestorNotSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
@@ -987,17 +1009,19 @@ func TestRunsGetURLQueryWithRequestorNotSuppliedReturnsOK(t *testing.T) {
 
 		// The request should not have the requestor parameter
 		assert.NotContains(t, req.URL.RawQuery, "requestor")
+		// The request should not have the user parameter
+		assert.NotContains(t, req.URL.RawQuery, "user")
 
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1008,7 +1032,7 @@ func TestRunsGetURLQueryWithRequestorNotSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1019,29 +1043,31 @@ func TestRunsGetURLQueryWithRequestorSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := "User123"
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.Contains(t, req.URL.RawQuery, "requestor="+url.QueryEscape(requestor))
 		assert.EqualValues(t, query.Get("requestor"), requestor)
+		assert.EqualValues(t, query.Get("user"), "")
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1052,7 +1078,7 @@ func TestRunsGetURLQueryWithRequestorSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1063,29 +1089,31 @@ func TestRunsGetURLQueryWithNumericRequestorSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := "9876543210"
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.EqualValues(t, query.Get("requestor"), requestor)
 		assert.Contains(t, req.URL.RawQuery, "requestor="+url.QueryEscape(requestor))
+		assert.EqualValues(t, query.Get("user"), "")
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1096,7 +1124,7 @@ func TestRunsGetURLQueryWithNumericRequestorSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1107,29 +1135,31 @@ func TestRunsGetURLQueryWithDashInRequestorSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := "User-123"
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.EqualValues(t, query.Get("requestor"), requestor)
 		assert.Contains(t, req.URL.RawQuery, "requestor="+url.QueryEscape(requestor))
+		assert.EqualValues(t, query.Get("user"), "")
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1140,7 +1170,7 @@ func TestRunsGetURLQueryWithDashInRequestorSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1151,29 +1181,31 @@ func TestRunsGetURLQueryWithAmpersandRequestorSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := "User&123"
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.Contains(t, req.URL.RawQuery, "requestor="+url.QueryEscape(requestor))
 		assert.EqualValues(t, query.Get("requestor"), requestor)
+		assert.EqualValues(t, query.Get("user"), "")
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1184,7 +1216,7 @@ func TestRunsGetURLQueryWithAmpersandRequestorSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1195,30 +1227,32 @@ func TestRunsGetURLQueryWithSpecialCharactersRequestorSuppliedReturnsOK(t *testi
 	age := ""
 	runName := "U456"
 	requestor := "User&!@£$%^&*(){}#/',."
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.EqualValues(t, query.Get("requestor"), requestor)
 		assert.Contains(t, req.URL.RawQuery, "requestor="+url.QueryEscape(requestor))
+		assert.EqualValues(t, query.Get("user"), "")
 
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1229,7 +1263,7 @@ func TestRunsGetURLQueryWithSpecialCharactersRequestorSuppliedReturnsOK(t *testi
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1240,23 +1274,24 @@ func TestRunsGetURLQueryWithResultSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := "Passed"
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	resultNamesInteraction := utils.NewHttpInteraction("/ras/resultnames", http.MethodGet)
-    resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte(RESULT_NAMES_RESPONSE))
-    }
+	}
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1268,14 +1303,14 @@ func TestRunsGetURLQueryWithResultSuppliedReturnsOK(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
+	interactions := []utils.HttpInteraction{
 		resultNamesInteraction,
-        getRunsInteraction,
-    }
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1286,7 +1321,7 @@ func TestRunsGetURLQueryWithResultSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1299,23 +1334,24 @@ func TestRunsGetURLQueryWithMultipleResultSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := "Passed,envfail"
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	resultNamesInteraction := utils.NewHttpInteraction("/ras/resultnames", http.MethodGet)
-    resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte(RESULT_NAMES_RESPONSE))
-    }
+	}
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1327,14 +1363,14 @@ func TestRunsGetURLQueryWithMultipleResultSuppliedReturnsOK(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
+	interactions := []utils.HttpInteraction{
 		resultNamesInteraction,
-        getRunsInteraction,
-    }
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1346,7 +1382,7 @@ func TestRunsGetURLQueryWithMultipleResultSuppliedReturnsOK(t *testing.T) {
 
 	// When...
 
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1359,16 +1395,17 @@ func TestRunsGetURLQueryWithResultNotSuppliedReturnsOK(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1380,13 +1417,13 @@ func TestRunsGetURLQueryWithResultNotSuppliedReturnsOK(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1397,7 +1434,7 @@ func TestRunsGetURLQueryWithResultNotSuppliedReturnsOK(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1408,23 +1445,24 @@ func TestRunsGetURLQueryWithInvalidResultSuppliedReturnsError(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := "garbage"
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	resultNamesInteraction := utils.NewHttpInteraction("/ras/resultnames", http.MethodGet)
-    resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	resultNamesInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte(RESULT_NAMES_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
+	interactions := []utils.HttpInteraction{
 		resultNamesInteraction,
-    }
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1435,7 +1473,7 @@ func TestRunsGetURLQueryWithInvalidResultSuppliedReturnsError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Error(t, err)
@@ -1448,14 +1486,15 @@ func TestActiveAndResultAreMutuallyExclusiveShouldReturnError(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := "Passed"
 	shouldGetActive := true
 	group := ""
 	tags := make([]string, 0)
 
-    interactions := []utils.HttpInteraction{}
+	interactions := []utils.HttpInteraction{}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1466,7 +1505,7 @@ func TestActiveAndResultAreMutuallyExclusiveShouldReturnError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Error(t, err)
@@ -1478,16 +1517,17 @@ func TestActiveParameterReturnsOk(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := true
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1499,13 +1539,13 @@ func TestActiveParameterReturnsOk(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1516,7 +1556,7 @@ func TestActiveParameterReturnsOk(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1527,6 +1567,7 @@ func TestRunsGetActiveRunsBuildsQueryCorrectly(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := "tester"
+	user := ""
 	result := ""
 	shouldGetActive := true
 	group := ""
@@ -1536,23 +1577,24 @@ func TestRunsGetActiveRunsBuildsQueryCorrectly(t *testing.T) {
 	mockEnv.SetUserName(requestor)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		assert.EqualValues(t, query.Get("from"), "")
 		assert.EqualValues(t, query.Get("to"), "")
 		assert.EqualValues(t, query.Get("runname"), runName)
 		assert.EqualValues(t, query.Get("requestor"), requestor)
+		assert.EqualValues(t, query.Get("user"), "")
 		assert.NotContains(t, req.URL.RawQuery, "status="+url.QueryEscape("finished"))
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(200)
 		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1563,7 +1605,7 @@ func TestRunsGetActiveRunsBuildsQueryCorrectly(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then ...
 	assert.Nil(t, err)
@@ -1578,16 +1620,17 @@ func TestRunsGetWithNextCursorGetsNextPageOfRuns(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := ""
 	tags := make([]string, 0)
 
 	getRunsInteraction1 := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction1.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction1.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1599,13 +1642,13 @@ func TestRunsGetWithNextCursorGetsNextPageOfRuns(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, page2Cursor, RUN_U456)))
-    }
+	}
 
 	getRunsInteraction2 := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction2.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction2.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1617,13 +1660,13 @@ func TestRunsGetWithNextCursorGetsNextPageOfRuns(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, page3Cursor, RUN_U456)))
-    }
+	}
 
 	getRunsInteraction3 := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction3.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction3.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1635,15 +1678,15 @@ func TestRunsGetWithNextCursorGetsNextPageOfRuns(t *testing.T) {
 				"amountOfRuns": 0,
 				"runs":[]
 			}`, page3Cursor)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction1,
-        getRunsInteraction2,
-        getRunsInteraction3,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction1,
+		getRunsInteraction2,
+		getRunsInteraction3,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "raw"
@@ -1654,14 +1697,14 @@ func TestRunsGetWithNextCursorGetsNextPageOfRuns(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	assert.Nil(t, err)
 	runsReturned := mockConsole.ReadText()
 	assert.Contains(t, runsReturned, runName)
 
-	run := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog|\n"
+	run := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog||http://example.com/test-runs/xxx876xxx|http://example.com/api/ras/runs/xxx876xxx\n"
 	expectedResults := run + run
 	assert.Equal(t, runsReturned, expectedResults)
 }
@@ -1672,16 +1715,17 @@ func TestRunsGetOfGroupWhichExistsProducesExpectedRaw(t *testing.T) {
 	age := ""
 	runName := "U456"
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	group := "dummyGroup"
 	tags := make([]string, 0)
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		runNameQueryParameter := values.Get("runname")
 		assert.Equal(t, runNameQueryParameter, runName)
@@ -1693,13 +1737,13 @@ func TestRunsGetOfGroupWhichExistsProducesExpectedRaw(t *testing.T) {
 				"amountOfRuns": 1,
 				"runs":[ %s ]
 			}`, RUN_U456)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "raw"
@@ -1710,14 +1754,14 @@ func TestRunsGetOfGroupWhichExistsProducesExpectedRaw(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	// We expect
 	assert.Nil(t, err)
 	textGotBack := mockConsole.ReadText()
 	assert.Contains(t, textGotBack, runName)
-	want := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog|\n"
+	want := "U456|Finished|Passed|2023-05-10T06:00:13.043037Z|2023-05-10T06:00:36.159003Z|2023-05-10T06:02:53.823338Z|137664|myTestPackage.MyTestName|unitTesting|myBundleId|dummyGroup|" + apiServerUrl + "/ras/runs/xxx876xxx/runlog||http://example.com/test-runs/xxx876xxx|http://example.com/api/ras/runs/xxx876xxx\n"
 	assert.Equal(t, textGotBack, want)
 }
 
@@ -1727,6 +1771,7 @@ func TestRunsGetWithBadGroupNameThrowsError(t *testing.T) {
 	runName := "U457"
 	age := ""
 	requestor := ""
+	user := ""
 	result := ""
 	shouldGetActive := false
 	outputFormat := "raw"
@@ -1734,9 +1779,9 @@ func TestRunsGetWithBadGroupNameThrowsError(t *testing.T) {
 
 	group := string(rune(300)) + "NONLATIN1"
 
-    interactions := []utils.HttpInteraction{}
+	interactions := []utils.HttpInteraction{}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	mockConsole := utils.NewMockConsole()
@@ -1746,7 +1791,7 @@ func TestRunsGetWithBadGroupNameThrowsError(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	assert.NotNil(t, err, "A non-Latin-1 group name should throw an error")
@@ -1760,17 +1805,18 @@ func TestRunsGetWithOneTagSendsRequestWithCorrectTagsQuery(t *testing.T) {
 	runName := "U456"
 	age := "2d:24h"
 	requestor := ""
+	user := ""
 	result := ""
 	group := ""
 	tag := "core"
-	tags := []string{ tag }
+	tags := []string{tag}
 	shouldGetActive := false
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		tagsQueryParameter := values.Get("tags")
 		assert.Equal(t, tagsQueryParameter, tag)
@@ -1782,13 +1828,13 @@ func TestRunsGetWithOneTagSendsRequestWithCorrectTagsQuery(t *testing.T) {
 				 "amountOfRuns": 1,
 				 "runs":[ %s ]
 			 }`, RUN_U456_v2)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1799,15 +1845,15 @@ func TestRunsGetWithOneTagSendsRequestWithCorrectTagsQuery(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	assert.Nil(t, err, "Failed with an error when we expected it to pass")
 	textGotBack := mockConsole.ReadText()
 	assert.Contains(t, textGotBack, runName)
 	want :=
-		"submitted-time(UTC) name requestor     status   result           test-name             group tags\n" +
-			"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2       anothertag,core\n" +
+		"submitted-time(UTC) name requestor     status   result           test-name             group tags            web-ui-url\n" +
+			"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2       anothertag,core http://example.com/test-runs/xxx876xxx\n" +
 			"\n" +
 			"Total:1\n"
 	assert.Equal(t, want, textGotBack)
@@ -1819,18 +1865,19 @@ func TestRunsGetWithMultipleTagsSendsRequestWithCorrectTagsQuery(t *testing.T) {
 	runName := "U456"
 	age := "2d:24h"
 	requestor := ""
+	user := ""
 	result := ""
 	group := ""
 	tag1 := "core"
 	tag2 := "anothertag"
-	tags := []string{ tag1, tag2 }
+	tags := []string{tag1, tag2}
 	shouldGetActive := false
 
 	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
-    getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		writer.WriteHeader(http.StatusOK)
-	
+
 		values := req.URL.Query()
 		tagsQueryParameter := values.Get("tags")
 		assert.Equal(t, tagsQueryParameter, strings.Join(tags, ","))
@@ -1842,13 +1889,13 @@ func TestRunsGetWithMultipleTagsSendsRequestWithCorrectTagsQuery(t *testing.T) {
 				 "amountOfRuns": 1,
 				 "runs":[ %s ]
 			 }`, RUN_U456_v2)))
-    }
+	}
 
-    interactions := []utils.HttpInteraction{
-        getRunsInteraction,
-    }
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
 
-    server := utils.NewMockHttpServer(t, interactions)
+	server := utils.NewMockHttpServer(t, interactions)
 	defer server.Server.Close()
 
 	outputFormat := "summary"
@@ -1859,16 +1906,246 @@ func TestRunsGetWithMultipleTagsSendsRequestWithCorrectTagsQuery(t *testing.T) {
 	commsClient := api.NewMockAPICommsClient(apiServerUrl)
 
 	// When...
-	err := GetRuns(runName, age, requestor, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
 
 	// Then...
 	assert.Nil(t, err, "Failed with an error when we expected it to pass")
 	textGotBack := mockConsole.ReadText()
 	assert.Contains(t, textGotBack, runName)
 	want :=
-		"submitted-time(UTC) name requestor     status   result           test-name             group tags\n" +
-			"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2       anothertag,core\n" +
+		"submitted-time(UTC) name requestor     status   result           test-name             group tags            web-ui-url\n" +
+			"2023-05-10 06:00:13 U456 unitTesting22 Finished LongResultString myTestPackage.MyTest2       anothertag,core http://example.com/test-runs/xxx876xxx\n" +
 			"\n" +
 			"Total:1\n"
 	assert.Equal(t, want, textGotBack)
+}
+
+func TestRunsGetURLQueryWithUserSuppliedReturnsOK(t *testing.T) {
+	// Given ...
+	age := ""
+	runName := "U456"
+	requestor := ""
+	user := "User123"
+	result := ""
+	shouldGetActive := false
+	group := ""
+	tags := make([]string, 0)
+
+	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+		query := req.URL.Query()
+		assert.EqualValues(t, query.Get("from"), "")
+		assert.EqualValues(t, query.Get("to"), "")
+		assert.EqualValues(t, query.Get("runname"), runName)
+		assert.EqualValues(t, query.Get("requestor"), "")
+		assert.Contains(t, req.URL.RawQuery, "user="+url.QueryEscape(user))
+		assert.EqualValues(t, query.Get("user"), user)
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(200)
+		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
+	}
+
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
+
+	server := utils.NewMockHttpServer(t, interactions)
+	defer server.Server.Close()
+
+	outputFormat := "summary"
+	mockConsole := utils.NewMockConsole()
+
+	apiServerUrl := server.Server.URL
+	mockTimeService := utils.NewMockTimeService()
+	commsClient := api.NewMockAPICommsClient(apiServerUrl)
+
+	// When...
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+
+	// Then ...
+	assert.Nil(t, err)
+}
+
+func TestRunsGetURLQueryWithNumericUserSuppliedReturnsOK(t *testing.T) {
+	// Given ...
+	age := ""
+	runName := "U456"
+	requestor := ""
+	user := "9876543210"
+	result := ""
+	shouldGetActive := false
+	group := ""
+	tags := make([]string, 0)
+
+	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+		query := req.URL.Query()
+		assert.EqualValues(t, query.Get("from"), "")
+		assert.EqualValues(t, query.Get("to"), "")
+		assert.EqualValues(t, query.Get("runname"), runName)
+		assert.EqualValues(t, query.Get("requestor"), "")
+		assert.EqualValues(t, query.Get("user"), user)
+		assert.Contains(t, req.URL.RawQuery, "user="+url.QueryEscape(user))
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(200)
+		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
+	}
+
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
+
+	server := utils.NewMockHttpServer(t, interactions)
+	defer server.Server.Close()
+
+	outputFormat := "summary"
+	mockConsole := utils.NewMockConsole()
+
+	apiServerUrl := server.Server.URL
+	mockTimeService := utils.NewMockTimeService()
+	commsClient := api.NewMockAPICommsClient(apiServerUrl)
+
+	// When...
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+
+	// Then ...
+	assert.Nil(t, err)
+}
+
+func TestRunsGetURLQueryWithDashInUserSuppliedReturnsOK(t *testing.T) {
+	// Given ...
+	age := ""
+	runName := "U456"
+	requestor := ""
+	user := "User-123"
+	result := ""
+	shouldGetActive := false
+	group := ""
+	tags := make([]string, 0)
+
+	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+		query := req.URL.Query()
+		assert.EqualValues(t, query.Get("from"), "")
+		assert.EqualValues(t, query.Get("to"), "")
+		assert.EqualValues(t, query.Get("runname"), runName)
+		assert.EqualValues(t, query.Get("requestor"), "")
+		assert.EqualValues(t, query.Get("user"), user)
+		assert.Contains(t, req.URL.RawQuery, "user="+url.QueryEscape(user))
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(200)
+		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
+	}
+
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
+
+	server := utils.NewMockHttpServer(t, interactions)
+	defer server.Server.Close()
+
+	outputFormat := "summary"
+	mockConsole := utils.NewMockConsole()
+
+	apiServerUrl := server.Server.URL
+	mockTimeService := utils.NewMockTimeService()
+	commsClient := api.NewMockAPICommsClient(apiServerUrl)
+
+	// When...
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+
+	// Then ...
+	assert.Nil(t, err)
+}
+
+func TestRunsGetURLQueryWithAmpersandUserSuppliedReturnsOK(t *testing.T) {
+	// Given ...
+	age := ""
+	runName := "U456"
+	requestor := ""
+	user := "User&123"
+	result := ""
+	shouldGetActive := false
+	group := ""
+	tags := make([]string, 0)
+
+	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+		query := req.URL.Query()
+		assert.EqualValues(t, query.Get("from"), "")
+		assert.EqualValues(t, query.Get("to"), "")
+		assert.EqualValues(t, query.Get("runname"), runName)
+		assert.EqualValues(t, query.Get("requestor"), "")
+		assert.EqualValues(t, query.Get("user"), user)
+		assert.Contains(t, req.URL.RawQuery, "user="+url.QueryEscape(user))
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(200)
+		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
+	}
+
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
+
+	server := utils.NewMockHttpServer(t, interactions)
+	defer server.Server.Close()
+
+	outputFormat := "summary"
+	mockConsole := utils.NewMockConsole()
+
+	apiServerUrl := server.Server.URL
+	mockTimeService := utils.NewMockTimeService()
+	commsClient := api.NewMockAPICommsClient(apiServerUrl)
+
+	// When...
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+
+	// Then ...
+	assert.Nil(t, err)
+}
+
+func TestRunsGetURLQueryWithSpecialCharactersUserSuppliedReturnsOK(t *testing.T) {
+	// Given ...
+	age := ""
+	runName := "U456"
+	requestor := ""
+	user := "User&!@£$%^&*(){}#/',."
+	result := ""
+	shouldGetActive := false
+	group := ""
+	tags := make([]string, 0)
+
+	getRunsInteraction := utils.NewHttpInteraction("/ras/runs", http.MethodGet)
+	getRunsInteraction.WriteHttpResponseFunc = func(writer http.ResponseWriter, req *http.Request) {
+		query := req.URL.Query()
+		assert.EqualValues(t, query.Get("from"), "")
+		assert.EqualValues(t, query.Get("to"), "")
+		assert.EqualValues(t, query.Get("runname"), runName)
+		assert.EqualValues(t, query.Get("requestor"), "")
+		assert.EqualValues(t, query.Get("user"), user)
+		assert.Contains(t, req.URL.RawQuery, "user="+url.QueryEscape(user))
+		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(200)
+		writer.Write([]byte(EMPTY_RUNS_RESPONSE))
+	}
+
+	interactions := []utils.HttpInteraction{
+		getRunsInteraction,
+	}
+
+	server := utils.NewMockHttpServer(t, interactions)
+	defer server.Server.Close()
+
+	outputFormat := "summary"
+	mockConsole := utils.NewMockConsole()
+
+	apiServerUrl := server.Server.URL
+	mockTimeService := utils.NewMockTimeService()
+	commsClient := api.NewMockAPICommsClient(apiServerUrl)
+
+	// When...
+	err := GetRuns(runName, age, requestor, user, result, shouldGetActive, outputFormat, group, tags, mockTimeService, mockConsole, commsClient)
+
+	// Then ...
+	assert.Nil(t, err)
 }

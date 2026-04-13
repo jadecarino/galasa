@@ -29,6 +29,8 @@ import dev.galasa.framework.spi.creds.ICredentialsService;
 import dev.galasa.framework.spi.rbac.RBACException;
 import dev.galasa.framework.spi.rbac.RBACService;
 import dev.galasa.framework.spi.streams.IStreamsService;
+import dev.galasa.framework.spi.tags.ITagsService;
+import dev.galasa.framework.spi.tags.TagsException;
 
 import java.net.URL;
 import java.util.HashMap;
@@ -45,6 +47,7 @@ public class MockFramework implements IFramework {
     private RBACService rbacService;
     private IDynamicStatusStoreService dssService;
     private IStreamsService streamsService;
+    private ITagsService tagsService;
     
     public MockFramework() {
         this.rbacService = FilledMockRBACService.createTestRBACServiceWithTestUser(BaseServletTest.JWT_USERNAME);
@@ -68,6 +71,12 @@ public class MockFramework implements IFramework {
     public MockFramework(IFrameworkRuns frameworkRuns){
         this();
         this.frameworkRuns = frameworkRuns;
+    }
+
+    public MockFramework(IFrameworkRuns frameworkRuns, IAuthStoreService authStoreService){
+        this();
+        this.frameworkRuns = frameworkRuns;
+        this.authStoreService = authStoreService;
     }
 
     public MockFramework(RBACService rbacService){ 
@@ -119,9 +128,17 @@ public class MockFramework implements IFramework {
         return archiveStore;
     }
 
+    public void setResultArchiveStore(IResultArchiveStore rasStore) {
+        this.archiveStore = rasStore;
+    }
+
     @Override
     public IFrameworkRuns getFrameworkRuns() throws FrameworkException {
         return this.frameworkRuns;
+    }
+
+    public void setFrameworkRuns(IFrameworkRuns frameworkRuns) {
+        this.frameworkRuns = frameworkRuns;
     }
 
     @Override
@@ -151,6 +168,15 @@ public class MockFramework implements IFramework {
     public @NotNull IDynamicStatusStoreService getDynamicStatusStoreService(@NotNull String namespace)
             throws DynamicStatusStoreException {
         return this.dssService;
+    }
+
+    @Override
+    public @NotNull ITagsService getTagsService() throws TagsException {
+        return this.tagsService;
+    }
+
+    public void setTagsService(ITagsService tagsService) {
+        this.tagsService = tagsService;
     }
 
     @Override
@@ -217,6 +243,4 @@ public class MockFramework implements IFramework {
     public @NotNull IEventsService getEventsService() {
         throw new UnsupportedOperationException("Unimplemented method 'getEventsService'");
     }
-
-
 }

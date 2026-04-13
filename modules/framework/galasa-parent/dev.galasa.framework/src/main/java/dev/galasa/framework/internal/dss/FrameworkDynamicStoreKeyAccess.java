@@ -5,6 +5,8 @@
  */
 package dev.galasa.framework.internal.dss;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -68,6 +70,19 @@ public class FrameworkDynamicStoreKeyAccess implements IDynamicStatusStoreKeyAcc
      */
     @Override
     public void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException {
+        final HashMap<String, String> newKeyValues = getPrefixedKeyValues(keyValues);
+
+        this.dssStore.put(newKeyValues);
+    }
+
+    @Override
+    public void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs) throws DynamicStatusStoreException {
+        final HashMap<String, String> newKeyValues = getPrefixedKeyValues(keyValues);
+
+        this.dssStore.put(newKeyValues, timeToLiveSecs);
+    }
+
+    private HashMap<String, String> getPrefixedKeyValues(Map<String, String> keyValues) {
         Objects.requireNonNull(keyValues);
 
         // *** Copy all the keys and prefix them
@@ -81,8 +96,7 @@ public class FrameworkDynamicStoreKeyAccess implements IDynamicStatusStoreKeyAcc
 
             newKeyValues.put(prefixKey(oKey), oValue);
         }
-
-        this.dssStore.put(newKeyValues);
+        return newKeyValues;
     }
 
     @Override
@@ -167,6 +181,29 @@ public class FrameworkDynamicStoreKeyAccess implements IDynamicStatusStoreKeyAcc
         }
 
         return returnSet;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * dev.galasa.framework.spi.IDynamicStatusStoreKeyAccess#getPrefixKeysOnly(java.lang.String)
+     */
+    @Override
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        final Collection<String> gotList = this.dssStore.getPrefixKeysOnly(prefixKey(keyPrefix));
+        final ArrayList<String> returnList = new ArrayList<>();
+
+        for (String key : gotList) {
+            if (key.startsWith(this.prefix)) {
+                key = key.substring(this.prefix.length());
+                returnList.add(key);
+            } else {
+                throw new DynamicStatusStoreException("Somehow we got keys with the wrong prefix");
+            }
+        }
+
+        return returnList;
     }
 
     /*

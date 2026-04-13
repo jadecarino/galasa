@@ -29,6 +29,7 @@ var (
         "testName": "dev.galasa.examples.banking.account.TestAccount",
         "testShortName": "TestAccount",
         "requestor": "unknown",
+		"user": "unknown",
         "status": "finished",
         "result": "Passed",
         "queued": "2024-03-14T10:11:02.185556Z",
@@ -239,6 +240,7 @@ func TestCanLaunchLocalJvmTest(t *testing.T) {
 		"galasa.dev.example.banking.account/galasa.dev.example.banking.account.TestAccount",
 		"myRequestType-UnitTest",
 		"myRequestor",
+		"myRequestor",
 		"unitTestStream",
 		"mvn:myGroup/myArtifact/myClassifier/obr",
 		isTraceEnabled,
@@ -255,6 +257,56 @@ func TestCanLaunchLocalJvmTest(t *testing.T) {
 		assert.Len(t, testRuns.Runs, 1, "Returned test runs array doesn't contain correct number of tests launched.")
 		assert.False(t, *testRuns.Complete, "Returned test runs should not already be complete")
 	}
+}
+
+func TestLaunchLocalJvmTestWithInvalidMethodNameThrowsError(t *testing.T) {
+	// Given...
+	bootstrapProps, env, fs, embeddedReadOnlyFS,
+		jvmLaunchParams, timeService, timedSleeper, mockProcessFactory, galasaHome := NewMockLauncherParams()
+
+	jvmLaunchParams.TestMethods = []string{"invalid method name!"}
+
+	mockFactory := &utils.MockFactory{
+		Env:         env,
+		FileSystem:  fs,
+		TimeService: timeService,
+	}
+
+	launcher, err := NewJVMLauncher(
+		mockFactory,
+		bootstrapProps, embeddedReadOnlyFS,
+		jvmLaunchParams, mockProcessFactory, galasaHome, timedSleeper,
+	)
+
+	if err != nil {
+		assert.Fail(t, "JVM launcher should have been creatable.")
+	}
+	assert.NotNil(t, launcher, "Launcher returned is nil!")
+
+	isTraceEnabled := true
+	var overrides map[string]interface{} = make(map[string]interface{})
+
+	var tags []string
+
+	// When...
+	_, err = launcher.SubmitTestRun(
+		"myGroup",
+		"galasa.dev.example.banking.account/galasa.dev.example.banking.account.TestAccount",
+		"myRequestType-UnitTest",
+		"myRequestor",
+		"myRequestor",
+		"unitTestStream",
+		"mvn:myGroup/myArtifact/myClassifier/obr",
+		isTraceEnabled,
+		"", // No Gherkin URL supplied
+		"", // No Gherkin Feature supplied
+		overrides,
+		tags,
+	)
+
+	// Then...
+	assert.ErrorContains(t, err, "GAL1276E")
+	assert.ErrorContains(t, err, "Invalid Java method name")
 }
 
 func TestCanGetRunGroupStatus(t *testing.T) {
@@ -300,6 +352,7 @@ func TestCanGetRunGroupStatus(t *testing.T) {
 		"galasa.dev.example.banking.account/galasa.dev.example.banking.account.TestAccount",
 		"myRequestType-UnitTest",
 		"myRequestor",
+		"myRequestor",
 		"unitTestStream",
 		"mvn:myGroup/myArtifact/myClassifier/obr",
 		isTraceEnabled,
@@ -320,6 +373,7 @@ func TestCanGetRunGroupStatus(t *testing.T) {
 		"testName": "dev.galasa.example.banking.account.TestAccountExtended",
 		"testShortName": "TestAccountExtended",
 		"requestor": "unknown",
+		"user": "unknown",
 		"status": "finished",
 		"result": "Passed",
 		"group": "none",
@@ -384,19 +438,6 @@ func TestJvmLauncherSetsRASStoreOverride(t *testing.T) {
 	assert.Contains(t, overridesGotBack, "framework.resultarchive.store")
 }
 
-func TestJvmLauncherSets3270TerminalOutputFormatProperty(t *testing.T) {
-	overrides := make(map[string]interface{})
-	fs := files.NewMockFileSystem()
-	env := utils.NewMockEnv()
-	galasaHome, _ := utils.NewGalasaHome(fs, env, "")
-
-	overridesGotBack := addStandardOverrideProperties(galasaHome, overrides)
-
-	assert.Contains(t, overridesGotBack, "zos3270.terminal.output")
-	assert.Contains(t, overridesGotBack["zos3270.terminal.output"], "png")
-	assert.Contains(t, overridesGotBack["zos3270.terminal.output"], "json")
-}
-
 func TestCanCreateTempPropsFile(t *testing.T) {
 	overrides := make(map[string]interface{})
 	fs := files.NewMockFileSystem()
@@ -450,6 +491,7 @@ func TestBadlyFormedObrFromProfileInfoCausesError(t *testing.T) {
 		"galasa.dev.example.banking.account/galasa.dev.example.banking.account.TestAccount",
 		"myRequestType-UnitTest",
 		"myRequestor",
+		"myRequestor",
 		"unitTestStream",
 		"notmaven://group/artifact/version/classifier",
 		isTraceEnabled,
@@ -497,6 +539,7 @@ func TestNoObrsFromParameterOrProfileCausesError(t *testing.T) {
 		"galasa.dev.example.banking.account/galasa.dev.example.banking.account.TestAccount",
 		"myRequestType-UnitTest",
 		"myRequestor",
+		"myRequestor",
 		"unitTestStream",
 		"", // No Obr from the profile record.
 		isTraceEnabled,
@@ -526,6 +569,7 @@ func getDefaultCommandSyntaxTestParameters() (
 	string,
 	string,
 	bool,
+	[]string,
 ) {
 	bootstrapProps := getBasicBootstrapProperties()
 	fs := files.NewOverridableMockFileSystem()
@@ -553,8 +597,10 @@ func getDefaultCommandSyntaxTestParameters() (
 	env := utils.NewMockEnv()
 	galasaHome, _ := utils.NewGalasaHome(fs, env, "")
 
+	testMethods := make([]string, 0)
+
 	return bootstrapProps, env, galasaHome, fs, javaHome, testObrs, testLocation,
-		remoteMaven, localMaven, galasaVersionToRun, overridesFilePath, isTraceEnabled
+		remoteMaven, localMaven, galasaVersionToRun, overridesFilePath, isTraceEnabled, testMethods
 }
 
 func TestCommandIncludesTraceWhenTraceIsEnabled(t *testing.T) {
@@ -567,7 +613,8 @@ func TestCommandIncludesTraceWhenTraceIsEnabled(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := true
 	isDebugEnabled := false
@@ -580,6 +627,7 @@ func TestCommandIncludesTraceWhenTraceIsEnabled(t *testing.T) {
 		fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -606,7 +654,8 @@ func TestCommandDoesNotIncludeTraceWhenTraceIsDisabled(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := false
@@ -617,6 +666,7 @@ func TestCommandDoesNotIncludeTraceWhenTraceIsDisabled(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -642,7 +692,8 @@ func TestCommandSyntaxContainsJavaHomeUnixSlashes(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		isTraceEnabled := getDefaultCommandSyntaxTestParameters()
+		isTraceEnabled,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	javaHome := "myJavaHome"
 	fs.SetFilePathSeparator("/")
@@ -654,6 +705,7 @@ func TestCommandSyntaxContainsJavaHomeUnixSlashes(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -680,7 +732,8 @@ func TestCommandSyntaxContainsJavaHomeWindowsSlashes(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		isTraceEnabled := getDefaultCommandSyntaxTestParameters()
+		isTraceEnabled,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	javaHome := "myJavaHome"
 	fs.SetFilePathSeparator("\\")
@@ -694,6 +747,7 @@ func TestCommandSyntaxContainsJavaHomeWindowsSlashes(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -754,7 +808,8 @@ func TestCommandIncludesGALASA_HOMESystemProperty(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := true
 	isDebugEnabled := false
@@ -767,6 +822,7 @@ func TestCommandIncludesGALASA_HOMESystemProperty(t *testing.T) {
 		fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -796,7 +852,8 @@ func TestCommandAllDashDSystemPropertiesPassedAppearBeforeTheDashJar(t *testing.
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := true
 	isDebugEnabled := false
@@ -809,6 +866,7 @@ func TestCommandAllDashDSystemPropertiesPassedAppearBeforeTheDashJar(t *testing.
 		fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -877,7 +935,8 @@ func TestCommandIncludesFlagsFromBootstrapProperties(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := false
@@ -888,6 +947,7 @@ func TestCommandIncludesFlagsFromBootstrapProperties(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -915,7 +975,8 @@ func TestCommandIncludesTwoFlagsFromBootstrapProperties(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	bootstrapProps[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Xmx40m -Xms20m"
 	isTraceEnabled := false
@@ -927,6 +988,7 @@ func TestCommandIncludesTwoFlagsFromBootstrapProperties(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -955,7 +1017,8 @@ func TestCommandIncludesDefaultDebugPortAndMode(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -966,6 +1029,7 @@ func TestCommandIncludesDefaultDebugPortAndMode(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -993,7 +1057,8 @@ func TestCommandDrawsValidDebugPortFromBootstrap(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1006,6 +1071,7 @@ func TestCommandDrawsValidDebugPortFromBootstrap(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1033,7 +1099,8 @@ func TestCommandDrawsInvalidDebugPortFromBootstrap(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1046,6 +1113,7 @@ func TestCommandDrawsInvalidDebugPortFromBootstrap(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1073,7 +1141,8 @@ func TestCommandDrawsValidDebugModeFromBootstrap(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1086,6 +1155,7 @@ func TestCommandDrawsValidDebugModeFromBootstrap(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1119,7 +1189,8 @@ func TestCommandDrawsInvalidDebugModeFromBootstrap(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1132,6 +1203,7 @@ func TestCommandDrawsInvalidDebugModeFromBootstrap(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1159,7 +1231,8 @@ func TestCommandDrawsValidDebugModeListenFromCommandLine(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1170,6 +1243,7 @@ func TestCommandDrawsValidDebugModeListenFromCommandLine(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1203,7 +1277,8 @@ func TestCommandDrawsValidDebugModeAttachFromCommandLine(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1214,6 +1289,7 @@ func TestCommandDrawsValidDebugModeAttachFromCommandLine(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1247,7 +1323,8 @@ func TestCommandDrawsInvalidDebugModeFromCommandLine(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := true // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1258,6 +1335,7 @@ func TestCommandDrawsInvalidDebugModeFromCommandLine(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1286,7 +1364,8 @@ func TestLocalMavenNotSetDefaults(t *testing.T) {
 		localMaven,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := false // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1298,6 +1377,7 @@ func TestLocalMavenNotSetDefaults(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1326,7 +1406,8 @@ func TestLocalMavenSet(t *testing.T) {
 		_,
 		galasaVersionToRun,
 		overridesFilePath,
-		_ := getDefaultCommandSyntaxTestParameters()
+		_,
+		testMethods := getDefaultCommandSyntaxTestParameters()
 
 	isTraceEnabled := false
 	isDebugEnabled := false // <<<< Debug is turned on. No overrides to debugPort in either boostrap or explicit command option.
@@ -1339,6 +1420,7 @@ func TestLocalMavenSet(t *testing.T) {
 		bootstrapProps, galasaHome, fs, javaHome,
 		testObrs,
 		testLocation,
+		testMethods,
 		remoteMaven,
 		localMaven,
 		galasaVersionToRun,
@@ -1354,6 +1436,50 @@ func TestLocalMavenSet(t *testing.T) {
 
 	assert.Contains(t, args, "--localmaven")
 	assert.Contains(t, args, "mavenRepo")
+}
+
+func TestMethodsAreSetWhenProvided(t *testing.T) {
+	// For...
+	bootstrapProps,
+		_, galasaHome, fs,
+		javaHome,
+		testObrs,
+		testLocation,
+		remoteMaven,
+		localMaven,
+		galasaVersionToRun,
+		overridesFilePath,
+		_,
+		_ := getDefaultCommandSyntaxTestParameters()
+		
+	testMethods := []string{"method1", "method2"}
+	isTraceEnabled := false
+	isDebugEnabled := false 
+	var debugPort uint32 = 0
+	debugMode := ""
+
+	// When...
+	_, args, err := getCommandSyntax(
+		bootstrapProps, galasaHome, fs, javaHome,
+		testObrs,
+		testLocation,
+		testMethods,
+		remoteMaven,
+		localMaven,
+		galasaVersionToRun,
+		overridesFilePath,
+		"", // No Gherkin URL supplied
+		isTraceEnabled,
+		isDebugEnabled, debugPort, debugMode,
+		BLANK_JWT,
+	)
+
+	// Then...
+	assert.Nil(t, err)
+
+	assert.Contains(t, args, "--methods")
+	assert.Contains(t, args, "method1")
+	assert.Contains(t, args, "method2")
 }
 
 func NewMockGherkinParams() (
@@ -1417,6 +1543,7 @@ func TestCanLaunchLocalJvmGherkinTest(t *testing.T) {
 		"", // No Java Class as this is a gherkin test
 		"", // No RequestType as this is a gherkin test
 		"myRequestor",
+		"myRequestor",
 		"", // No Stream as this is a gherkin test
 		"", // No OBR as this is a gherkin test
 		isTraceEnabled,
@@ -1466,6 +1593,7 @@ func TestBadGherkinURLSuffixReturnsError(t *testing.T) {
 		"", // No Java Class as this is a gherkin test
 		"", // No RequestType as this is a gherkin test
 		"myRequestor",
+		"myRequestor",
 		"", // No Stream as this is a gherkin test
 		"", // No OBR as this is a gherkin test
 		isTraceEnabled,
@@ -1509,6 +1637,7 @@ func TestBadGherkinURLPrefixReutrnsError(t *testing.T) {
 		"myGroup",
 		"", // No Java Class as this is a gherkin test
 		"", // No RequestType as this is a gherkin test
+		"myRequestor",
 		"myRequestor",
 		"", // No Stream as this is a gherkin test
 		"", // No OBR as this is a gherkin test
@@ -1557,6 +1686,7 @@ func TestSetTestStructureFromRasFileInvalidFileContentReturnsError(t *testing.T)
 		"testName": "dev.galasa.examples.banking.account.TestAccount",
 		"testShortName": "TestAccount",
 		"requestor": "unknown",
+		"user": "unknown",
 		"status": "finished",
 		"result": "Passed",
 		"queued": "2024-03-14T10:11:02.185556Z",
@@ -1701,6 +1831,7 @@ func TestGetRunsByIdReturnsOk(t *testing.T) {
 		"galasa.dev.examples.banking.account/galasa.dev.examples.banking.account.TestAccount",
 		"CLI",
 		"unknown",
+		"unknown",
 		"unitTestStream",
 		"mvn:myGroup/myArtifact/myClassifier/obr",
 		isTraceEnabled,
@@ -1724,4 +1855,85 @@ func TestGetRunsByIdReturnsOk(t *testing.T) {
 	assert.Equal(t, "dev.galasa.examples.banking.account", run.TestStructure.GetBundle())
 	assert.Equal(t, "Passed", run.TestStructure.GetResult())
 	assert.Equal(t, "simpleSampleTest", run.GetTestStructure().Methods[0].GetMethodName())
+}
+
+func TestLaunchOptionsNoSpacesNoQuotes(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=NothingControversial"
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 1)
+	assert.Equal(t, "-Dtest.property=NothingControversial", launchOptions[0])
+}
+
+func TestLaunchOptionsSpacesNoQuotes(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=NothingControversial -Dtest.property2=NeitherIsThis -Dtest.property3=OrThis"
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 3)
+	assert.Equal(t, "-Dtest.property=NothingControversial", launchOptions[0])
+	assert.Equal(t, "-Dtest.property2=NeitherIsThis", launchOptions[1])
+	assert.Equal(t, "-Dtest.property3=OrThis", launchOptions[2])
+}
+
+func TestLaunchOptionsSpacesAndQuotes(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=NothingControversial -Dtest.property2=\"Spaces in this one\" -Dtest.property3=\"And this one\""
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 3)
+	assert.Equal(t, "-Dtest.property=NothingControversial", launchOptions[0])
+	assert.Equal(t, "-Dtest.property2=Spaces in this one", launchOptions[1])
+	assert.Equal(t, "-Dtest.property3=And this one", launchOptions[2])
+}
+
+func TestLaunchOptionsEscapedQuotesInQuotes(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=\"Escaped \\\"Quotes\\\""
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 1)
+	assert.Equal(t, "-Dtest.property=Escaped \"Quotes\"", launchOptions[0])
+}
+
+func TestLaunchOptionsEscapedQuotesOutsideQuotes(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=This\\\"Escaping should be ignored so we are now in a quoted block\""
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 1)
+	assert.Equal(t, "-Dtest.property=This\\Escaping should be ignored so we are now in a quoted block", launchOptions[0])
+}
+
+func TestLaunchOptionsImpliedClosure(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=\"Opened it -Dtest.property2=ButForgotToCloseIt!"
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 1)
+	assert.Equal(t, "-Dtest.property=Opened it -Dtest.property2=ButForgotToCloseIt!", launchOptions[0])
+}
+
+func TestLaunchOptionsEscapeAtEnd(t *testing.T) {
+	var args []string = make([]string, 0)
+	props := props.JavaProperties{}
+	props[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS] = "-Dtest.property=\"Finishing with an escape and forgot to close\\"
+
+	launchOptions := appendArgsBootstrapJvmLaunchOptions(args, props)
+	assert.NotNil(t, launchOptions)
+	assert.Len(t, launchOptions, 1)
+	assert.Equal(t, "-Dtest.property=Finishing with an escape and forgot to close\\", launchOptions[0])
 }

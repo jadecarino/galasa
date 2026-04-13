@@ -41,11 +41,14 @@ const (
 	HEADER_DURATION       = "duration(ms)"
 	HEADER_BUNDLE         = "bundle"
 	HEADER_REQUESTOR      = "requestor"
+	HEADER_USER           = "user"
 	HEADER_RUN_LOG        = "run-log"
 	HEADER_METHOD_NAME    = "method"
 	HEADER_METHOD_TYPE    = "type"
 	HEADER_GROUP          = "group"
 	HEADER_TAGS           = "tags"
+	HEADER_WEBUI_URL      = "web-ui-url"
+	HEADER_REST_API_URL   = "rest-api-url"
 
 	RAS_RUNS_URL = "/ras/runs/"
 )
@@ -62,12 +65,16 @@ type FormattableTest struct {
 	EndTimeUTC    string
 	QueuedTimeUTC string
 	Requestor     string
+	User          string
 	Bundle        string
 	ApiServerUrl  string
 	Group         string
 	Methods       []galasaapi.TestMethod
 	Lost          bool
 	Tags          []string
+	WebUiUrl      string
+	RestApiUrl    string
+	IsLocal       bool
 }
 
 func NewFormattableTest() FormattableTest {
@@ -157,17 +164,17 @@ func generateResultTotalsReport(totalResults int, resultsCount map[string]int) s
 }
 
 func accumulateResults(resultCounts map[string]int, run FormattableTest) {
-	runResult := run.Result
-	if len(runResult) > 0 {
-		resultTotal, isPresent := resultCounts[runResult]
-		if isPresent {
-			resultTotal++
-			resultCounts[runResult] = resultTotal
-		}
+	var resultKey string
+
+	if len(run.Result) > 0 {
+		resultKey = run.Result
+	} else if strings.ToUpper(run.Status) == RUN_RESULT_UNKNOWN {
+		resultKey = RUN_RESULT_UNKNOWN
 	} else {
-		resultCounts[RUN_RESULT_ACTIVE]++
+		resultKey = RUN_RESULT_ACTIVE
 	}
 
+	resultCounts[resultKey]++
 }
 
 func initialiseResultMap() map[string]int {

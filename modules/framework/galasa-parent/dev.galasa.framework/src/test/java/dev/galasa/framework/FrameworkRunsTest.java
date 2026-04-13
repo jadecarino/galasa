@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -23,10 +24,13 @@ import org.junit.Test;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import dev.galasa.framework.beans.Property;
 import dev.galasa.framework.mocks.MockCPSStore;
 import dev.galasa.framework.mocks.MockDSSStore;
 import dev.galasa.framework.mocks.MockFramework;
 import dev.galasa.framework.mocks.MockRun;
+import dev.galasa.framework.mocks.MockTimeService;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.Result;
@@ -68,6 +72,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String bundleName = "mybundle";
         String testName = "mytest";
         String groupName = "my.group";
@@ -77,6 +82,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = List.of("testMethod1", "testMethod2", "testMethod3");
 
         Properties overrides = new Properties();
         String override1Key = "override1";
@@ -94,6 +100,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -107,28 +114,32 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
         assertThat(run).isNotNull();
         assertThat(run.getName()).isEqualTo("U1");
         assertThat(run.getTest()).isEqualTo(bundleName + "/" + testName);
+        assertThat(run.getRequestedTestMethods()).containsExactlyElementsOf(requestedTestMethods);
 
         // Check that the DSS has been populated with the correct run-related properties
         assertThat(mockDss.get("request.prefix.U.lastused")).isEqualTo("1");
-        assertThat(mockDss.get("run.U1.obr")).isEqualTo(obr);
-        assertThat(mockDss.get("run.U1.group")).isEqualTo(groupName);
-        assertThat(mockDss.get("run.U1.requestor")).isEqualTo(requestor);
-        assertThat(mockDss.get("run.U1.testbundle")).isEqualTo(bundleName);
-        assertThat(mockDss.get("run.U1.repository")).isEqualTo(mavenRepo);
-        assertThat(mockDss.get("run.U1.stream")).isEqualTo(stream);
-        assertThat(mockDss.get("run.U1.local")).isEqualTo(Boolean.toString(local));
-        assertThat(mockDss.get("run.U1.testclass")).isEqualTo(testName);
-        assertThat(mockDss.get("run.U1.trace")).isEqualTo(Boolean.toString(trace));
-        assertThat(mockDss.get("run.U1.request.type")).isEqualTo(runType.toUpperCase());
-        assertThat(mockDss.get("run.U1.status")).isEqualTo("queued");
-        assertThat(mockDss.get("run.U1.overrides")).isEqualTo(getExpectedOverridesJson(overrides));
+        assertThat(mockDss.get("run.U1.testmethods")).isEqualTo(gson.toJson(requestedTestMethods));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.OBR)).isEqualTo(obr);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.GROUP)).isEqualTo(groupName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REQUESTOR)).isEqualTo(requestor);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.USER)).isEqualTo(user);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TEST_BUNDLE)).isEqualTo(bundleName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REPOSITORY)).isEqualTo(mavenRepo);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.STREAM)).isEqualTo(stream);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.LOCAL)).isEqualTo(Boolean.toString(local));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TEST_CLASS)).isEqualTo(testName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TRACE)).isEqualTo(Boolean.toString(trace));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REQUEST_TYPE)).isEqualTo(runType.toUpperCase());
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.OVERRIDES)).isEqualTo(getExpectedOverridesJson(overrides));
     }
    
     @Test
@@ -147,6 +158,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String bundleName = "mybundle";
         String testName = "mytest";
         String groupName = "my.group";
@@ -156,6 +168,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
         String override1Key = "override1";
@@ -173,6 +186,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -186,7 +200,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -196,18 +211,19 @@ public class FrameworkRunsTest {
 
         // Check that the DSS has been populated with the correct run-related properties
         assertThat(mockDss.get("request.prefix.U.lastused")).isEqualTo("1");
-        assertThat(mockDss.get("run.U1.obr")).isEqualTo(obr);
-        assertThat(mockDss.get("run.U1.group")).isEqualTo(groupName);
-        assertThat(mockDss.get("run.U1.requestor")).isEqualTo(requestor);
-        assertThat(mockDss.get("run.U1.testbundle")).isEqualTo(bundleName);
-        assertThat(mockDss.get("run.U1.repository")).isEqualTo(mavenRepo);
-        assertThat(mockDss.get("run.U1.stream")).isEqualTo(stream);
-        assertThat(mockDss.get("run.U1.local")).isEqualTo(Boolean.toString(local));
-        assertThat(mockDss.get("run.U1.testclass")).isEqualTo(testName);
-        assertThat(mockDss.get("run.U1.trace")).isEqualTo(Boolean.toString(trace));
-        assertThat(mockDss.get("run.U1.request.type")).isEqualTo(runType.toUpperCase());
-        assertThat(mockDss.get("run.U1.status")).isEqualTo("queued");
-        assertThat(mockDss.get("run.U1.overrides")).isEqualTo(getExpectedOverridesJson(overrides));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.OBR)).isEqualTo(obr);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.GROUP)).isEqualTo(groupName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REQUESTOR)).isEqualTo(requestor);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.USER)).isEqualTo(user);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TEST_BUNDLE)).isEqualTo(bundleName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REPOSITORY)).isEqualTo(mavenRepo);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.STREAM)).isEqualTo(stream);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.LOCAL)).isEqualTo(Boolean.toString(local));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TEST_CLASS)).isEqualTo(testName);
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.TRACE)).isEqualTo(Boolean.toString(trace));
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.REQUEST_TYPE)).isEqualTo(runType.toUpperCase());
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
+        assertThat(mockDss.get("run.U1."+DssPropertyKeyRunNameSuffix.OVERRIDES)).isEqualTo(getExpectedOverridesJson(overrides));
     }
    
     @Test
@@ -228,6 +244,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String bundleName = "mybundle";
         String testName = "mytest";
         String groupName = "my.group";
@@ -237,6 +254,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
         String override1Key = "override1";
@@ -255,6 +273,7 @@ public class FrameworkRunsTest {
             frameworkRuns.submitRun(
                 runType,
                 requestor,
+                user,
                 bundleName,
                 testName,
                 groupName,
@@ -268,7 +287,8 @@ public class FrameworkRunsTest {
                 sharedEnvironmentPhase,
                 sharedEnvironmentRunName,
                 language,
-                submissionId
+                submissionId,
+                requestedTestMethods
             );
         }, FrameworkException.class);
 
@@ -291,6 +311,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String bundleName = "mybundle";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
@@ -299,6 +320,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -311,6 +333,7 @@ public class FrameworkRunsTest {
             frameworkRuns.submitRun(
                 runType,
                 requestor,
+                user,
                 bundleName,
                 testName,
                 groupName,
@@ -324,7 +347,8 @@ public class FrameworkRunsTest {
                 sharedEnvironmentPhase,
                 sharedEnvironmentRunName,
                 language,
-                submissionId
+                submissionId,
+                requestedTestMethods
             );
         }, FrameworkException.class);
 
@@ -348,6 +372,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -355,6 +380,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -367,6 +393,7 @@ public class FrameworkRunsTest {
             frameworkRuns.submitRun(
                 runType,
                 requestor,
+                user,
                 bundleName,
                 testName,
                 groupName,
@@ -380,7 +407,8 @@ public class FrameworkRunsTest {
                 sharedEnvironmentPhase,
                 sharedEnvironmentRunName,
                 language,
-                submissionId
+                submissionId,
+                requestedTestMethods
             );
         }, FrameworkException.class);
 
@@ -405,6 +433,7 @@ public class FrameworkRunsTest {
         String submissionId = "submission1";
         String runType = "unknown";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -412,6 +441,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -422,6 +452,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -435,7 +466,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -460,6 +492,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mytest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -467,6 +500,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -477,6 +511,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -490,7 +525,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -515,6 +551,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mygherkintest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -522,6 +559,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -532,6 +570,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -545,7 +584,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -555,19 +595,20 @@ public class FrameworkRunsTest {
         assertThat(run.getTestBundleName()).isEqualTo(null);
 
         // Check that the DSS has been populated with the correct run-related properties
-        assertThat(mockDss.get("run.L1.gherkin")).isEqualTo(testName);
-        assertThat(mockDss.get("run.L1.testclass")).isEqualTo(testName);
-        assertThat(mockDss.get("run.L1.testbundle")).isEqualTo("none");
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.GHERKIN)).isEqualTo(testName);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.TEST_CLASS)).isEqualTo(testName);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.TEST_BUNDLE)).isEqualTo("none");
         assertThat(mockDss.get("request.prefix.L.lastused")).isEqualTo("1");
-        assertThat(mockDss.get("run.L1.obr")).isEqualTo(obr);
-        assertThat(mockDss.get("run.L1.group")).isEqualTo(groupName);
-        assertThat(mockDss.get("run.L1.requestor")).isEqualTo(requestor);
-        assertThat(mockDss.get("run.L1.repository")).isEqualTo(mavenRepo);
-        assertThat(mockDss.get("run.L1.stream")).isEqualTo(stream);
-        assertThat(mockDss.get("run.L1.local")).isEqualTo(Boolean.toString(local));
-        assertThat(mockDss.get("run.L1.trace")).isEqualTo(Boolean.toString(trace));
-        assertThat(mockDss.get("run.L1.request.type")).isEqualTo(runType.toUpperCase());
-        assertThat(mockDss.get("run.L1.status")).isEqualTo("queued");
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.OBR)).isEqualTo(obr);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.GROUP)).isEqualTo(groupName);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.REQUESTOR)).isEqualTo(requestor);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.USER)).isEqualTo(user);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.REPOSITORY)).isEqualTo(mavenRepo);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.STREAM)).isEqualTo(stream);
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.LOCAL)).isEqualTo(Boolean.toString(local));
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.TRACE)).isEqualTo(Boolean.toString(trace));
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.REQUEST_TYPE)).isEqualTo(runType.toUpperCase());
+        assertThat(mockDss.get("run.L1."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
     }
 
     @Test
@@ -588,6 +629,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mysharedenvtest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -595,6 +637,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -602,6 +645,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -615,7 +659,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -626,19 +671,20 @@ public class FrameworkRunsTest {
         expectedOverrides.put("framework.run.shared.environment.phase", "BUILD");
 
         // Check that the DSS has been populated with the correct run-related properties
-        assertThat(mockDss.get("run.SHARED-RUN1.overrides")).isEqualTo(getExpectedOverridesJson(expectedOverrides));
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.OVERRIDES)).isEqualTo(getExpectedOverridesJson(expectedOverrides));
         assertThat(mockDss.get("run.SHARED-RUN1.shared.environment")).isEqualTo("true");
-        assertThat(mockDss.get("run.SHARED-RUN1.obr")).isEqualTo(obr);
-        assertThat(mockDss.get("run.SHARED-RUN1.group")).isEqualTo(groupName);
-        assertThat(mockDss.get("run.SHARED-RUN1.requestor")).isEqualTo(requestor);
-        assertThat(mockDss.get("run.SHARED-RUN1.testbundle")).isEqualTo(bundleName);
-        assertThat(mockDss.get("run.SHARED-RUN1.repository")).isEqualTo(mavenRepo);
-        assertThat(mockDss.get("run.SHARED-RUN1.stream")).isEqualTo(stream);
-        assertThat(mockDss.get("run.SHARED-RUN1.local")).isEqualTo(Boolean.toString(local));
-        assertThat(mockDss.get("run.SHARED-RUN1.testclass")).isEqualTo(testName);
-        assertThat(mockDss.get("run.SHARED-RUN1.trace")).isEqualTo(Boolean.toString(trace));
-        assertThat(mockDss.get("run.SHARED-RUN1.request.type")).isEqualTo(runType.toUpperCase());
-        assertThat(mockDss.get("run.SHARED-RUN1.status")).isEqualTo("queued");
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.OBR)).isEqualTo(obr);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.GROUP)).isEqualTo(groupName);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.REQUESTOR)).isEqualTo(requestor);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.USER)).isEqualTo(user);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.TEST_BUNDLE)).isEqualTo(bundleName);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.REPOSITORY)).isEqualTo(mavenRepo);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.STREAM)).isEqualTo(stream);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.LOCAL)).isEqualTo(Boolean.toString(local));
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.TEST_CLASS)).isEqualTo(testName);
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.TRACE)).isEqualTo(Boolean.toString(trace));
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.REQUEST_TYPE)).isEqualTo(runType.toUpperCase());
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
     }
 
     @Test
@@ -659,6 +705,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mysharedenvtest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -666,6 +713,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -674,6 +722,7 @@ public class FrameworkRunsTest {
             frameworkRuns.submitRun(
                 runType,
                 requestor,
+                user,
                 bundleName,
                 testName,
                 groupName,
@@ -687,7 +736,8 @@ public class FrameworkRunsTest {
                 sharedEnvironmentPhase,
                 sharedEnvironmentRunName,
                 language,
-                submissionId
+                submissionId,
+                requestedTestMethods
             );
         }, FrameworkException.class);
 
@@ -703,7 +753,7 @@ public class FrameworkRunsTest {
         String sharedEnvironmentRunName = "SHARED-RUN1";
 
         mockDss.put("run." + sharedEnvironmentRunName + ".shared.environment", "true");
-        mockDss.put("run." + sharedEnvironmentRunName + ".status", "up");
+        mockDss.put("run." + sharedEnvironmentRunName + "." +DssPropertyKeyRunNameSuffix.STATUS, "up");
 
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
@@ -718,6 +768,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mysharedenvtest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -725,6 +776,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -732,6 +784,7 @@ public class FrameworkRunsTest {
         IRun run = frameworkRuns.submitRun(
             runType,
             requestor,
+            user,
             bundleName,
             testName,
             groupName,
@@ -745,7 +798,8 @@ public class FrameworkRunsTest {
             sharedEnvironmentPhase,
             sharedEnvironmentRunName,
             language,
-            submissionId
+            submissionId,
+            requestedTestMethods
         );
 
         // Then...
@@ -753,10 +807,10 @@ public class FrameworkRunsTest {
         assertThat(run.getName()).isEqualTo(sharedEnvironmentRunName);
 
         // Check that the DSS has been populated with the correct run-related properties
-        assertThat(mockDss.get("run.SHARED-RUN1.overrides")).isEqualTo("framework.run.shared.environment.phase=DISCARD");
+        assertThat(mockDss.get("run.SHARED-RUN1." +DssPropertyKeyRunNameSuffix.OVERRIDES)).isEqualTo("framework.run.shared.environment.phase=DISCARD");
         assertThat(mockDss.get("run.SHARED-RUN1.shared.environment")).isEqualTo("true");
-        assertThat(mockDss.get("run.SHARED-RUN1.group")).isEqualTo(groupName);
-        assertThat(mockDss.get("run.SHARED-RUN1.status")).isEqualTo("queued");
+        assertThat(mockDss.get("run.SHARED-RUN1."+DssPropertyKeyRunNameSuffix.GROUP)).isEqualTo(groupName);
+        assertThat(mockDss.get("run.SHARED-RUN1." +DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo("queued");
     }
 
     @Test
@@ -781,6 +835,7 @@ public class FrameworkRunsTest {
         String bundleName = "mybundle";
         String testName = "mysharedenvtest";
         String requestor = "me";
+        String user = "me";
         String groupName = "my.group";
         String mavenRepo = "https://my.maven.repo";
         String obr = "mvn:my.group/my.group.obr/0.38.0/obr";
@@ -788,6 +843,7 @@ public class FrameworkRunsTest {
         boolean local = true;
         boolean trace = true;
         Set<String> tags = null ;
+        List<String> requestedTestMethods = null;
 
         Properties overrides = new Properties();
 
@@ -796,6 +852,7 @@ public class FrameworkRunsTest {
             frameworkRuns.submitRun(
                 runType,
                 requestor,
+                user,
                 bundleName,
                 testName,
                 groupName,
@@ -809,7 +866,8 @@ public class FrameworkRunsTest {
                 sharedEnvironmentPhase,
                 sharedEnvironmentRunName,
                 language,
-                submissionId
+                submissionId,
+                requestedTestMethods
             );
         }, FrameworkException.class);
 
@@ -825,20 +883,24 @@ public class FrameworkRunsTest {
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String rasRunId = "my-run-document-id";
 
         // Put a run-related property into the DSS to show that the run with the given name exists in the DSS
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
 
         // When...
         boolean isRunMarkedCancelled = frameworkRuns.markRunInterrupted(runName, Result.CANCELLED);
 
         // Then...
         assertThat(isRunMarkedCancelled).isTrue();
-        assertThat(mockDss.get("run." + runName + ".interruptReason")).isEqualTo(Result.CANCELLED);
+        assertThat(mockDss.get("run." + runName + "." + DssPropertyKeyRunNameSuffix.INTERRUPT_REASON)).isEqualTo(Result.CANCELLED);
+        assertThat(mockDss.get("run." + runName + "." + DssPropertyKeyRunNameSuffix.INTERRUPTED_AT)).isEqualTo(currentTime.toString());
 
         // We expect the 'rasActions' property to be populated with a base64-encoded JSON structure
         List<RunRasAction> expectedRasActions = new ArrayList<>();
@@ -847,37 +909,41 @@ public class FrameworkRunsTest {
         String expectedJsonStr = gson.toJson(expectedRasActions);
         String expectedEncodedStr = Base64.getEncoder().encodeToString(expectedJsonStr.getBytes(StandardCharsets.UTF_8));
 
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(expectedEncodedStr);
+        assertThat(mockDss.get("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(expectedEncodedStr);
     }
 
     @Test
-    public void testCancelRunWithoutRunIdSetsInterruptReasonOnly() throws Exception {
+    public void testCancelRunWithoutRunIdSetsInterruptReasonAndTimeOnly() throws Exception {
         // Given...
         MockDSSStore mockDss = new MockDSSStore(new HashMap<>());
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String status = "allocated";
 
         // Put a run-related property into the DSS to show that the run with the given name exists in the DSS
-        mockDss.put("run." + runName + ".status", status);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.STATUS, status);
 
         // When...
         boolean isRunMarkedCancelled = frameworkRuns.markRunInterrupted(runName, Result.CANCELLED);
 
         // Then...
         assertThat(isRunMarkedCancelled).isTrue();
-        assertThat(mockDss.get("run." + runName + ".interruptReason")).isEqualTo(Result.CANCELLED);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON)).isEqualTo(Result.CANCELLED);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPTED_AT)).isEqualTo(currentTime.toString());
 
         // We expect the 'rasActions' property to be empty
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isNull();
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isNull();
     }
 
     @Test
-    public void testCancelNonExistantRunReturnsFalse() throws Exception {
+    public void testCancelNonExistentRunReturnsFalse() throws Exception {
         // Given...
         MockDSSStore mockDss = new MockDSSStore(new HashMap<>());
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
@@ -914,10 +980,10 @@ public class FrameworkRunsTest {
         String encodedRasActionStr = Base64.getEncoder().encodeToString(rasActionJsonStr.getBytes(StandardCharsets.UTF_8));
 
         // Mark the run as cancelled already
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
-        mockDss.put("run." + runName + ".status", TestRunLifecycleStatus.FINISHED.toString());
-        mockDss.put("run." + runName + ".result", Result.CANCELLED);
-        mockDss.put("run." + runName + ".rasActions", encodedRasActionStr);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.STATUS, TestRunLifecycleStatus.FINISHED.toString());
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RESULT, Result.CANCELLED);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS, encodedRasActionStr);
 
         // When...
         boolean isRunMarkedCancelled = frameworkRuns.markRunInterrupted(runName, Result.CANCELLED);
@@ -926,7 +992,7 @@ public class FrameworkRunsTest {
         assertThat(isRunMarkedCancelled).isTrue();
 
         // We don't want the 'rasActions' property to have changed
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(encodedRasActionStr);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(encodedRasActionStr);
     }
 
     @Test
@@ -936,7 +1002,10 @@ public class FrameworkRunsTest {
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String rasRunId = "my-run-document-id";
@@ -949,9 +1018,10 @@ public class FrameworkRunsTest {
         String encodedRasActionStr = Base64.getEncoder().encodeToString(rasActionJsonStr.getBytes(StandardCharsets.UTF_8));
 
         // Mark the run as cancelled already
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
-        mockDss.put("run." + runName + ".interruptReason", Result.CANCELLED);
-        mockDss.put("run." + runName + ".rasActions", encodedRasActionStr);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, Result.CANCELLED);
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPTED_AT, currentTime.toString());
+        mockDss.put("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS, encodedRasActionStr);
 
         // When...
         boolean isRunMarkedCancelled = frameworkRuns.markRunInterrupted(runName, Result.CANCELLED);
@@ -960,7 +1030,7 @@ public class FrameworkRunsTest {
         assertThat(isRunMarkedCancelled).isTrue();
 
         // We don't want the 'rasActions' property to have changed
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(encodedRasActionStr);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(encodedRasActionStr);
     }
 
     @Test
@@ -988,30 +1058,34 @@ public class FrameworkRunsTest {
         frameworkRuns.addRunRasAction(mockRun, rasAction);
 
         // Then...
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(encodedRasActionStr);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(encodedRasActionStr);
     }
 
     @Test
-    public void testmarkRunInterruptedSetsInterruptReasonAndRasActionOk() throws Exception {
+    public void testMarkRunInterruptedSetsInterruptPropertiesAndRasActionOk() throws Exception {
         // Given...
         MockDSSStore mockDss = new MockDSSStore(new HashMap<>());
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String rasRunId = "my-run-document-id";
 
         // Put a run-related property into the DSS to show that the run with the given name exists in the DSS
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
 
         // When...
         boolean isRunMarkedRequeued = frameworkRuns.markRunInterrupted(runName, Result.REQUEUED);
 
         // Then...
         assertThat(isRunMarkedRequeued).isTrue();
-        assertThat(mockDss.get("run." + runName + ".interruptReason")).isEqualTo(Result.REQUEUED);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON)).isEqualTo(Result.REQUEUED);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPTED_AT)).isEqualTo(currentTime.toString());
 
         // We expect the 'rasActions' property to be populated with a base64-encoded JSON structure
         List<RunRasAction> expectedRasActions = new ArrayList<>();
@@ -1020,7 +1094,7 @@ public class FrameworkRunsTest {
         String expectedJsonStr = gson.toJson(expectedRasActions);
         String expectedEncodedStr = Base64.getEncoder().encodeToString(expectedJsonStr.getBytes(StandardCharsets.UTF_8));
 
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(expectedEncodedStr);
+        assertThat(mockDss.get("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(expectedEncodedStr);
     }
 
     @Test
@@ -1030,7 +1104,10 @@ public class FrameworkRunsTest {
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String rasRunId = "my-run-document-id";
@@ -1043,9 +1120,9 @@ public class FrameworkRunsTest {
         String encodedRasActionStr = Base64.getEncoder().encodeToString(rasActionJsonStr.getBytes(StandardCharsets.UTF_8));
 
         // Mark the run as requeued already
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
-        mockDss.put("run." + runName + ".interruptReason", Result.REQUEUED);
-        mockDss.put("run." + runName + ".rasActions", encodedRasActionStr);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, Result.REQUEUED);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_ACTIONS, encodedRasActionStr);
 
         // When...
         boolean isRunMarkedRequeued = frameworkRuns.markRunInterrupted(runName, Result.REQUEUED);
@@ -1054,11 +1131,11 @@ public class FrameworkRunsTest {
         assertThat(isRunMarkedRequeued).isTrue();
 
         // We don't want the 'rasActions' property to have changed
-        assertThat(mockDss.get("run." + runName + ".rasActions")).isEqualTo(encodedRasActionStr);
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.RAS_ACTIONS)).isEqualTo(encodedRasActionStr);
     }
 
     @Test
-    public void testRequeueRunOnNonExistantRunDoesNotUpdateDss() throws Exception {
+    public void testRequeueRunOnNonExistentRunDoesNotUpdateDss() throws Exception {
         // Given...
         MockDSSStore mockDss = new MockDSSStore(new HashMap<>());
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
@@ -1088,7 +1165,7 @@ public class FrameworkRunsTest {
         String runName = "mytestrun1";
 
         // Mark the run as local
-        mockDss.put("run." + runName + ".local", "true");
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.LOCAL, "true");
 
         // When...
         boolean isRunReset = frameworkRuns.reset(runName);
@@ -1098,7 +1175,7 @@ public class FrameworkRunsTest {
     }
 
     @Test
-    public void testResetRunOnNonExistantRunDoesNotUpdateDss() throws Exception {
+    public void testResetRunOnNonExistentRunDoesNotUpdateDss() throws Exception {
         // Given...
         MockDSSStore mockDss = new MockDSSStore(new HashMap<>());
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
@@ -1124,22 +1201,222 @@ public class FrameworkRunsTest {
         MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
         MockFramework mockFramework = new MockFramework(mockCps, mockDss);
 
-        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework);
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
 
         String runName = "mytestrun1";
         String rasRunId = "my-run-document-id";
 
-        mockDss.put("run." + runName + ".rasrunid", rasRunId);
-        mockDss.put("run." + runName + ".interruptReason", Result.REQUEUED);
-        mockDss.put("run." + runName + ".heartbeat", Instant.now().toString());
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.RAS_RUN_ID, rasRunId);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.INTERRUPT_REASON, Result.REQUEUED);
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.INTERRUPTED_AT, currentTime.toString());
+        mockDss.put("run." + runName + "."+DssPropertyKeyRunNameSuffix.HEARTBEAT, Instant.now().toString());
 
         // When...
         boolean isRunReset = frameworkRuns.reset(runName);
 
         // Then...
         assertThat(isRunReset).isTrue();
-        assertThat(mockDss.get("run." + runName + ".interruptReason")).isNull();
-        assertThat(mockDss.get("run." + runName + ".heartbeat")).isNull();
-        assertThat(mockDss.get("run." + runName + ".status")).isEqualTo(TestRunLifecycleStatus.QUEUED.toString());
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPT_REASON)).isNull();
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.INTERRUPTED_AT)).isNull();
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.HEARTBEAT)).isNull();
+        assertThat(mockDss.get("run." + runName + "." +DssPropertyKeyRunNameSuffix.STATUS)).isEqualTo(TestRunLifecycleStatus.QUEUED.toString());
+    }
+
+    @Test
+    public void testCanGetCpsPropertiesForExistingRunWithNoOverrides() throws Exception {
+        // Given...
+        Map<String, String> cpsProps = new HashMap<>();
+        cpsProps.put("namespace1.first.cps.property", "hello");
+        cpsProps.put("namespace1.second.cps.property", "world");
+        cpsProps.put("namespace2.cps.property", "another value!");
+
+        Map<String, String> dssProps = new HashMap<>();
+        String runName = "U123";
+        dssProps.put("run." + runName + ".status", TestRunLifecycleStatus.FINISHED.toString());
+
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(cpsProps);
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // When...
+        List<String> namespacesToGet = List.of("namespace1", "namespace2");
+        Map<String, String> propertiesGotBack = frameworkRuns.getCpsPropertiesAndOverridesUsedByTestRun(runName, namespacesToGet);
+
+        // Then...
+        assertThat(propertiesGotBack).hasSize(3);
+        assertThat(propertiesGotBack).containsAllEntriesOf(cpsProps);
+    }
+
+    @Test
+    public void testCanGetCpsPropertiesForExistingRunWithBlankOverrides() throws Exception {
+        // Given...
+        Map<String, String> cpsProps = new HashMap<>();
+        cpsProps.put("namespace1.first.cps.property", "hello");
+        cpsProps.put("namespace1.second.cps.property", "world");
+        cpsProps.put("namespace2.cps.property", "another value!");
+
+        Map<String, String> dssProps = new HashMap<>();
+        String runName = "U123";
+        dssProps.put("run." + runName + ".overrides", "     ");
+
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(cpsProps);
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // When...
+        List<String> namespacesToGet = List.of("namespace1", "namespace2");
+        Map<String, String> propertiesGotBack = frameworkRuns.getCpsPropertiesAndOverridesUsedByTestRun(runName, namespacesToGet);
+
+        // Then...
+        assertThat(propertiesGotBack).hasSize(3);
+        assertThat(propertiesGotBack).containsAllEntriesOf(cpsProps);
+    }
+
+    @Test
+    public void testCanGetCpsPropertiesAndOverridesForExistingRun() throws Exception {
+        // Given...
+        Map<String, String> cpsProps = new HashMap<>();
+        cpsProps.put("namespace1.first.cps.property", "hello");
+        cpsProps.put("namespace1.second.cps.property", "world");
+        cpsProps.put("namespace2.cps.property", "another value");
+
+        Map<String, String> dssProps = new HashMap<>();
+
+        List<Property> overrideProperties = new ArrayList<>();
+        overrideProperties.add(new Property("this.is.an.override", "I'm a value!"));
+        overrideProperties.add(new Property("namespace1.second.cps.property", "I'm an overridden value!"));
+
+        String runName = "U123";
+        dssProps.put("run." + runName + ".overrides", gson.toJson(overrideProperties));
+        
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(cpsProps);
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // When...
+        List<String> namespacesToGet = List.of("namespace1", "namespace2");
+        Map<String, String> propertiesGotBack = frameworkRuns.getCpsPropertiesAndOverridesUsedByTestRun(runName, namespacesToGet);
+
+        // Then...
+        assertThat(propertiesGotBack).hasSize(4);
+        assertThat(propertiesGotBack.get("namespace1.first.cps.property")).isEqualTo("hello");
+        assertThat(propertiesGotBack.get("namespace1.second.cps.property")).isEqualTo("I'm an overridden value!");
+        assertThat(propertiesGotBack.get("namespace2.cps.property")).isEqualTo("another value");
+        assertThat(propertiesGotBack.get("this.is.an.override")).isEqualTo("I'm a value!");
+    }
+
+    @Test
+    public void testGetCpsPropertiesForNonExistentRunReturnsCurrentCpsProperties() throws Exception {
+        // Given...
+        Map<String, String> cpsProps = new HashMap<>();
+        cpsProps.put("namespace1.first.cps.property", "hello");
+        cpsProps.put("namespace1.second.cps.property", "world");
+        cpsProps.put("namespace2.cps.property", "another value");
+
+        Map<String, String> dssProps = new HashMap<>();
+        String runName = "U123";
+        
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(cpsProps);
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // When...
+        List<String> namespacesToGet = List.of("namespace1", "namespace2");
+        Map<String, String> propertiesGotBack = frameworkRuns.getCpsPropertiesAndOverridesUsedByTestRun(runName, namespacesToGet);
+
+        // Then...
+        assertThat(propertiesGotBack).hasSize(3);
+        assertThat(propertiesGotBack).containsAllEntriesOf(cpsProps);
+    }
+
+    @Test
+    public void testGetPropertiesForExistingRunWithNullNamespacesReturnsOnlyOverrides() throws Exception {
+        // Given...
+        Map<String, String> cpsProps = new HashMap<>();
+        cpsProps.put("namespace1.first.cps.property", "hello");
+        cpsProps.put("namespace1.second.cps.property", "world");
+        cpsProps.put("namespace2.cps.property", "another value");
+
+        Map<String, String> dssProps = new HashMap<>();
+
+        List<Property> overrideProperties = new ArrayList<>();
+        overrideProperties.add(new Property("this.is.an.override", "I'm a value!"));
+        overrideProperties.add(new Property("namespace1.second.cps.property", "I'm an overridden value!"));
+
+        String runName = "U123";
+        dssProps.put("run." + runName + ".overrides", gson.toJson(overrideProperties));
+        
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(cpsProps);
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        Instant currentTime = Instant.now();
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // When...
+        List<String> namespacesToGet = null;
+        Map<String, String> propertiesGotBack = frameworkRuns.getCpsPropertiesAndOverridesUsedByTestRun(runName, namespacesToGet);
+
+        // Then...
+        assertThat(propertiesGotBack).hasSize(2);
+        assertThat(propertiesGotBack.get("this.is.an.override")).isEqualTo("I'm a value!");
+        assertThat(propertiesGotBack.get("namespace1.second.cps.property")).isEqualTo("I'm an overridden value!");
+    }
+
+    @Test
+    public void testCanClearInterruptPropertiesFromExistingRun() throws Exception {
+        // Given...
+        Map<String, String> dssProps = new HashMap<>();
+
+        String runName = "U123";
+        Instant currentTime = Instant.now();
+        dssProps.put("run." + runName + ".status", TestRunLifecycleStatus.RUNNING.toString());
+        dssProps.put("run." + runName + ".interruptedAt", currentTime.toString());
+        dssProps.put("run." + runName + ".interruptReason", Result.HUNG);
+        
+        MockDSSStore mockDss = new MockDSSStore(dssProps);
+        MockCPSStore mockCps = new MockCPSStore(new HashMap<>());
+        MockFramework mockFramework = new MockFramework(mockCps, mockDss);
+
+        MockTimeService mockTimeService = new MockTimeService(currentTime);
+
+        FrameworkRuns frameworkRuns = new FrameworkRuns(mockFramework, mockTimeService);
+
+        // Check that the interrupt properties have been set correctly
+        IRun existingRun = frameworkRuns.getRun(runName);
+        assertThat(existingRun.getInterruptReason()).isEqualTo(Result.HUNG);
+        assertThat(existingRun.getInterruptedAt()).isEqualTo(currentTime.toString());
+
+        // When...
+        frameworkRuns.clearRunInterrupt(runName);
+
+        // Then...
+        assertThat(dssProps).hasSize(1);
+        assertThat(dssProps.get("run." + runName + ".status")).isEqualTo(TestRunLifecycleStatus.RUNNING.toString());
     }
 }

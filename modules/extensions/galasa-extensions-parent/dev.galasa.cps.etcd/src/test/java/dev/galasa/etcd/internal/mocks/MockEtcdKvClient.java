@@ -31,10 +31,12 @@ import io.etcd.jetcd.options.CompactOption;
 import io.etcd.jetcd.options.DeleteOption;
 import io.etcd.jetcd.options.GetOption;
 import io.etcd.jetcd.options.PutOption;
+import io.etcd.jetcd.options.TxnOption;
 
 public class MockEtcdKvClient implements KV {
 
-    Map<String, String> kvContents = new HashMap<>();
+    private Map<String, String> kvContents = new HashMap<>();
+    private MockTransaction mockTransaction;
 
     public MockEtcdKvClient(Map<String, String> kvContents) {
         this.kvContents = kvContents;
@@ -121,6 +123,16 @@ public class MockEtcdKvClient implements KV {
         return CompletableFuture.completedFuture(null);
     }
 
+    @Override
+    public Txn txn() {
+        this.mockTransaction = new MockTransaction();
+        return this.mockTransaction;
+    }
+
+    public MockTransaction getTransaction() {
+        return this.mockTransaction;
+    }
+
     private KeyValue createKeyValue(String key, String value) {
         ByteString keyByteStr = ByteString.copyFromUtf8(key);
         Builder builder = KeyValue.newBuilder().setKey(keyByteStr);
@@ -145,8 +157,7 @@ public class MockEtcdKvClient implements KV {
     }
 
     @Override
-    public Txn txn() {
+    public Txn txn(TxnOption option) {
         throw new UnsupportedOperationException("Unimplemented method 'txn'");
     }
-    
 }

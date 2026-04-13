@@ -12,10 +12,12 @@ import java.util.Set;
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class MockIRun implements IRun {
 
-    private String name ;
+    private String rasRunId;
+    private String name;
 
     public MockIRun(String name) {
         this.name = name ;
@@ -24,6 +26,15 @@ public class MockIRun implements IRun {
     @Override
     public String getName() {
         return this.name;
+    }
+
+    @Override
+    public String getRasRunId() {
+        return this.rasRunId;
+    }
+
+    public void setRasRunId(String rasRunId) {
+        this.rasRunId = rasRunId;
     }
 
     @Override
@@ -49,6 +60,11 @@ public class MockIRun implements IRun {
     @Override
     public String getRequestor() {
         throw new UnsupportedOperationException("Unimplemented method 'getRequestor'");
+    }
+
+    @Override
+    public String getUser() {
+        throw new UnsupportedOperationException("Unimplemented method 'getUser'");
     }
 
     @Override
@@ -137,16 +153,31 @@ public class MockIRun implements IRun {
     }
 
     @Override
-    public String getRasRunId() {
-        throw new UnsupportedOperationException("Unimplemented method 'getRasRunId'");
-    }
-
-    @Override
     public List<RunRasAction> getRasActions() {
         throw new UnsupportedOperationException("Unimplemented method 'getRasActions'");
     }
 
     public Set<String> getTags() {
         throw new UnsupportedOperationException("Unimplemented method 'getTags'");
+    }
+
+    @Override
+    public TestStructure toTestStructure() {
+        throw new UnsupportedOperationException("Unimplemented method 'toTestStructure'");
+    }
+
+    @Override
+    public Instant getInterruptedAt() {
+        throw new UnsupportedOperationException("Unimplemented method 'getInterruptedAt'");
+    }
+
+    @Override
+    public Instant getAllocatedTimeout() {
+        throw new UnsupportedOperationException("Unimplemented method 'getAllocatedTimeout'");
+    }
+
+    @Override
+    public List<String> getRequestedTestMethods() {
+        throw new UnsupportedOperationException("Unimplemented method 'getRequestedTestMethods'");
     }
 }

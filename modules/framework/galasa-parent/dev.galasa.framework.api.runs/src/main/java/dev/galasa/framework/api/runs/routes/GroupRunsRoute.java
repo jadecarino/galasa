@@ -29,9 +29,13 @@ import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.ResultArchiveStoreException;
+import dev.galasa.framework.spi.auth.AuthStoreException;
+import dev.galasa.framework.spi.auth.IAuthStoreService;
+import dev.galasa.framework.spi.auth.IUser;
 import dev.galasa.framework.spi.rbac.BuiltInAction;
 import dev.galasa.framework.spi.rbac.RBACException;
 import dev.galasa.framework.spi.utils.GalasaGson;
+import dev.galasa.framework.spi.utils.SystemTimeService;
 
 import static dev.galasa.framework.api.common.ServletErrorMessage.*;
 public class GroupRunsRoute extends GroupRuns{
@@ -39,12 +43,14 @@ public class GroupRunsRoute extends GroupRuns{
     protected static final String path = "\\/[a-zA-Z0-9_\\-]*";
     private final GalasaGson gson = new GalasaGson();
     private final String GROUP_RUNS_CANCELLED_STATUS = "cancelled";
+    private final Environment env;
 
     public GroupRunsRoute(ResponseBuilder responseBuilder, IFramework framework, Environment env) throws RBACException {
         // Regex to match endpoints:
 		// -> /runs/{GroupID}
 		//
-        super(responseBuilder, path, framework);
+        super(responseBuilder, path, framework, new SystemTimeService() );
+        this.env = env;
     }
 
     @Override
@@ -59,7 +65,7 @@ public class GroupRunsRoute extends GroupRuns{
 
         List<IRun> runs = getRuns(groupName.substring(1));
         if (runs != null){
-            ScheduleStatus serializedRuns = serializeRuns(runs);
+            ScheduleStatus serializedRuns = serializeRuns(runs, env);
             return getResponseBuilder().buildResponse(request, response, "application/json", gson.toJson(serializedRuns), HttpServletResponse.SC_OK);
         }else{
             ServletError error = new ServletError(GAL5019_UNABLE_TO_RETRIEVE_RUNS, groupName);
@@ -81,8 +87,50 @@ public class GroupRunsRoute extends GroupRuns{
 
         checkRequestHasContent(request);
         ScheduleRequest scheduleRequest = getScheduleRequestfromRequest(request);
-        ScheduleStatus scheduleStatus = scheduleRun(scheduleRequest, groupName.substring(1), requestor);
+
+        String user = scheduleRequest.getUser();
+        if (user != null && !user.isBlank()) {
+            boolean isRequestorPermittedToSetUser = isActionPermitted(BuiltInAction.TEST_RUN_SET_USER, requestor);
+            if (isRequestorPermittedToSetUser) {
+                // Try to get the case-accurate loginId using case-insensitive lookup
+                String caseAccurateUser = getCaseAccurateLoginId(user);
+                // If we found a case-accurate user, use it; otherwise use the provided user
+                String userToValidate = (caseAccurateUser != null) ? caseAccurateUser : user;
+                
+                // Validate the user has permission to launch tests
+                validateActionPermitted(BuiltInAction.TEST_RUN_LAUNCH, userToValidate);
+                
+                // Update the schedule request with the validated user (case-accurate if found)
+                scheduleRequest.setUser(userToValidate);
+            } else {
+                // If the requestor login ID does not have the TEST_RUN_SET_USER action,
+                // don't block them from launching the test, but don't let them override the user.
+                scheduleRequest.setUser(requestor);
+            }
+        }
+
+        ScheduleStatus scheduleStatus = scheduleRun(scheduleRequest, groupName.substring(1), requestor, env);
         return getResponseBuilder().buildResponse(request, response, "application/json", gson.toJson(scheduleStatus), HttpServletResponse.SC_CREATED);
+    }
+
+    /**
+     * Retrieves the case-accurate loginId for a given user using case-insensitive matching.
+     *
+     * @param loginId the loginId to look up (case-insensitive)
+     * @return the case-accurate loginId from the auth store, or null if not found
+     * @throws FrameworkException if there is an issue accessing the auth store
+     */
+    private String getCaseAccurateLoginId(String loginId) throws FrameworkException {
+        try {
+            IAuthStoreService authStoreService = framework.getAuthStoreService();
+            IUser user = authStoreService.getUserByLoginIdCaseInsensitive(loginId);
+            if (user != null) {
+                return user.getLoginId();
+            }
+            return null;
+        } catch (AuthStoreException e) {
+            throw new FrameworkException("Failed to retrieve user from auth store", e);
+        }
     }
 
     @Override

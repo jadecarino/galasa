@@ -21,6 +21,7 @@ import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IFrameworkRuns;
 import dev.galasa.framework.spi.IResourceManagement;
+import dev.galasa.framework.spi.IResourceManagementProvider;
 import dev.galasa.framework.spi.IRun;
 
 public class RunFinishedRuns implements Runnable {
@@ -34,7 +35,7 @@ public class RunFinishedRuns implements Runnable {
             .withZone(ZoneId.systemDefault());
 
     protected RunFinishedRuns(IFramework framework, IResourceManagement resourceManagement,
-            IDynamicStatusStoreService dss, RunResourceManagement runResourceManagement,
+            IDynamicStatusStoreService dss, IResourceManagementProvider runResourceManagement,
             IConfigurationPropertyStoreService cps) throws FrameworkException {
         this.resourceManagement = resourceManagement;
         this.frameworkRuns = framework.getFrameworkRuns();
@@ -55,7 +56,7 @@ public class RunFinishedRuns implements Runnable {
                     e);
         }
 
-        logger.info("Starting Finished Run search");
+        logger.info("Starting search for finished runs");
         try {
             List<IRun> runs = frameworkRuns.getAllRuns();
             for (IRun run : runs) {
@@ -67,21 +68,30 @@ public class RunFinishedRuns implements Runnable {
                 }
 
                 Instant finished = run.getFinished();
-                Instant expires = finished.plusSeconds(defaultFinishedDelete);
+                Instant expires = null;
+                if (finished != null) {
+                    expires = finished.plusSeconds(defaultFinishedDelete);
+                }
+
                 Instant now = Instant.now();
-                if (expires.compareTo(now) <= 0) {
-                    String sFinished = dtf.format(LocalDateTime.ofInstant(finished, ZoneId.systemDefault()));
-                    /// TODO put time management into the framework
-                    logger.info("Deleting run " + runName + ", finished at " + sFinished);
+                if (expires == null || expires.compareTo(now) <= 0) {
+                    if (finished != null) {
+                        String sFinished = dtf.format(LocalDateTime.ofInstant(finished, ZoneId.systemDefault()));
+                        logger.info("Deleting run " + runName + ", finished at " + sFinished);
+                    } else {
+                        logger.info("Deleting run " + runName + ", finished is null");
+                    }
+
                     this.frameworkRuns.delete(runName);
+                    logger.info("Deleted run " + runName + " from the DSS");
                 }
             }
-        } catch (FrameworkException e) {
+        } catch (Exception e) {
             logger.error("Scan of runs failed", e);
         }
 
         this.resourceManagement.resourceManagementRunSuccessful();
-        logger.info("Finished Finished search");
+        logger.info("Completed search for finished runs");
     }
 
 }

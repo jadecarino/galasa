@@ -7,14 +7,18 @@ package dev.galasa.framework.mocks;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Properties;
 
 import javax.validation.constraints.NotNull;
+
+import org.apache.commons.logging.Log;
 
 import dev.galasa.framework.spi.CertificateStoreException;
 import dev.galasa.framework.spi.ConfidentialTextException;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.EventsException;
+import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.ICertificateStoreService;
 import dev.galasa.framework.spi.IConfidentialTextService;
 import dev.galasa.framework.spi.IConfigurationPropertyStore;
@@ -24,6 +28,8 @@ import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IFrameworkInitialisation;
 import dev.galasa.framework.spi.IResultArchiveStoreService;
 import dev.galasa.framework.spi.ResultArchiveStoreException;
+import dev.galasa.framework.spi.auth.AuthStoreException;
+import dev.galasa.framework.spi.auth.IAuthStore;
 import dev.galasa.framework.spi.creds.CredentialsException;
 import dev.galasa.framework.spi.creds.ICredentialsStore;
 
@@ -36,6 +42,10 @@ public class MockFrameworkInitialisation implements IFrameworkInitialisation {
 
     public MockFrameworkInitialisation(URI cpsUri) {
         this(cpsUri, null, null);
+    }
+
+    public MockFrameworkInitialisation(MockFramework framework) {
+        this(null, null, null, framework);
     }
 
     public MockFrameworkInitialisation(URI cpsUri, URI dssUri, URI credsUri) {
@@ -112,5 +122,20 @@ public class MockFrameworkInitialisation implements IFrameworkInitialisation {
     @Override
     public List<URI> getResultArchiveStoreUris() {
         throw new UnsupportedOperationException("Unimplemented method 'getResultArchiveStoreUris'");
+    }
+
+    @Override
+    public URI getAuthStoreUri() {
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthStoreUri'");
+    }
+
+    @Override
+    public void registerAuthStore(@NotNull IAuthStore authStore) throws AuthStoreException {
+        // Do nothing...
+    }
+
+    @Override
+    public void initialiseAuthStore(Log logger, Properties overrideProperties) throws FrameworkException {
+        // Do nothing...
     }
 }

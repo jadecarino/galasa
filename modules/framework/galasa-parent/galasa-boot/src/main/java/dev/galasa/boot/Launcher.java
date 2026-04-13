@@ -16,6 +16,7 @@ import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -48,7 +49,15 @@ import dev.galasa.boot.felix.FelixFramework;
  */
 public class Launcher {
 
+    private static final String LOG4J2_PROPERTIES_FILE_OPTION = "log4j2-properties-file";
+    private static final String LOG4J2_CONFIGURATION_FILE_PROPERTY_NAME = "log4j2.configurationFile";
+    
+    private static final String LOCAL_RESOURCE_MANAGEMENT_OPTION = "local-resource-management";
+    private static final String INCLUDES_MONITOR_PATTERN_OPTION  = "includes-monitor-pattern";
+    private static final String EXCLUDES_MONITOR_PATTERN_OPTION  = "excludes-monitor-pattern";
+
     private static final String     OBR_OPTION                = "obr";
+    private static final String     METHODS_OPTION            = "methods";
     private static final String     BOOTSTRAP_OPTION          = "bootstrap";
     private static final String     OVERRIDES_OPTION          = "overrides";
     private static final String     RESOURCEMANAGEMENT_OPTION = "resourcemanagement";
@@ -98,6 +107,7 @@ public class Launcher {
     private boolean                 isDryRun;
     private boolean                 setupEco;
     private boolean                 validateEco;
+    private boolean                 isLocalResourceManagement;
 
     private Integer                 metrics;
     private Integer                 health;
@@ -107,7 +117,19 @@ public class Launcher {
     private URL                     localMavenRepo;
     private List<URL>               remoteMavenRepos          = new ArrayList<>();
 
-    public Environment              env                       = new SystemEnvironment();
+    private List<String>            includeMonitorGlobPatterns = new ArrayList<>();
+    private List<String>            excludeMonitorGlobPatterns = new ArrayList<>();
+    private List<String>            testMethodNames            = new ArrayList<>();
+
+    public Environment              env;
+
+    public Launcher() {
+        this(new SystemEnvironment());
+    }
+
+    public Launcher(Environment env) {
+        this.env = env;
+    }
 
     /**
      * Launcher main method
@@ -159,6 +181,13 @@ public class Launcher {
                     logger.debug("Test Bundle: " + testBundleName);
                     logger.debug("Test Class: " + testClassName);
                     overridesProperties.setProperty("framework.run.testbundleclass", this.testName);
+                    
+                    // Add methods if specified
+                    if (!testMethodNames.isEmpty()) {
+                        String methodsString = String.join(",", testMethodNames);
+                        logger.debug("Test Methods: " + methodsString);
+                        overridesProperties.setProperty("framework.run.testmethods", methodsString);
+                    }
                 } else if (runName != null) {
                     logger.debug("Test Run: " + runName);
                     overridesProperties.setProperty("framework.run.name", this.runName);
@@ -170,8 +199,12 @@ public class Launcher {
                 felixFramework.runTest(bootstrapProperties, overridesProperties);
             } else if (isResourceManagement) {
                 logger.debug("Resource Management");
-                ResourceManagementConfiguration resourceManagementConfig = new ResourceManagementConfiguration(env);
+                ResourceManagementConfiguration resourceManagementConfig = new ResourceManagementConfiguration(includeMonitorGlobPatterns, excludeMonitorGlobPatterns, env);
                 felixFramework.runResourceManagement(bootstrapProperties, overridesProperties, bundles, metrics, health, resourceManagementConfig);
+            } else if (isLocalResourceManagement) {
+                logger.debug("Local Resource Management");
+                ResourceManagementConfiguration resourceManagementConfig = new ResourceManagementConfiguration(includeMonitorGlobPatterns, excludeMonitorGlobPatterns, env);
+                felixFramework.runLocalResourceManagement(bootstrapProperties, overridesProperties, bundles, resourceManagementConfig);
             } else if (isK8sController) {
                 logger.debug("Kubernetes Controller");
                 felixFramework.runK8sController(bootstrapProperties, overridesProperties, bundles, metrics, health);
@@ -262,6 +295,23 @@ public class Launcher {
         options.addOption(null, DRY_RUN_OPTION, false, "Perform a dry-run of the specified actions. Can be combined with \"" + FILE_OPTION_LONG + "\"");
         options.addOption(null, SETUPECO_OPTION, false, "Setup the Galasa Ecosystem");
         options.addOption(null, VALIDATEECO_OPTION, false, "Validate the Galasa Ecosystem");
+        options.addOption(null, LOG4J2_PROPERTIES_FILE_OPTION, true, "Optional. Path to a custom log4j2 properties file. Overrides the --trace option.");
+        options.addOption(null, LOCAL_RESOURCE_MANAGEMENT_OPTION, false, "Starts a local resource management process.");
+        options.addOption(null, INCLUDES_MONITOR_PATTERN_OPTION, true, "Optional. Used alongside " + LOCAL_RESOURCE_MANAGEMENT_OPTION + ". " +
+                "A list of Java class glob patterns representing the resource monitors that the framework should load. "+
+                "To use multiple patterns, this flag can be supplied multiple times or by providing a comma-separated list of patterns. "+
+                "If omitted, the resource monitors in the Galasa uber OBR will be loaded."
+        );
+        options.addOption(null, EXCLUDES_MONITOR_PATTERN_OPTION, true, "Optional. Used alongside " + LOCAL_RESOURCE_MANAGEMENT_OPTION + ". " +
+                "A list of Java class glob patterns representing the resource monitors that the framework should not load. "+
+                "To use multiple patterns, this flag can be supplied multiple times or by providing a comma-separated list of patterns. "+
+                "If omitted, no resource monitors will be excluded."
+        );
+        options.addOption(null, METHODS_OPTION, true, "Optional. Used alongside " + TEST_OPTION + ". " +
+                "A list of test method names to run. "+
+                "To use multiple methods, this flag can be supplied multiple times or by providing a comma-separated list of method names. "+
+                "If omitted, all test methods in the test class will be run."
+        );
         
 
         CommandLineParser parser = new DefaultParser();
@@ -278,7 +328,11 @@ public class Launcher {
 
         if (commandLine.hasOption(TRACE_OPTION)) {
             logger.setLevel(Level.TRACE);
-            System.setProperty("log4j2.configurationFile", "trace-log4j2.properties");
+            System.setProperty(LOG4J2_CONFIGURATION_FILE_PROPERTY_NAME, "trace-log4j2.properties");
+        }
+
+        if (commandLine.hasOption(LOG4J2_PROPERTIES_FILE_OPTION)) {
+            setLog4j2PropertiesFile(commandLine.getOptionValue(LOG4J2_PROPERTIES_FILE_OPTION));
         }
 
         // *** Add any OBRs if coded
@@ -297,6 +351,8 @@ public class Launcher {
         checkForHealthPort(commandLine);
         checkForLocalMaven(commandLine);
         checkForRemoteMaven(commandLine);
+        checkForResourceMonitorIncludesAndExcludes(commandLine);
+        checkForTestMethods(commandLine);
 
         isTestRun = commandLine.hasOption(TEST_OPTION) || commandLine.hasOption(RUN_OPTION) || commandLine.hasOption(GHERKIN_OPTION);
         isResourceManagement = commandLine.hasOption(RESOURCEMANAGEMENT_OPTION);
@@ -307,6 +363,7 @@ public class Launcher {
         isDryRun = commandLine.hasOption(DRY_RUN_OPTION);
         setupEco = commandLine.hasOption(SETUPECO_OPTION);
         validateEco = commandLine.hasOption(VALIDATEECO_OPTION);
+        isLocalResourceManagement = commandLine.hasOption(LOCAL_RESOURCE_MANAGEMENT_OPTION);
 
         if (isTestRun) {
             runName = commandLine.getOptionValue(RUN_OPTION);
@@ -334,7 +391,7 @@ public class Launcher {
             return;
         }
 
-        if (isResourceManagement) {
+        if (isResourceManagement || isLocalResourceManagement) {
             return;
         }
 
@@ -369,6 +426,7 @@ public class Launcher {
                 		+ ", --" + K8SCONTROLLER_OPTION
                 		+ ", --" + METRICSERVER_OPTION
                 		+ ", --" + RESOURCEMANAGEMENT_OPTION
+                		+ ", --" + LOCAL_RESOURCE_MANAGEMENT_OPTION
                 		+ ", --" + BUNDLE_OPTION
                         + ", --" + SETUPECO_OPTION
                         + ", --" + VALIDATEECO_OPTION
@@ -515,6 +573,63 @@ public class Launcher {
         }
     }
 
+    private void checkForResourceMonitorIncludesAndExcludes(CommandLine commandLine) {
+        if (commandLine.hasOption(INCLUDES_MONITOR_PATTERN_OPTION)) {
+            String[] includesPatterns = commandLine.getOptionValues(INCLUDES_MONITOR_PATTERN_OPTION);
+            this.includeMonitorGlobPatterns = Arrays.asList(includesPatterns);
+        }
+
+        if (commandLine.hasOption(EXCLUDES_MONITOR_PATTERN_OPTION)) {
+            String[] excludesPatterns = commandLine.getOptionValues(EXCLUDES_MONITOR_PATTERN_OPTION);
+            this.excludeMonitorGlobPatterns = Arrays.asList(excludesPatterns);
+        }
+    }
+
+    private void checkForTestMethods(CommandLine commandLine) {
+        if (commandLine.hasOption(METHODS_OPTION)) {
+            String[] methodsOptions = commandLine.getOptionValues(METHODS_OPTION);
+            for (String methodsOption : methodsOptions) {
+                // Split by comma to support comma-separated values
+                String[] methods = methodsOption.split(",");
+                for (String method : methods) {
+                    String trimmedMethod = method.trim();
+                    if (!trimmedMethod.isEmpty()) {
+                        this.testMethodNames.add(trimmedMethod);
+                    }
+                }
+            }
+        }
+    }
+
+    void setLog4j2PropertiesFile(String log4j2PropertiesFilePath) {
+        if (log4j2PropertiesFilePath != null) {
+            try {
+                URI log4j2PropertiesFileUri = new URI(log4j2PropertiesFilePath);
+                String log4j2PropertiesUrlScheme = log4j2PropertiesFileUri.getScheme();
+                URL log4j2PropertiesUrl = null;
+
+                if (log4j2PropertiesUrlScheme != null && !"file".equals(log4j2PropertiesUrlScheme)) {
+                    throw new IllegalArgumentException("A URL with an unsupported scheme was given. The supported scheme is 'file'");
+                }
+
+                if ("file".equals(log4j2PropertiesUrlScheme)) {
+                    // The given path includes a file:// scheme, convert it into a URL
+                    // to check that it is valid
+                    log4j2PropertiesUrl = log4j2PropertiesFileUri.toURL();
+                } else {
+                    // Either an absolute or relative path was given
+                    Path path = Path.of(log4j2PropertiesFilePath).toAbsolutePath().normalize();
+                    log4j2PropertiesUrl = path.toUri().toURL();
+                }
+
+                env.setProperty(LOG4J2_CONFIGURATION_FILE_PROPERTY_NAME, log4j2PropertiesUrl.toString());
+            } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+                logger.error("Invalid log4j2 properties file URL", e);
+                commandLineError(null);
+            }
+        }
+    }
+
     /**
      * Issue command line options error and exit
      */
@@ -526,24 +641,25 @@ public class Launcher {
         logger.error(
                 "\nExample test run arguments: --obr infra.obr --obr test.obr --test test.bundle/test.package.TestClass\n"
                         + "Example Resource Management arguments: --obr infra.obr --obr test.obr --resourcemanagement");
-        System.exit(-1);
+        env.exit(-1);
     }
 
     public void validateJavaLevel(Environment env) throws LauncherException{
         String version = env.getProperty("java.version");
         logger.trace("Checking version of Java, found: " + version);
-        if(version == null || version.isEmpty()){
+        if (version == null || version.isEmpty()){
             logger.error("Unable to determine Java version - will exit");
             throw new LauncherException("Unable to determine Java version - will exit");
         }
 
-        if(version.startsWith("17") || version.startsWith("11")){
+        if (version.startsWith("17")){
             logger.trace("Java version " + version + " validated");
             return;
         }
 
-        logger.error("Galasa requires Java 11, we found: " + version + " will exit");
-        throw new LauncherException("Galasa requires Java 11, we found: " + version + " will exit");
+        String msg = "Galasa requires Java 17, we found: " + version + ". Correct your classpath to a supported version of java and re-try.";
+        logger.error(msg);
+        throw new LauncherException(msg);
     }
     
     /**

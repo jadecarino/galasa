@@ -92,7 +92,7 @@ public class MockCPSStore implements IConfigurationPropertyStore, IConfiguration
 
     @Override
     public Map<String, String> getAllProperties() {
-        throw new UnsupportedOperationException("Unimplemented method 'getAllProperties'");
+        return this.properties;
     }
 
     @Override
@@ -113,6 +113,11 @@ public class MockCPSStore implements IConfigurationPropertyStore, IConfiguration
     @Override
     public void deletePrefixedProperties(@NotNull String prefix) throws ConfigurationPropertyStoreException {
         throw new UnsupportedOperationException("Unimplemented method 'deletePrefixedProperties'");
+    }
+
+    @Override
+    public void setProperties(Map<String, String> propertiesToSet) throws ConfigurationPropertyStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'setProperties'");
     }
 
 }

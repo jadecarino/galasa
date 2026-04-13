@@ -9,10 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
-	"github.com/galasa-dev/cli/pkg/api"
 	"github.com/galasa-dev/cli/pkg/embedded"
 	galasaErrors "github.com/galasa-dev/cli/pkg/errors"
 	"github.com/galasa-dev/cli/pkg/galasaapi"
@@ -35,14 +33,10 @@ type TestResultsSummary struct {
 	MethodFails  int
 }
 
-// JvmLauncher can act as a launcher, it's given test cases which need to
-// be executed, and it launches them within a local JVM.
-type JvmLauncher struct {
+// BaseJvmLauncher contains the common properties that can be used in different JVM launchers
+type BaseJvmLauncher struct {
 	// The fully-qualified path to JAVA_HOME where we can find the bin/java command.
 	javaHome string
-
-	// The parameters from the command-line.
-	cmdParams RunsSubmitLocalCmdParameters
 
 	// An abstraction of the environment, so we can look up things like JAVA_HOME
 	env spi.Environment
@@ -56,9 +50,6 @@ type JvmLauncher struct {
 	// A file system so we can get at embedded content if required.
 	// (Like so we can unpack the boot.jar)
 	embeddedFileSystem embedded.ReadOnlyFileSystem
-
-	// The collection of tests which are running, or have completed.
-	localTests []*LocalTest
 
 	// This timer service allows unit tests to control the time explicitly.
 	timeService spi.TimeService
@@ -74,6 +65,19 @@ type JvmLauncher struct {
 
 	// So we can get common objects easily.
 	factory spi.Factory
+}
+
+// JvmLauncher can act as a launcher, it's given test cases which need to
+// be executed, and it launches them within a local JVM.
+type JvmLauncher struct {
+	// Inherit the properties in the base JVM launcher structure
+	BaseJvmLauncher
+
+	// The parameters from the command-line.
+	cmdParams RunsSubmitLocalCmdParameters
+
+	// The collection of tests which are running, or have completed.
+	localTests []*LocalTest
 }
 
 // These parameters are gathered from the command-line and passed into the laucher.
@@ -107,6 +111,9 @@ type RunsSubmitLocalCmdParameters struct {
 
 	// A string containing the url of the gherkin test file to be exceuted
 	GherkinURL string
+
+	// A list of strings containing a selection of test methods to be run.
+	TestMethods []string
 }
 
 const (
@@ -190,6 +197,7 @@ func (launcher *JvmLauncher) SubmitTestRun(
 	className string,
 	requestType string,
 	requestor string,
+	user string,
 	stream string,
 	obrFromPortfolio string,
 	isTraceEnabled bool,
@@ -253,12 +261,22 @@ func (launcher *JvmLauncher) SubmitTestRun(
 				}
 
 				if err == nil {
+					// Validate test methods if provided
+					for _, method := range launcher.cmdParams.TestMethods {
+						err = utils.ValidateJavaMethodName(method)
+						if err != nil {
+							break
+						}
+					}
+				}
+
+				if err == nil {
 
 					var jwt = ""
-					if launcher.isCPSRemote() {
+					if isCPSRemote(launcher.bootstrapProps) {
 						// Though this is a local test run being launched, the CPS will be remote on an ecosystem via REST.
 						// If the config store value doesn't start wiht that, then it's not a remote CPS, so we don't need the JWT.
-						apiServerUrl := launcher.getCPSRemoteApiServerUrl()
+						apiServerUrl := getCPSRemoteApiServerUrl(launcher.bootstrapProps)
 						authenticator := launcher.factory.GetAuthenticator(apiServerUrl, launcher.galasaHome)
 						log.Printf("framework.config.store bootstrap property indicates a remote CPS will be used. So we need a valid JWT.\n")
 						jwt, err = authenticator.GetBearerToken()
@@ -274,7 +292,7 @@ func (launcher *JvmLauncher) SubmitTestRun(
 							launcher.bootstrapProps,
 							launcher.galasaHome,
 							launcher.fileSystem, launcher.javaHome, obrs,
-							*testClassToLaunch, launcher.cmdParams.RemoteMaven, launcher.cmdParams.LocalMaven,
+							*testClassToLaunch, launcher.cmdParams.TestMethods, launcher.cmdParams.RemoteMaven, launcher.cmdParams.LocalMaven,
 							launcher.cmdParams.TargetGalasaVersion, overridesFilePath,
 							gherkinURL,
 							isTraceEnabled,
@@ -316,39 +334,6 @@ func (launcher *JvmLauncher) SubmitTestRun(
 	}
 
 	return testRuns, err
-}
-
-// isCPSRemote - decide whether the config store used by tests is remote or not.
-// If it is remote, we are going to have to get a valid JWT to use.
-func (launcher *JvmLauncher) isCPSRemote() bool {
-	isRemote := false
-	configStoreProp := launcher.bootstrapProps["framework.config.store"]
-	isRemote = strings.HasPrefix(configStoreProp, "galasacps")
-	return isRemote
-}
-
-// Gets the https URL of the config store, to be used contacting the remote CPS.
-func (launcher *JvmLauncher) getCPSRemoteApiServerUrl() string {
-	configStoreGalasaUrl := launcher.bootstrapProps["framework.config.store"]
-	// The configuration has a URL like galasacps://myhost/api
-	// We need to turn it into something like https://myhost/api
-	httpsUrl := strings.Replace(configStoreGalasaUrl, "galasacps", "https", 1)
-	return httpsUrl
-}
-
-func defaultLocalMavenIfNotSet(localMaven string, fileSystem spi.FileSystem) (string, error) {
-	var err error
-	returnMavenPath := ""
-	if localMaven == "" {
-		var userHome string
-		userHome, err = fileSystem.GetUserHomeDirPath()
-		if err == nil {
-			returnMavenPath = "file:///" + strings.ReplaceAll(userHome, "\\", "/") + "/.m2/repository"
-		}
-	} else {
-		returnMavenPath = localMaven
-	}
-	return returnMavenPath, err
 }
 
 func buildListOfAllObrs(obrsFromCommandLine []string, obrFromPortfolio string) ([]utils.MavenCoordinates, error) {
@@ -425,20 +410,8 @@ func addStandardOverrideProperties(
 
 	overrideRasStoreProperty(galasaHome, overrides)
 	overrideLocalRunIdPrefixProperty(overrides)
-	override3270TerminalOutputFormat(overrides)
 
 	return overrides
-}
-
-func override3270TerminalOutputFormat(overrides map[string]interface{}) {
-	// Force the launched runs to use the "L" prefix in their runids.
-	const OVERRIDE_PROPERTY_3270_TERMINAL_OUTPUT_FORMAT = "zos3270.terminal.output"
-
-	// Only set this property if it's not already set by the user, or in the users' override file.
-	_, isPropAlreadySet := overrides[OVERRIDE_PROPERTY_3270_TERMINAL_OUTPUT_FORMAT]
-	if !isPropAlreadySet {
-		overrides[OVERRIDE_PROPERTY_3270_TERMINAL_OUTPUT_FORMAT] = "json,png"
-	}
 }
 
 func overrideLocalRunIdPrefixProperty(overrides map[string]interface{}) {
@@ -614,6 +587,11 @@ func (launcher *JvmLauncher) GetTestCatalog(stream string) (TestCatalog, error) 
 	return nil, nil
 }
 
+// IsLocal returns true as this launcher runs tests locally
+func (launcher *JvmLauncher) IsLocal() bool {
+	return true
+}
+
 // -----------------------------------------------------------------------------
 // Local functions
 // -----------------------------------------------------------------------------
@@ -646,6 +624,7 @@ func getCommandSyntax(
 	javaHome string,
 	testObrs []utils.MavenCoordinates,
 	testLocation TestLocation,
+	testMethods []string,
 	remoteMaven string,
 	localMaven string,
 	galasaVersionToRun string,
@@ -661,59 +640,24 @@ func getCommandSyntax(
 	var cmd string = ""
 	var args []string = make([]string, 0)
 	var err error
-	var bootJarPath string
 
-	// Gather any variable values we need to.
-	debugMode, err = calculateDebugMode(debugMode, bootstrapProperties)
+	cmd, args, err = getBaseCommandSyntax(
+		bootstrapProperties,
+		galasaHome,
+		fileSystem,
+		javaHome,
+		testObrs,
+		[]string{remoteMaven},
+		localMaven,
+		galasaVersionToRun,
+		isTraceEnabled,
+		isDebugEnabled,
+		debugPort,
+		debugMode,
+		jwt,
+	)
+
 	if err == nil {
-		debugPort, err = calculateDebugPort(debugPort, bootstrapProperties)
-		if err == nil {
-			bootJarPath, err = utils.GetGalasaBootJarPath(fileSystem, galasaHome)
-		}
-	}
-
-	if err == nil {
-
-		separator := fileSystem.GetFilePathSeparator()
-
-		// Note: Even in windows, when the java executable is called 'java.exe'
-		// You don't need to add the '.exe' extension it seems.
-		cmd = javaHome + separator + "bin" +
-			separator + "java"
-
-		args = appendArgsDebugOptions(args, isDebugEnabled, debugMode, debugPort)
-
-		args = appendArgsBootstrapJvmLaunchOptions(args, bootstrapProperties)
-
-		// Note: Any -D properties are options for the JVM, so must appear before the -jar parameter.
-		// Parameters after the -jar parameter get passed into the 'main' of the launched java program.
-		args = append(args, "-Dfile.encoding=UTF-8")
-
-		nativeGalasaHomeFolderPath := galasaHome.GetNativeFolderPath()
-		args = append(args, `-DGALASA_HOME="`+nativeGalasaHomeFolderPath+`"`)
-
-		// If there is a jwt, pass it through.
-		if jwt != "" {
-			args = append(args, "-DGALASA_JWT="+jwt)
-		}
-
-		args = append(args, "-jar")
-		args = append(args, bootJarPath)
-
-		// --localmaven file://${M2_PATH}/repository/
-		// Note: URLs always have forward-slashes
-		localMaven, err = defaultLocalMavenIfNotSet(localMaven, fileSystem)
-		args = append(args, "--localmaven")
-		args = append(args, localMaven)
-
-		// --remotemaven $REMOTE_MAVEN
-		args = append(args, "--remotemaven")
-		args = append(args, remoteMaven)
-
-		// --bootstrap file:${HOME}/.galasa/bootstrap.properties
-		args = append(args, "--bootstrap")
-		bootstrapPath := "file:///" + galasaHome.GetUrlFolderPath() + "/bootstrap.properties"
-		args = append(args, bootstrapPath)
 
 		// --overrides file:${HOME}/.galasa/overrides.properties
 		args = append(args, "--overrides")
@@ -721,20 +665,6 @@ func getCommandSyntax(
 		// go the same way.
 		overridesPath := "file:///" + strings.ReplaceAll(overridesFilePath, "\\", "/")
 		args = append(args, overridesPath)
-
-		for _, obrCoordinate := range testObrs {
-			// We are aiming for this:
-			// mvn:${TEST_OBR_GROUP_ID}/${TEST_OBR_ARTIFACT_ID}/${TEST_OBR_VERSION}/obr
-			args = append(args, "--obr")
-			obrMvnPath := "mvn:" + obrCoordinate.GroupId + "/" +
-				obrCoordinate.ArtifactId + "/" + obrCoordinate.Version + "/obr"
-			args = append(args, obrMvnPath)
-		}
-
-		// --obr mvn:dev.galasa/dev.galasa.uber.obr/${OBR_VERSION}/obr
-		args = append(args, "--obr")
-		galasaUberObrPath := "mvn:dev.galasa/dev.galasa.uber.obr/" + galasaVersionToRun + "/obr"
-		args = append(args, galasaUberObrPath)
 
 		if gherkinUrl != "" {
 			// -- gherkin file://gherkin.feature file location
@@ -744,127 +674,16 @@ func getCommandSyntax(
 			// --test ${TEST_BUNDLE}/${TEST_JAVA_CLASS}
 			args = append(args, "--test")
 			args = append(args, testLocation.OSGiBundleName+"/"+testLocation.QualifiedJavaClassName)
-		}
 
-		if isTraceEnabled {
-			args = append(args, "--trace")
+			// --methods ${TEST_METHOD}
+			for _, method := range testMethods {
+				args = append(args, "--methods")
+				args = append(args, method)
+			}
 		}
-
 	}
 
 	return cmd, args, err
-}
-
-func appendArgsDebugOptions(args []string, isDebugEnabled bool, debugMode string, debugPort uint32) []string {
-
-	if isDebugEnabled {
-		var buff strings.Builder
-
-		buff.WriteString("-agentlib:jdwp=transport=dt_socket,address=*:")
-		buff.WriteString(strconv.FormatUint(uint64(debugPort), 10))
-		buff.WriteString(",server=")
-		if debugMode == "listen" {
-			buff.WriteString("y")
-		} else {
-			buff.WriteString("n")
-		}
-		buff.WriteString(",suspend=y")
-
-		args = append(args, buff.String())
-	}
-
-	return args
-}
-
-func appendArgsBootstrapJvmLaunchOptions(args []string, bootstrapProperties props.JavaProperties) []string {
-	// Append all the java launch properties explicitly spelt-out in the boostrap file.
-	// The framework.jvm.local.launch.options bootstrap file property can add parameters to the commmand-line.
-	// For example -Xmx80m and similar parameters.
-	// Use a space-separated list of options and the JVM gets launched with those in front.
-	jvmLaunchOptions, isOptionsPresent := bootstrapProperties[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS]
-	if isOptionsPresent {
-		// strip off the leading and trailing whitespace.
-		jvmLaunchOptions = strings.Trim(jvmLaunchOptions, " \t\n\r")
-
-		// Split based on commas
-		launchOptionParts := strings.Split(jvmLaunchOptions, api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_OPTIONS_SEPARATOR)
-
-		// Add each piece to the list of args returned.
-		args = append(args, launchOptionParts...)
-	}
-
-	return args
-}
-
-func calculateDebugPort(debugPort uint32, bootstrapProperties props.JavaProperties) (uint32, error) {
-	var err error
-
-	if debugPort == 0 {
-		// Debug port was not set on the command-line.
-
-		// Look in the bootstrap properties for a value.
-		bootstrapPropsValue, isPresent := bootstrapProperties[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_DEBUG_PORT]
-		if isPresent {
-			// Not specified on command line. Use value in bootstrap property instead.
-			var debugPortU64 uint64
-			debugPortU64, err = strconv.ParseUint(bootstrapPropsValue, 10, 32)
-			if err != nil {
-				err = galasaErrors.NewGalasaError(
-					galasaErrors.GALASA_ERROR_BOOTSTRAP_BAD_DEBUG_PORT_VALUE,
-					bootstrapPropsValue,
-					api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_DEBUG_PORT,
-					strconv.FormatUint(uint64(DEBUG_PORT_DEFAULT), 10),
-				)
-			} else {
-				// Bootstrap property value is good.
-				debugPort = uint32(debugPortU64)
-			}
-		} else {
-			// Not specified on command-linem, nothing in bootstrap property.
-			debugPort = DEBUG_PORT_DEFAULT
-		}
-	}
-	return debugPort, err
-}
-
-func calculateDebugMode(debugMode string, bootstrapProperties props.JavaProperties) (string, error) {
-	var err error
-
-	if debugMode == "" {
-		// The value hasn't been set on the command-line.
-
-		// Look in the bootstrap properties for a value.
-		bootstrapPropsValue, isPresent := bootstrapProperties[api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_DEBUG_MODE]
-		if isPresent {
-			debugMode = bootstrapPropsValue
-			err = checkDebugModeValueIsValid(debugMode, galasaErrors.GALASA_ERROR_BOOTSTRAP_BAD_DEBUG_MODE_VALUE)
-		} else {
-			// Default to 'listen'
-			debugMode = "listen"
-		}
-	}
-
-	if err == nil {
-		err = checkDebugModeValueIsValid(debugMode, galasaErrors.GALASA_ERROR_ARG_BAD_DEBUG_MODE_VALUE)
-	}
-
-	return debugMode, err
-}
-
-func checkDebugModeValueIsValid(debugMode string, errorMessageIfInvalid *galasaErrors.MessageType) error {
-	var err error
-
-	lowerCaseDebugMode := strings.ToLower(debugMode)
-
-	switch lowerCaseDebugMode {
-	case "listen":
-	case "attach":
-		break
-	default:
-		err = galasaErrors.NewGalasaError(errorMessageIfInvalid, debugMode, api.BOOTSTRAP_PROPERTY_NAME_LOCAL_JVM_LAUNCH_DEBUG_MODE)
-	}
-
-	return err
 }
 
 // User input is expected of the form osgiBundleName/qualifiedJavaClassName

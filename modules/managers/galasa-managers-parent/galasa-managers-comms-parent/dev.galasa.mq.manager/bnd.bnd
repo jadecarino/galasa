@@ -17,5 +17,6 @@ Import-Package: !javax.validation.constraints,\
 Embed-Transitive: true
 Embed-Dependency: *;scope=compile
 -includeresource: com.ibm.mq.allclient-*.jar; lib:=true,\
-    javax.jms-api-*.jar; lib:=true
+    javax.jms-api-*.jar; lib:=true,\
+    json-*.jar; lib:=true
     

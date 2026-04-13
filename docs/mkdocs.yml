@@ -19,7 +19,10 @@ edit_uri: edit/main/docs/content/
 use_directory_urls: true
 
 # Copyright
-copyright: Copyright &copy; Open Mainframe Project
+copyright: >
+  Copyright &copy; Open Mainframe Project - A Series of LF Projects, LLC 
+  <br/>For web site terms of use, privacy policy, trademark policy and general project policies please see <a href="https://lfprojects.org">https://lfprojects.org</a>
+  <br/><a href="#__consent">Change cookie settings</a>
 
 # Configuration
 docs_dir: content
@@ -30,6 +33,12 @@ theme:
   name: material
   logo: assets/galasa-icon-white.svg
   favicon: assets/galasa-icon-white.svg
+
+  # Saying there is no font theme, turns off access to the googleapi fonts which could be used
+  # to track personal activity. See https://github.com/galasa-dev/projectmanagement/issues/2342
+  font:
+    false
+
   icon:
     repo: fontawesome/brands/github
   custom_dir: overrides
@@ -108,6 +117,7 @@ plugins:
   - offline:
       enabled: !ENV [OFFLINE, false]
   - search
+  - privacy
   - blog:
       blog_dir: hub
       blog_toc: true
@@ -137,6 +147,14 @@ extra:
       link: https://github.com/galasa-dev
     - icon: fontawesome/brands/slack
       link: https://openmainframeproject.slack.com/signup#/domain-signup
+
+  consent:
+    title: Cookie consent
+    description: >- 
+      We use cookies to recognize your repeated visits and preferences, and to enhance the experience when interacting with Github.
+      For more detail see our notes on <a href="https://github.com/galasa-dev/galasa/blob/main/docs/cookies.md">cookie usage</a>.
+
+  generator: false
 
 # Page tree
 nav:
@@ -180,6 +198,10 @@ nav:
       - docs/writing-own-tests/binding-tests.md
       - docs/writing-own-tests/key-principles.md
       - docs/writing-own-tests/test-result-provider.md
+      - docs/writing-own-tests/running-resource-cleanup-locally.md
+    - Configuring Credentials:
+      - docs/configuring-local-credentials/index.md
+      - docs/configuring-local-credentials/macos-keychain-store.md
     - The Galasa Ecosystem:
       - docs/ecosystem/index.md
       - docs/ecosystem/ecosystem-architecture.md
@@ -198,6 +220,7 @@ nav:
       - docs/manage-ecosystem/runs-reset-cancel.md
       - docs/manage-ecosystem/runs-get.md
       - docs/manage-ecosystem/runs-download.md
+      - docs/manage-ecosystem/automatic-runs-cleanup.md
       - docs/manage-ecosystem/runs-delete.md
     - Upgrading:
       - docs/upgrading/index.md 
@@ -212,7 +235,9 @@ nav:
         - docs/managers/ims-tm-managers/ims-tm-manager.md
       - Cloud Managers:
         - docs/managers/cloud-managers/index.md
-        - docs/managers/cloud-managers/docker-manager.md
+        - Docker Manager:
+          - docs/managers/cloud-managers/docker-manager.md
+          - docs/managers/cloud-managers/docker-tls-configuration.md
         - docs/managers/cloud-managers/kubernetes-manager.md
         - docs/managers/cloud-managers/open-stack-manager.md
       - Communications Managers:
@@ -235,7 +260,6 @@ nav:
         - docs/managers/test-tool-managers/jmeter-manager.md
         - docs/managers/test-tool-managers/sdv-manager.md
         - docs/managers/test-tool-managers/selenium-manager.md
-        - docs/managers/test-tool-managers/vtp-manager.md
       - Unix Managers:
         - docs/managers/unix-managers/index.md
         - docs/managers/unix-managers/linux-manager.md
@@ -247,18 +271,12 @@ nav:
         - docs/managers/zos-managers/rse-api-manager.md
         - docs/managers/zos-managers/zos-batch-rse-api-manager.md
         - docs/managers/zos-managers/zos-batch-zos-mf-manager.md
-        - docs/managers/zos-managers/z-os-file-manager.md
         - docs/managers/zos-managers/zos-file-rse-api-manager.md
-        - docs/managers/zos-managers/z-os-file-zos-mf-manager.md
-        - docs/managers/zos-managers/zos-batch-manager.md
         - docs/managers/zos-managers/zos-batch-zos-mf-manager.md
-        - docs/managers/zos-managers/zos-console-manager.md
         - docs/managers/zos-managers/zos-console-oeconsol-manager.md
         - docs/managers/zos-managers/zos-console-zos-mf-manager.md
-        - docs/managers/zos-managers/zos-file-manager.md
         - docs/managers/zos-managers/zos-file-zos-mf-manager.md
         - docs/managers/zos-managers/zos-manager.md
-        - docs/managers/zos-managers/zos-managertestformat.md
         - docs/managers/zos-managers/zos-mf-manager.md
         - docs/managers/zos-managers/zos-program-manager.md
         - docs/managers/zos-managers/zos-tso-command-ssh-manager.md

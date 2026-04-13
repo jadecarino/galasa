@@ -6,11 +6,13 @@
 package dev.galasa.framework.api.common.mocks;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import javax.validation.constraints.NotNull;
 
+import dev.galasa.framework.TestRunLifecycleStatus;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IFrameworkRuns;
@@ -64,14 +66,15 @@ public class MockIFrameworkRuns implements IFrameworkRuns{
     }
 
     @Override
-    public @NotNull IRun submitRun(String type, String requestor, String bundleName, String testName, String groupName,
+    public @NotNull IRun submitRun(String type, String requestor, String user, String bundleName, String testName, String groupName,
             String mavenRepository, String obr, String stream, boolean local, boolean trace, Set<String> tags, Properties overrides,
-            SharedEnvironmentPhase sharedEnvironmentPhase, String sharedEnvironmentRunName, String language, String submissionId)
-            throws FrameworkException {
-            if (stream.equals("null")){
-                throw new FrameworkException(language);
-            }
-        return new MockIRun("runname"+testName, type, requestor, testName, sharedEnvironmentRunName, bundleName, language, groupName, this.mockSubmissionId, tags);
+            SharedEnvironmentPhase sharedEnvironmentPhase, String sharedEnvironmentRunName, String language, String submissionId,
+            List<String> requestedTestMethods
+    ) throws FrameworkException {
+        if (stream.equals("null")){
+            throw new FrameworkException(language);
+        }
+        return new MockIRun("runname", type, requestor, user, bundleName + "/" + testName, null, bundleName, testName, groupName, this.mockSubmissionId, tags);
     }
 
     @Override
@@ -106,5 +109,22 @@ public class MockIFrameworkRuns implements IFrameworkRuns{
     @Override
     public void addRunRasAction(IRun run, RunRasAction rasActionToAdd) throws DynamicStatusStoreException {
         throw new UnsupportedOperationException("Unimplemented method 'addRunRasAction'");
+    }
+
+    @Override
+    public boolean markRunCancelling(String runName, TestRunLifecycleStatus currentStatus)
+            throws DynamicStatusStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'markRunFinished'");
+    }
+
+    @Override
+    public Map<String, String> getCpsPropertiesAndOverridesUsedByTestRun(String runName, List<String> namespaces)
+            throws FrameworkException {
+        throw new UnsupportedOperationException("Unimplemented method 'getCpsPropertiesAndOverridesUsedByTestRun'");
+    }
+
+    @Override
+    public void clearRunInterrupt(String runName) throws DynamicStatusStoreException {
+        throw new UnsupportedOperationException("Unimplemented method 'clearRunInterrupt'");
     }
 }

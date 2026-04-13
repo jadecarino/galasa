@@ -7,6 +7,7 @@ package dev.galasa.framework.mocks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -19,7 +20,8 @@ import dev.galasa.framework.spi.IFrameworkRuns;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
 
-public class MockFrameworkRuns implements IFrameworkRuns{
+public class MockFrameworkRuns implements IFrameworkRuns {
+    private List<String> deletedRunNames = new ArrayList<>();
     protected String groupName;
     List<IRun> runs ;
 
@@ -86,20 +88,26 @@ public class MockFrameworkRuns implements IFrameworkRuns{
     }
 
     @Override
-    public @NotNull IRun submitRun(String type, String requestor, String bundleName, String testName, String groupName,
+    public @NotNull IRun submitRun(String type, String requestor, String user, String bundleName, String testName, String groupName,
             String mavenRepository, String obr, String stream, boolean local, boolean trace, Set<String> tags,Properties overrides,
-            SharedEnvironmentPhase sharedEnvironmentPhase, String sharedEnvironmentRunName, String language, String submissionId)
-            throws FrameworkException {
-            if (stream.equals("null")){
-                throw new FrameworkException(language);
-            }
+            SharedEnvironmentPhase sharedEnvironmentPhase, String sharedEnvironmentRunName, String language, String submissionId,
+            List<String> requestedTestMethods
+    ) throws FrameworkException {
+        if (stream.equals("null")){
+            throw new FrameworkException(language);
+        }
 
         throw new FrameworkException("Method not implemented in mock class.");
     }
 
     @Override
     public boolean delete(String runname) throws DynamicStatusStoreException {
+        deletedRunNames.add(runname);
         return true;
+    }
+
+    public List<String> getDeletedRunNames() {
+        return this.deletedRunNames;
     }
 
     @Override
@@ -121,12 +129,41 @@ public class MockFrameworkRuns implements IFrameworkRuns{
     }
 
     @Override
+    public boolean markRunCancelling(String runName, TestRunLifecycleStatus currentStatus)
+            throws DynamicStatusStoreException {
+        MockRun run = (MockRun) getRun(runName);
+        if (run != null) {
+            run.setStatus(TestRunLifecycleStatus.CANCELLING.toString());
+        }
+        return true;
+    }
+
+    @Override
     public boolean markRunInterrupted(String runName, String interruptReason) throws DynamicStatusStoreException {
+        MockRun run = (MockRun) getRun(runName);
+        if (run != null) {
+            run.setInterruptReason(interruptReason);
+        }
         return true;
     }
 
     @Override
     public void addRunRasAction(IRun run, RunRasAction rasActionToAdd) throws DynamicStatusStoreException {
         throw new UnsupportedOperationException("Unimplemented method 'addRunRasAction'");
+    }
+
+    @Override
+    public Map<String, String> getCpsPropertiesAndOverridesUsedByTestRun(String runName, List<String> namespaces)
+            throws FrameworkException {
+        throw new UnsupportedOperationException("Unimplemented method 'getCpsPropertiesAndOverridesUsedByTestRun'");
+    }
+
+    @Override
+    public void clearRunInterrupt(String runName) throws DynamicStatusStoreException {
+        MockRun run = (MockRun) getRun(runName);
+        if (run != null) {
+            run.setInterruptReason(null);
+            run.setInterruptedAt(null);
+        }
     }
 }

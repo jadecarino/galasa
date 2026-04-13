@@ -67,13 +67,18 @@ public class MockIConfigurationPropertyStoreService implements IConfigurationPro
     }
 
     @Override
+    public void setProperties(Map<String, String> propertiesToSet) throws ConfigurationPropertyStoreException {
+        this.properties.putAll(propertiesToSet);
+    }
+
+    @Override
     public void deleteProperty(@NotNull String name) throws ConfigurationPropertyStoreException {
         this.properties.remove(name);
     }
 
     @Override
     public Map<String, String> getAllProperties() throws ConfigurationPropertyStoreException {
-               throw new UnsupportedOperationException("Unimplemented method 'getAllProperties'");
+        return this.properties;
     }
 
     @Override

@@ -9,7 +9,7 @@ You can explore Galasa further with Galasa Simbank. Galasa Simbank is a simulate
 - A test that uses a provisioned account object to perform the same test as `BasicAccountCreditTest.java` in an improved test design - `ProvisionedAccountCreditTests.java`.
 - A test that exercises the z/OS Batch Manager by simulating the submission of a JCL job to add a number of accounts to the SimBank system - `BatchAccountsOpenTest.java`.
 
-The following sections explain how to run the `SimBankIVT` test class by using the CLI. Make sure that you have installed the Galasa CLI tool and Java version 11 JDK, and have set the JAVA_HOME environment variable, as described in the [CLI prerequisites offline](../cli-command-reference/zipped-prerequisites.md) documentation. 
+The following sections explain how to run the `SimBankIVT` test class by using the CLI. Make sure that you have installed the Galasa CLI tool and Java version 17 JDK, and have set the JAVA_HOME environment variable, as described in the [CLI prerequisites offline](../cli-command-reference/zipped-prerequisites.md) documentation. 
 
 
 ## Updating the overrides and credentials property files
@@ -48,7 +48,7 @@ In order to run the Galasa SimBanks tests you need to add some configuration inf
 
 ## Running the SimBank IVT test class by using the CLI
 
-The SimBank tests are located in the `maven` directory of the `isolated.zip` downloadable file. Complete the following steps to run the SimBankIVT test that is provided with Galasa. The following example uses SimBank OBR version `0.43.0`.
+The SimBank tests are located in the `maven` directory of the `isolated.zip` downloadable file. Complete the following steps to run the SimBankIVT test that is provided with Galasa. The following example uses SimBank OBR version `0.48.0`.
 
 Remember to initialise your local environment by running the `galasactl local init` command and to start the SimPlatform server by running the `run-simplatform.sh` script, as described in the [Running Galasa SimBank using the CLI offline](./simbank-cli-offline.md) documentation.
 
@@ -60,7 +60,7 @@ You are now ready to run a local Galasa test offline with just the contents of t
 
     ```shell
     galasactl runs submit local --log - \
-    --obr mvn:dev.galasa/dev.galasa.simbank.obr/0.43.0/obr \
+    --obr mvn:dev.galasa/dev.galasa.simbank.obr/0.48.0/obr \
     --class dev.galasa.simbank.tests/dev.galasa.simbank.tests.SimBankIVT \
     --localMaven file:////Users/youruserid/Downloads/isolated/maven
     ```
@@ -69,7 +69,7 @@ You are now ready to run a local Galasa test offline with just the contents of t
 
     ```powershell
     galasactl runs submit local --log - `
-    --obr mvn:dev.galasa/dev.galasa.simbank.obr/0.43.0/obr `
+    --obr mvn:dev.galasa/dev.galasa.simbank.obr/0.48.0/obr `
     --class dev.galasa.simbank.tests/dev.galasa.simbank.tests.SimBankIVT `
     --localMaven file:////Users/youruserid/Downloads/isolated/maven
     ```
@@ -87,7 +87,7 @@ On Mac or Unix:
 
 ```shell
 galasactl runs submit local --log - \
---obr mvn:dev.galasa/dev.galasa.simbank.obr/0.43.0/obr \
+--obr mvn:dev.galasa/dev.galasa.simbank.obr/0.48.0/obr \
 --class dev.galasa.simbank.tests/dev.galasa.simbank.tests.BasicAccountCreditTest \
 --localMaven file:////Users/youruserid/Downloads/isolated/maven
 ```
@@ -96,7 +96,7 @@ On Windows (Powershell):
 
 ```powershell
 galasactl runs submit local --log - `
---obr mvn:dev.galasa/dev.galasa.simbank.obr/0.43.0/obr `
+--obr mvn:dev.galasa/dev.galasa.simbank.obr/0.48.0/obr `
 --class dev.galasa.simbank.tests/dev.galasa.simbank.tests.BasicAccountCreditTest `
 --localMaven file:////Users/youruserid/Downloads/isolated/maven
 ```

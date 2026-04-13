@@ -23,13 +23,16 @@ public enum ServletErrorMessage {
     GAL5014_STATUS_NAME_NOT_RECOGNIZED                (5014,"E: Error parsing the query parameters. 'status' value ''{0}'' not recognised. Expected status name to match one of the following ''{1}''."),
     GAL5428_DETAIL_VALUE_NOT_RECOGNIZED               (5428,"E: Error parsing the query parameters. 'detail' value ''{0}'' not recognised. Expected detail name to match one of the following ''{1}''."),
 
-    // RunsReset/Cancel...
+    // RunsReset/Cancel/Update tags...
     GAL5045_INVALID_STATUS_UPDATE_REQUEST             (5045, "E: Error occurred. The field ''status'' in the request body is invalid. The ''status'' value ''{0}'' supplied is not supported. Supported values are: ''queued'' and ''finished''."),
     GAL5046_UNABLE_TO_CANCEL_RUN_INVALID_RESULT       (5046, "E: Error occurred when trying to cancel the run ''{0}''. The ''result'' ''{1}''' supplied is not supported. Supported values are: ''cancelled''."),
     GAL5047_UNABLE_TO_RESET_RUN                       (5047, "E: Error occurred when trying to reset the run ''{0}''. Report the problem to your Galasa Ecosystem owner."),
     GAL5048_UNABLE_TO_CANCEL_RUN                      (5048, "E: Error occurred when trying to cancel the run ''{0}''. Report the problem to your Galasa Ecosystem owner."),
     GAL5049_UNABLE_TO_RESET_COMPLETED_RUN             (5049, "E: Error occurred when trying to reset the run ''{0}''. The run has already completed."),
     GAL5050_UNABLE_TO_CANCEL_COMPLETED_RUN            (5050, "E: Error occurred when trying to cancel the run ''{0}''. The run has already completed."),
+    GAL5107_INVALID_TAGS_AND_RESULT_UPDATE_REQUEST    (5107, "E: Error occurred. Updating both the fields ''tags'' and ''result'' is invalid. The ''tags'' value should only be changed on a test that has finished."),
+    GAL5108_CANNOT_UPDATE_TAGS_ON_RUNNING_TEST        (5108, "E: Error occurred when trying to alter the tags on the run ''{0}''. Ensure the run has finished running before attempting to alter the tags."),
+    GAL5109_INVALID_TAGS_AND_STATUS_UPDATE_REQUEST    (5109, "E: Error occurred. Updating both the fields ''tags'' and ''status'' is invalid. The ''tags'' value should only be changed on a test that has finished."),
     GAL5430_GROUP_RUNS_ALREADY_FINISHED               (5430, "I: When trying to cancel the run group ''{0}'', no recent active (unfinished) test runs were found which are part of that group. Archived test runs may be part of that group, which can be queried separately from the Result Archive Store."),
     GAL5431_INVALID_CANCEL_UPDATE_REQUEST             (5431, "E: Error occurred. The field ''result'' in the request body is invalid. The ''result'' value ''{0}'' supplied is not supported. Supported values are: ''cancelled''."),
 
@@ -46,7 +49,7 @@ public enum ServletErrorMessage {
     // GenericErrors...
     GAL5000_GENERIC_API_ERROR                         (5000,"E: Error occurred when trying to access the endpoint. Report the problem to your Galasa Ecosystem owner."),
     GAL5400_BAD_REQUEST                               (5400,"E: Error occurred when trying to execute request ''{0}''. Check your request parameters or report the problem to your Galasa Ecosystem owner."),
-    GAL5401_UNAUTHORIZED                              (5401,"E: Unauthorized. Please ensure you have provided a valid 'Authorization' header with a valid bearer token and try again."),
+    GAL5401_UNAUTHORIZED                              (5401,"E: Unauthorized. Ensure you have provided a valid 'Authorization' header with a valid bearer token and try again."),
     GAL5404_UNRESOLVED_ENDPOINT_ERROR                 (5404,"E: Error occurred when trying to identify the endpoint ''{0}''. Check your endpoint URL or report the problem to your Galasa Ecosystem owner."),
     GAL5405_METHOD_NOT_ALLOWED                        (5405,"E: Error occurred when trying to access the endpoint ''{0}''. The method ''{1}'' is not allowed."),
     GAL5406_UNSUPPORTED_CONTENT_TYPE_REQUESTED        (5406, "E: Unsupported ''Accept'' header value set. Supported response types are: [{0}]. Ensure the ''Accept'' header in your request contains a valid value and try again"),
@@ -91,7 +94,7 @@ public enum ServletErrorMessage {
     GAL5044_INVALID_PROPERTY_NAME_TRAILING_DOT        (5044, "E: Invalid property name. Property name ''{0}'' must not end with a '.' (dot) separator."),
 
     //Resources APIs...
-    GAL5025_UNSUPPORTED_ACTION                        (5025, "E: Error occurred. The field ''action'' in the request body is invalid. Supported actions are: create, apply and update. This could indicate a mis-match between client and server levels.Check the level with your Ecosystem administrator. You may have to upgrade/downgrade your client program so that the levels of client and server match."),
+    GAL5025_UNSUPPORTED_ACTION                        (5025, "E: Error occurred. The field ''action'' in the request body is invalid. Supported actions are: create, apply, update, and delete. This could indicate a mis-match between client and server levels. Check the level with your Ecosystem administrator. You may have to upgrade/downgrade your client program so that the levels of client and server match."),
     GAL5026_UNSUPPORTED_RESOURCE_TYPE                 (5026, "E: Error occurred. The field ''kind'' in the request body is invalid. This could indicate a mis-match between client and server levels. Check the level with your Ecosystem administrator. You may have to upgrade/downgrade your client program so that the levels of client and server match."),
     GAL5027_UNSUPPORTED_API_VERSION                   (5027, "E: Error occurred. The field ''apiVersion'' in the request body is invalid. Currently the ecosystem accepts the ''{0}'' api version. This could indicate a mis-match between client and server levels. Check the level with your Ecosystem administrator. You may have to upgrade/downgrade your client program so that the levels of client and server match."),
     GAL5067_NULL_RESOURCE_IN_BODY                     (5067, "E: Error occurred. A ''NULL'' value is not a valid resource. Check the request format, or check with your Ecosystem administrator."),
@@ -155,14 +158,18 @@ public enum ServletErrorMessage {
     GAL5100_ERROR_UNEXPECTED_SECRET_FIELD_PROVIDED    (5100, "E: Invalid secret payload provided. An unexpected field was given to update a ''{0}'' secret. Only the following fields can be provided to update this secret: ''{1}''. Check your request payload and try again."),
     GAL5101_ERROR_UNEXPECTED_SECRET_TYPE_DETECTED     (5101, "E: Unknown secret type detected. A secret retrieved from the credentials store is in an unknown or unsupported format. Report the problem to your Galasa Ecosystem owner."),
     GAL5102_INVALID_SECRET_DESCRIPTION_PROVIDED       (5102, "E: Invalid secret description provided. The description should not only contain spaces or tabs. When provided, it must contain characters in the Latin-1 character set. Report the problem to your Galasa Ecosystem owner."),
+    GAL5450_FAILED_TO_CREATE_KEYSTORE_CREDENTIALS     (5450, "E: Failed to create a Java KeyStore from the provided secret data. The keystore data may be invalid, incorrectly encoded, the keystore type may be unsupported, or the keystore password may be incorrect. Check your request payload and try again."),
+    GAL5451_MUTUALLY_EXCLUSIVE_FIELDS_PROVIDED        (5451, "E: Invalid secret payload provided. The ''{0}'' field cannot be used with KeyStore credentials. KeyStore credentials only accept ''keystore'', ''keystoreType'', and ''keystorePassword'' fields. Check your request payload and try again."),
+    GAL5452_INVALID_KEYSTORE_BASE64_ENCODING          (5452, "E: Invalid keystore value provided. The keystore value must be valid base64-encoded data. Check your request payload and try again."),
+    GAL5453_MISSING_KEYSTORE_PASSWORD_FIELD           (5453, "E: Invalid secret payload provided. The ''keystorePassword'' field is missing. Check your request payload and try again."),
     
     // Auth callback API...
     GAL5103_UNEXPECTED_STATE_PARAMETER_PROVIDED       (5103, "E: Unexpected ''state'' query parameter value provided. The provided ''state'' parameter value does not match the stored state identifier or the auth request has timed out. Try to log in again."),
     GAL5104_INVALID_CALLBACK_URL_PROVIDED             (5104, "E: Invalid callback URL provided. The callback URL must be a valid URL. Check your request parameters and try again."),
     GAL5105_INTERNAL_DSS_ERROR                        (5105, "E: Error occurred when trying to access the Dynamic Status Store. Report the problem to your Galasa Ecosystem owner."),
 
-
     // RBAC APIs...
+    GAL5119_USER_CANNOT_UPDATE_OWN_PRIORITY           (5119, "E: A user is not allowed to update their own priority. Ask a Galasa service administrator to change your priority instead."),
     GAL5120_INVALID_ACTION_NAME_PROVIDED              (5120, "E: Invalid action name provided."),
     GAL5121_INVALID_ROLE_ID_PROVIDED                  (5121, "E: Invalid role id provided."),
     GAL5122_ACTION_NAMED_NOT_FOUND                    (5122, "E: Action with that name not found."),
@@ -173,12 +180,19 @@ public enum ServletErrorMessage {
     GAL5413_USER_CANNOT_UPDATE_OWN_USER_ROLE          (5413, "E: A user is not allowed to update their own role. Ask a Galasa service administrator to change your role instead."),
     GAL5414_USER_CANNOT_UPDATE_SERVICE_OWNER_ROLE     (5414, "E: A user is not allowed to update the role of the Galasa service owner. Ask a Galasa service administrator to change the list of owners and update the kubernetes configuration of the service."),
 
-    // STREAMS API
-    GAL5418_INVALID_STREAM_NAME                       (5418, "E: Invalid 'name' provided. A valid stream name should always start with 'a'-'z' or 'A'-'Z' and end with 'a'-'z', 'A'-'Z' or 0-9."),
+    // Streams API
+    GAL5418_INVALID_STREAM_NAME                       (5418, "E: Invalid ''name'' provided. A valid stream name should always start with 'a'-'z' or 'A'-'Z' and end with 'a'-'z', 'A'-'Z' or 0-9."),
     GAL5419_FAILED_TO_GET_STREAM_NAME_FROM_URL        (5419, "E: Failed to retrieve a stream name from the request path. Ensure that you have provided a valid name representing an existing stream in your request and try again"),
     GAL5420_ERROR_STREAM_NOT_FOUND                    (5420, "E: Unable to retrieve a stream with the given stream name. No such stream exists."),
     GAL5426_FAILED_TO_DELETE_STREAM                   (5426, "E: Failed to delete a test stream with the given name from the Configuration Property Store. The Configuration Property Store might be experiencing temporary issues. Report the problem to your Galasa service owner."),
-    GAL5427_MISSING_STREAM_NAME                       (5427, "E: Error occurred because the Galasa Stream is invalid. The 'metadata' field cannot be empty. The field 'name' is mandatory for the type GalasaStream."),
+    GAL5427_MISSING_STREAM_NAME                       (5427, "E: Failed to create or update a Galasa Stream. No stream name was provided. Check that your request payload is correct and try again."),
+    GAL5429_ERROR_STREAM_ALREADY_EXISTS               (5429, "E: Error occurred when trying to create a stream with the given name. A stream with the provided name already exists."),
+    GAL5432_ERROR_STREAM_DOES_NOT_EXIST               (5432, "E: Error occurred. A stream with the provided name does not exist. Check that your provided stream name is correct and try again."),
+    GAL5433_FAILED_TO_SET_STREAM                      (5433, "E: Failed to set a stream with the given name in the Configuration Property Store. The Configuration Property Store might be experiencing temporary issues. Report the problem to your Galasa service owner."),
+    GAL5434_INVALID_GALASA_STREAM_MISSING_FIELDS      (5434, "E: Invalid GalasaStream provided. One or more of the following mandatory fields are missing from the ''{0}'' field: [{1}]. Check that your request payload is correct and try again."),
+    GAL5435_INVALID_GALASA_STREAM_OBR_DEFINITION      (5435, "E: Invalid GalasaStream provided. One or more of the provided OBRs is not in the correct format. Check that your request payload is correct and try again."),
+    GAL5436_INVALID_STREAM_URL_PROVIDED               (5436, "E: Invalid GalasaStream provided. The URL provided for the ''{0}'' field is not a valid URL. Check that your request payload is correct and try again."),
+    GAL5437_INVALID_STREAM_MISSING_OBRS               (5437, "E: Invalid GalasaStream provided. Expecting at least one OBR in the ''obrs'' field but no OBRs were provided. Check that your request payload is correct and try again."),
 
     // Monitors APIs...
     GAL5421_ERROR_GETTING_MONITOR_DEPLOYMENTS         (5421, "E: Error occurred when getting the Galasa monitor deployments from Kubernetes. Report the problem to your Galasa systems administrator."),
@@ -186,15 +200,31 @@ public enum ServletErrorMessage {
     GAL5423_INVALID_MONITOR_NAME_PROVIDED             (5423, "E: Invalid monitor name provided. Check that the name provided only contains characters in the ranges 'a'-'z', 'A'-'Z', 0-9, '-' (hyphens), '_' (underscores), and '.' (dots)."),
     GAL5424_FAILED_TO_UPDATE_MONITOR                  (5424, "E: Error occurred when attempting to update the Galasa monitor deployment in Kubernetes. Report the problem to your Galasa systems administrator."),
     GAL5425_ERROR_MONITOR_UPDATE_MISSING_DATA         (5425, "E: Invalid request payload. The request body is missing the ''data'' field. Check your request parameters and try again."),
+
+    // Tags APIs...
+    GAL5438_ERROR_GETTING_TAGS                        (5438, "E: Error occurred when getting tags from the Galasa service. Report the problem to your Galasa service administrator."),
+    GAL5439_ERROR_GETTING_TAG_BY_NAME                 (5439, "E: Unable to get a tag with the given name from the Galasa service. Report the problem to your Galasa service administrator."),
+    GAL5440_INVALID_TAG_ID_PROVIDED                   (5440, "E: Invalid tag ID provided. Check that the ID provided is a valid Base64 URL encoded string that only contains characters in the ranges 'a'-'z', 'A'-'Z', 0-9, '-' (hyphens), and '_' (underscores)."),
+    GAL5441_ERROR_TAG_NOT_FOUND                       (5441, "E: Failed to find a tag with the given name. No such tag exists. Check that you have provided the correct tag name and try again."),
+    GAL5442_ERROR_DELETING_TAG                        (5442, "E: Error occurred when deleting the tag with the given name. Report the problem to your Galasa service administrator."),
+    GAL5443_INVALID_TAG_NAME_PROVIDED                 (5443, "E: Invalid tag name provided. The name of a tag cannot be empty, contain only spaces or tabs, and must only contain characters in the Latin-1 character set. Check your request payload and try again."),
+    GAL5444_INVALID_TAG_DESCRIPTION_PROVIDED          (5444, "E: Invalid tag description provided. The description should not only contain spaces or tabs. When provided, it must contain characters in the Latin-1 character set. Check your request payload and try again."),
+    GAL5445_ERROR_TAG_ALREADY_EXISTS                  (5445, "E: Error occurred when trying to create a tag with the given name. A tag with the provided name already exists. Check your request payload and try again."),
+    GAL5446_ERROR_SETTING_TAG                         (5446, "E: Internal server error occurred when trying to set the tag with the given name. Report the problem to your Galasa service administrator"),
+    GAL5447_MISSING_REQUIRED_TAG_FIELD                (5447, "E: Invalid GalasaTag provided. The required field ''{0}'' was missing from the request payload. Check your request payload and try again."),
+    GAL5448_INVALID_TAG_PRIORITY_PROVIDED             (5448, "E: Invalid tag priority provided. The tag priority must be a whole number. Check your request payload and try again."),
+
+    // RAS Health API
+    GAL5449_RAS_NOT_AVAILABLE                         (5449, "E: The RAS is not available for requests at this time. The RAS might be experiencing server issues. Contact your Galasa service administrator."),
     ;
 
     // >>>
-    // >>> Note: Please keep this up to date, to save us wondering what to allocate next... 
+    // >>> Note: Please keep this up to date, to save us wondering what to allocate next...
     // >>>       otherwise you have to find a 'gap' in the range.
     // >>>       Unit tests guarantee that this number is 'free' to use for a new error message.
     // >>>       If you do use this number for a new error template, please incriment this value.
     // >>>
-    public static final int GALxxx_NEXT_MESSAGE_NUMBER_TO_USE = 5432;
+    public static final int GALxxx_NEXT_MESSAGE_NUMBER_TO_USE = 5454;
 
 
     private String template ;

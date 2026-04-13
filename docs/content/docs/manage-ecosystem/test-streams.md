@@ -20,28 +20,41 @@ The following diagram shows the relationship between the test code, test catalog
 ![test stream architecture:](test-streams-architecture.svg)
 
 
-## Creating and retrieving test stream components
+## Creating and retrieving a test stream
 
-The components of the `test.stream` property are set by using `galasactl properties set` command, as shown in the following example:
+The components of the `test.stream` property are set by either using the `galasactl streams set` command or the `galasactl resources apply -f {yaml-filename}` command.
 
-```shell
-galasactl properties set --namespace framework --name test.stream.mystream.description --value "My stream to use as an example"
-galasactl properties set --namespace framework --name test.stream.mystream.repo --value http://points-to-my-maven-repo.example.org
-galasactl properties set --namespace framework --name test.stream.mystream.location --value http://points-to-my-test-catalog.example.org
-galasactl properties set --namespace framework --name test.stream.mystream.obr --value mvn:myorg/myartifact/0.0.1/obr
-```
+When using the `galasactl resources` command, the `apply` sub-command will update the stream if it already exists, but you could use the `create` or `update` sub-command as an alternative.
 
-These four commands each set a part of the stream. Streams must always be created in the `framework` namespace and must always have all four components set.
+See the command reference for [galasactl streams set](../reference/cli-syntax/galasactl_streams_set.md) and [galasactl resources apply](../reference/cli-syntax/galasactl_resources_apply.md) for specific syntax help.
 
-You can view all test streams in the `framework` namespace by using the `galasactl properties get` command, as shown in the following example:
+Streams are explained in more detail, with an example [here](../ecosystem/ecosystem-manage-resources.md/#test-streams-as-galasastream-resources).
+
+You can view all test streams in the `framework` namespace by using the `galasactl streams get` command, as shown in the following example:
 
 ```
-galasactl properties get --namespace framework --name test.streams 
-namespace name         value 
-framework test.streams integrationtests, regressiontests 
+galasactl streams get
+name             state   description
+integrationtests enabled Test stream for in-development integration tests
+regressiontests  enabled Regression test suite
 
 Total:2
 ```
+
+The following table shows the available output formats that can be provided as part of the `galasactl streams get` command:
+
+| Name |  Description  |
+| :---- | :-------- | 
+| `--format summary` | The default format is _summary_. Summary format is useful if you need a quick, high-level overview. If you omit the `--format` flag in the command, results are returned in summary format. You can set the summary format explicitly by setting the `--format summary` flag in the `galasactl streams get` command.   | 
+| `--format yaml` |  The results from `galasactl streams get` are returned as GalasaStream resources in YAML format. This YAML content can then be used in `galasactl resources` commands to create, update, and delete secrets using a YAML file. See [Configuring an Ecosystem using resource files](./ecosystem-manage-resources.md) for more details.|
+
+For example, you can use the following command to retrieve all test streams in `yaml` format:
+
+```shell
+galasactl streams get --format yaml
+```
+
+For a complete list of supported parameters, see the [galasactl streams get](../reference/cli-syntax/galasactl_streams_get.md) command reference.
 
 ## Organising test streams
 

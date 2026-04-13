@@ -5,28 +5,6 @@ title: "Frequently asked questions"
 Use the following sections to scan for questions and problems that have been raised previously, and how these have been answered and resolved.
 
 
-## How can I generate screenshot output when running my tests locally?
-
-You can generate screenshot output by setting the `zos3270.terminal.output` property in your `cps.properties` file or your `overrides.properties` file. For example, to generate screenshot output in json and png format, set the property to `zos3270.terminal.output=json,png`. 
-
-If you used the `galasactl local init` command to initialise your environment, the following setting should be in the `cps.properties` file already, so you can un-comment the line `zos3270.terminal.output=json,png` by removing the hash symbol (`#`), as shown in the following example:
-
-```properties
-#-------------------------------------------------------------------------
-# zos3270.terminal.output
-#
-# Controls which output format(s) any 3270 traffic uses when creating artifact files
-# in the Result Archive Store (RAS).
-#
-# Supported values are 'json' or 'png' or both.
-# 
-# Default for a locally-launched JVM test is both.
-#
-# Example:
-zos3270.terminal.output=json,png
-```
-
-
 ## What function can I use to clear a CICS screen in a 3270 terminal?
 
 If your terminal object is of type `ITerminal` you can use the `terminal.clear().waitForKeyboard()` method in your test code. 
@@ -36,9 +14,9 @@ If your terminal object is of type `ICicsTerminal` you can use the method `reset
 
 ## Are there any IVT test cases or Javadoc that I can look at for samples of test code / methods?
 
-Yes, you can view the [installation verification tests (IVTs)](https://github.com/galasa-dev/managers/tree/main/galasa-managers-parent){target="_blank"} for the Managers in GitHub.
+Yes, you can view the [installation verification tests (IVTs)](https://github.com/galasa-dev/galasa/tree/main/modules/managers/galasa-managers-parent){target="_blank"} for the Managers in GitHub.
 
-You can find the links to the Javadoc API documentation for all the Galasa Managers on the [overview page](https://javadoc.galasa.dev/){target="_blank"}.
+You can find the links to the Javadoc API documentation for all the Galasa Managers on the [overview page](../reference/javadoc/overview-summary.html){target="_blank"}.
 
 
 ## Can I generate run reports with logs whist running Galasa tests? 
@@ -130,7 +108,7 @@ but with the values customized to match the name and location of your z/OS syste
 
 ## What is the connection between z/OS terminal and application?
 
-The `ITerminal` object allows communication to the remote z/OS system. See the [Javadoc for ITerminal](https://javadoc.galasa.dev/dev/galasa/zos3270/ITerminal.html){target="_blank"} for more information. 
+The `ITerminal` object allows communication to the remote z/OS system. See the [Javadoc for ITerminal](../../docs/reference/javadoc/dev/galasa/zos3270/ITerminal.html){target="_blank"} for more information. 
 
 
 ## Why is my test (which is running on a local LPAR) failing at the Provision Generate phase with the error "Caused by: dev.galasa.zos.ZosManagerException: Insufficent capacity for images in cluster..."?

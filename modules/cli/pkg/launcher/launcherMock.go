@@ -20,6 +20,7 @@ type LaunchParameters struct {
 	ClassName        string
 	RequestType      string
 	Requestor        string
+	User             string
 	Stream           string
 	ObrFromPortfolio string
 	IsTraceEnabled   bool
@@ -71,6 +72,7 @@ func (launcher *MockLauncher) SubmitTestRun(
 	className string,
 	requestType string,
 	requestor string,
+	user string,
 	stream string,
 	obrFromPortfolio string,
 	isTraceEnabled bool,
@@ -85,6 +87,7 @@ func (launcher *MockLauncher) SubmitTestRun(
 		ClassName:        className,
 		RequestType:      requestType,
 		Requestor:        requestor,
+		User:             user,
 		Stream:           stream,
 		ObrFromPortfolio: obrFromPortfolio,
 		IsTraceEnabled:   isTraceEnabled,
@@ -141,4 +144,9 @@ func (launcher *MockLauncher) GetStreams() ([]string, error) {
 // GetTestCatalog gets the test catalog for a given stream.
 func (launcher *MockLauncher) GetTestCatalog(stream string) (TestCatalog, error) {
 	return nil, nil
+}
+
+// IsLocal returns false for the mock launcher
+func (launcher *MockLauncher) IsLocal() bool {
+	return false
 }

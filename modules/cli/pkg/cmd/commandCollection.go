@@ -55,7 +55,10 @@ const (
 	COMMAND_NAME_RUNS_SUBMIT              = "runs submit"
 	COMMAND_NAME_RUNS_SUBMIT_LOCAL        = "runs submit local"
 	COMMAND_NAME_RUNS_RESET               = "runs reset"
+	COMMAND_NAME_RUNS_UPDATE              = "runs update"
 	COMMAND_NAME_RUNS_CANCEL              = "runs cancel"
+	COMMAND_NAME_RUNS_CLEANUP             = "runs cleanup"
+	COMMAND_NAME_RUNS_CLEANUP_LOCAL       = "runs cleanup local"
 	COMMAND_NAME_RUNS_DELETE              = "runs delete"
 	COMMAND_NAME_RESOURCES                = "resources"
 	COMMAND_NAME_RESOURCES_APPLY          = "resources apply"
@@ -66,6 +69,10 @@ const (
 	COMMAND_NAME_SECRETS_GET              = "secrets get"
 	COMMAND_NAME_SECRETS_SET              = "secrets set"
 	COMMAND_NAME_SECRETS_DELETE           = "secrets delete"
+	COMMAND_NAME_TAGS                     = "tags"
+	COMMAND_NAME_TAGS_DELETE              = "tags delete"
+	COMMAND_NAME_TAGS_GET                 = "tags get"
+	COMMAND_NAME_TAGS_SET                 = "tags set"
 	COMMAND_NAME_USERS                    = "users"
 	COMMAND_NAME_USERS_GET                = "users get"
 	COMMAND_NAME_USERS_SET                = "users set"
@@ -74,6 +81,7 @@ const (
 	COMMAND_NAME_ROLES_GET                = "roles get"
 	COMMAND_NAME_STREAMS                  = "streams"
 	COMMAND_NAME_STREAMS_GET              = "streams get"
+	COMMAND_NAME_STREAMS_SET              = "streams set"
 	COMMAND_NAME_STREAMS_DELETE           = "streams delete"
 )
 
@@ -165,6 +173,10 @@ func (commands *commandCollectionImpl) init(factory spi.Factory) error {
 
 	if err == nil {
 		err = commands.addSecretsCommands(factory, rootCommand, commsFlagSet)
+	}
+
+	if err == nil {
+		err = commands.addTagsCommands(factory, rootCommand, commsFlagSet)
 	}
 
 	if err == nil {
@@ -334,8 +346,11 @@ func (commands *commandCollectionImpl) addRunsCommands(factory spi.Factory, root
 	var runsSubmitCommand spi.GalasaCommand
 	var runsSubmitLocalCommand spi.GalasaCommand
 	var runsResetCommand spi.GalasaCommand
+	var runsUpdateCommand spi.GalasaCommand
 	var runsCancelCommand spi.GalasaCommand
 	var runsDeleteCommand spi.GalasaCommand
+	var runsCleanupCommand spi.GalasaCommand
+	var runsCleanupLocalCommand spi.GalasaCommand
 
 	runsCommand, err = NewRunsCmd(rootCommand, commsFlagSet)
 	if err == nil {
@@ -351,14 +366,23 @@ func (commands *commandCollectionImpl) addRunsCommands(factory spi.Factory, root
 						if err == nil {
 							runsResetCommand, err = NewRunsResetCommand(factory, runsCommand, commsFlagSet)
 							if err == nil {
-								runsCancelCommand, err = NewRunsCancelCommand(factory, runsCommand, commsFlagSet)
+								runsUpdateCommand, err = NewRunsUpdateCommand(factory, runsCommand, commsFlagSet)
 								if err == nil {
-									runsDeleteCommand, err = NewRunsDeleteCommand(factory, runsCommand, commsFlagSet)
+									runsCancelCommand, err = NewRunsCancelCommand(factory, runsCommand, commsFlagSet)
+									if err == nil {
+										runsDeleteCommand, err = NewRunsDeleteCommand(factory, runsCommand, commsFlagSet)
+									}
 								}
 							}
 						}
 					}
 				}
+			}
+		}
+		if err == nil {
+			runsCleanupCommand, err = NewRunsCleanupCmd(runsCommand)
+			if err == nil {
+				runsCleanupLocalCommand, err = NewRunsCleanupLocalCommand(factory, runsCleanupCommand, commsFlagSet)
 			}
 		}
 	}
@@ -371,8 +395,11 @@ func (commands *commandCollectionImpl) addRunsCommands(factory spi.Factory, root
 		commands.commandMap[runsSubmitCommand.Name()] = runsSubmitCommand
 		commands.commandMap[runsSubmitLocalCommand.Name()] = runsSubmitLocalCommand
 		commands.commandMap[runsResetCommand.Name()] = runsResetCommand
+		commands.commandMap[runsUpdateCommand.Name()] = runsUpdateCommand
 		commands.commandMap[runsCancelCommand.Name()] = runsCancelCommand
 		commands.commandMap[runsDeleteCommand.Name()] = runsDeleteCommand
+		commands.commandMap[runsCleanupCommand.Name()] = runsCleanupCommand
+		commands.commandMap[runsCleanupLocalCommand.Name()] = runsCleanupLocalCommand
 	}
 
 	return err
@@ -444,6 +471,38 @@ func (commands *commandCollectionImpl) addSecretsCommands(factory spi.Factory, r
 	return err
 }
 
+func (commands *commandCollectionImpl) addTagsCommands(factory spi.Factory, rootCommand spi.GalasaCommand, commsFlagSet GalasaFlagSet) error {
+
+	var err error
+	var tagsCommand spi.GalasaCommand
+	var tagsDeleteCommand spi.GalasaCommand
+	var tagsSetCommand spi.GalasaCommand
+	var tagsGetCommand spi.GalasaCommand
+
+	tagsCommand, err = NewTagsCmd(rootCommand, commsFlagSet)
+
+	if err == nil {
+		tagsDeleteCommand, err = NewTagsDeleteCommand(factory, tagsCommand, commsFlagSet)
+	}
+
+	if err == nil {
+		tagsSetCommand, err = NewTagsSetCommand(factory, tagsCommand, commsFlagSet)
+	}
+
+	if err == nil {
+		tagsGetCommand, err = NewTagsGetCommand(factory, tagsCommand, commsFlagSet)
+	}
+
+	if err == nil {
+		commands.commandMap[tagsCommand.Name()] = tagsCommand
+		commands.commandMap[tagsDeleteCommand.Name()] = tagsDeleteCommand
+		commands.commandMap[tagsSetCommand.Name()] = tagsSetCommand
+		commands.commandMap[tagsGetCommand.Name()] = tagsGetCommand
+	}
+
+	return err
+}
+
 func (commands *commandCollectionImpl) addMonitorsCommands(factory spi.Factory, rootCommand spi.GalasaCommand, commsFlagSet GalasaFlagSet) error {
 
 	var err error
@@ -455,6 +514,9 @@ func (commands *commandCollectionImpl) addMonitorsCommands(factory spi.Factory, 
 
 	if err == nil {
 		monitorsGetCommand, err = NewMonitorsGetCommand(factory, monitorsCommand, commsFlagSet)
+	}
+
+	if err == nil {
 		monitorsSetCommand, err = NewMonitorsSetCommand(factory, monitorsCommand, commsFlagSet)
 	}
 
@@ -520,25 +582,28 @@ func (commands *commandCollectionImpl) addStreamsCommands(factory spi.Factory, r
 	var err error
 	var streamsCommand spi.GalasaCommand
 	var streamsGetCommand spi.GalasaCommand
+	var streamsSetCommand spi.GalasaCommand
 	var streamsDeleteCommand spi.GalasaCommand
 
 	streamsCommand, err = NewStreamsCommand(rootCommand, commsFlagSet)
 
 	if err == nil {
-
-		commands.commandMap[streamsCommand.Name()] = streamsCommand
 		streamsGetCommand, err = NewStreamsGetCommand(factory, streamsCommand, commsFlagSet)
+	}
 
-		if err == nil {
+	if err == nil {
+		streamsSetCommand, err = NewStreamsSetCommand(factory, streamsCommand, commsFlagSet)
+	}
 
-			commands.commandMap[streamsGetCommand.Name()] = streamsGetCommand
-			streamsDeleteCommand, err = NewStreamsDeleteCommand(factory, streamsCommand, commsFlagSet)
+	if err == nil {
+		streamsDeleteCommand, err = NewStreamsDeleteCommand(factory, streamsCommand, commsFlagSet)
+	}
 
-			if err == nil {
-				commands.commandMap[streamsDeleteCommand.Name()] = streamsDeleteCommand
-			}
-
-		}
+	if err == nil {
+		commands.commandMap[streamsCommand.Name()] = streamsCommand
+		commands.commandMap[streamsGetCommand.Name()] = streamsGetCommand
+		commands.commandMap[streamsSetCommand.Name()] = streamsSetCommand
+		commands.commandMap[streamsDeleteCommand.Name()] = streamsDeleteCommand
 	}
 
 	return err

@@ -58,6 +58,10 @@ public class ResultArchiveStorePath implements Path {
             path = path.replaceAll("\\Q\\\\E", "/"); // NOSONAR
         }
 
+        if (path.contains(" ")) {
+            path = path.trim().replaceAll(" ", "%20");
+        }
+
         this.absolute = path.startsWith("/");
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);

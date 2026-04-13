@@ -29,6 +29,12 @@ public class Settings implements Runnable, ISettings {
     public static final int MAX_TEST_POD_RETRY_LIMIT_DEFAULT = 5;
     public static final String MAX_TEST_POD_RETRY_LIMIT_CONFIG_MAP_PROPERTY_NAME = "max_test_pod_retry_limit";
 
+    public static final int INTERRUPTED_RUN_CLEANUP_GRACE_PERIOD_SECS_DEFAULT = 300;
+    public static final String INTERRUPTED_RUN_CLEANUP_GRACE_PERIOD_SECS_PROPERTY_NAME = "interrupted_test_run_cleanup_grace_period_seconds";
+
+    public static final int ALLOCATED_TEST_RUN_TIMEOUT_MINUTES_DEFAULT = 30;
+    public static final String ALLOCATED_TEST_RUN_TIMEOUT_MINUTES_PROPERTY_NAME = "allocated_test_run_timeout_minutes";
+
     private final Log         logger                      = LogFactory.getLog(getClass());
 
     private final K8sController controller;
@@ -49,6 +55,7 @@ public class Settings implements Runnable, ISettings {
     private int               engineCPULimitM             = 1000;
     private String            nodeArch                    = "";
     private String            nodePreferredAffinity       = "";
+    private String            nodeRequiredAffinity        = "";
     private String            nodeTolerations             = "";
 
     // A fail-safe to make sure we never try to re-launch/re-create a pod for a testcase more than 
@@ -62,6 +69,8 @@ public class Settings implements Runnable, ISettings {
     private String            reportCapabilties           = null;
 
     private long              kubeLaunchIntervalMillisecs = 1000L;
+    private long              interruptedTestRunCleanupGracePeriodSeconds = INTERRUPTED_RUN_CLEANUP_GRACE_PERIOD_SECS_DEFAULT;
+    private long              allocatedTestRunTimeoutMinutes = ALLOCATED_TEST_RUN_TIMEOUT_MINUTES_DEFAULT;
 
     // Poll loop interval which is looking for queued test runs, so they can be launched in a pod.
     private int               runPollSeconds              = 60;
@@ -195,6 +204,8 @@ public class Settings implements Runnable, ISettings {
         this.engineLabel = updateProperty(configMapData, "engine_label", "k8s-standard-engine", this.engineLabel);
         this.engineImage = updateProperty(configMapData, "engine_image", "ghcr.io/galasa-dev/galasa-boot-embedded-amd64", this.engineImage);
         this.kubeLaunchIntervalMillisecs = updateProperty(configMapData, "kube_launch_interval_milliseconds", kubeLaunchIntervalMillisecs, this.kubeLaunchIntervalMillisecs);
+        this.interruptedTestRunCleanupGracePeriodSeconds = updateProperty(configMapData, INTERRUPTED_RUN_CLEANUP_GRACE_PERIOD_SECS_PROPERTY_NAME, INTERRUPTED_RUN_CLEANUP_GRACE_PERIOD_SECS_DEFAULT, this.interruptedTestRunCleanupGracePeriodSeconds);
+        this.allocatedTestRunTimeoutMinutes = updateProperty(configMapData, ALLOCATED_TEST_RUN_TIMEOUT_MINUTES_PROPERTY_NAME, ALLOCATED_TEST_RUN_TIMEOUT_MINUTES_DEFAULT, this.allocatedTestRunTimeoutMinutes);
 
         this.engineMemoryRequestMi = updateProperty(configMapData, "engine_memory_request", engineMemoryRequestMi, this.engineMemoryRequestMi);
         this.engineMemoryLimitMi = updateProperty(configMapData, "engine_memory_limit", engineMemoryLimitMi, this.engineMemoryLimitMi);
@@ -205,6 +216,7 @@ public class Settings implements Runnable, ISettings {
 
         this.nodeArch = updateProperty(configMapData, "node_arch", "", this.nodeArch);
         this.nodePreferredAffinity = updateProperty(configMapData, "galasa_node_preferred_affinity", "", this.nodePreferredAffinity);
+        this.nodeRequiredAffinity = updateProperty(configMapData, "galasa_node_required_affinity", "", this.nodeRequiredAffinity);
         this.nodeTolerations = updateProperty(configMapData, "galasa_node_tolerations", "", this.nodeTolerations);
 
         this.encryptionKeysSecretName = updateProperty(configMapData, "encryption_keys_secret_name", "", this.encryptionKeysSecretName);
@@ -338,6 +350,11 @@ public class Settings implements Runnable, ISettings {
         return this.nodePreferredAffinity;
     }
 
+    @Override
+    public String getNodeRequiredAffinity() {
+        return this.nodeRequiredAffinity;
+    }
+
     public String getNodeTolerations() {
         return this.nodeTolerations;
     }
@@ -381,5 +398,13 @@ public class Settings implements Runnable, ISettings {
 
     public int getMaxTestPodRetryLimit() {
         return this.maxTestPodRetryLimit;
+    }
+
+    public long getInterruptedTestRunCleanupGracePeriodSeconds() {
+        return this.interruptedTestRunCleanupGracePeriodSeconds;
+    }
+
+    public long getAllocatedTestRunTimeoutMinutes() {
+        return this.allocatedTestRunTimeoutMinutes;
     }
 }

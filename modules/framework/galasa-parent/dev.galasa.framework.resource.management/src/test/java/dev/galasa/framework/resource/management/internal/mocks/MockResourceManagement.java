@@ -5,21 +5,22 @@
  */
 package dev.galasa.framework.resource.management.internal.mocks;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import dev.galasa.framework.spi.IResourceManagement;
 
 
 public class MockResourceManagement implements IResourceManagement {
 
+    public boolean isSuccessful;
+    private MockScheduledExecutorService scheduledExecutorService = new MockScheduledExecutorService();
+
     @Override
-    public ScheduledExecutorService getScheduledExecutorService() {
-        throw new UnsupportedOperationException("Unimplemented method 'getScheduledExecutorService'");
+    public MockScheduledExecutorService getScheduledExecutorService() {
+        return scheduledExecutorService;
     }
 
     @Override
     public void resourceManagementRunSuccessful() {
-        throw new UnsupportedOperationException("Unimplemented method 'resourceManagementRunSuccessful'");
+        this.isSuccessful = true;
     }
     
 }

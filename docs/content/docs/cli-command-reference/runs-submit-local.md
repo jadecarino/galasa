@@ -16,7 +16,7 @@ Local runs do not benefit from the features that are provided when running tests
 
 To use the `galasactl runs submit local` command, the `JAVA_HOME` environment variable must be set to reference the JVM in which you want the test to run, as described in the [CLI prerequisites online](./cli-prereqs.md) and [CLI prerequisites offline](./zipped-prerequisites.md) documentation. This is because the local java run-time environment is used to launch the test locally. To check that `JAVA_HOME` is set correctly, the tool checks that `$JAVA_HOME/bin/java` exists in Unix or Mac, and `%JAVA_HOME%\bin\java.exe` exists on Windows.
 
-The level of Java must match the supported level of the Galasa version that is being launched. Use the `galasactl --version` command to find the galasactl tool version. We currently support Java version 11 to version 17 JDK. _Note:_ We do not currently support Java 21 or later.
+The level of Java must match the supported level of the Galasa version that is being launched. Use the `galasactl --version` command to find the galasactl tool version. We currently support Java version 17 JDK. _Note:_ We do not currently support Java 21 or later.
 
 To view the full list of options that are available, see the [galasactl runs submit local](../reference/cli-syntax/galasactl_runs_submit_local.md) command reference.
 
@@ -72,7 +72,7 @@ where:
 - `--log` specifies that debugging information is directed somewhere, and the `-` means that it is sent to the console (stderr).
 - `--gherkin` specifies the path where the  CLI tool can find the Gherkin file containing the Gherkin tests. The path must be specified in a URL form, ending in a `.feature` extension. For example,`file:///Users/myuserid/gherkin/MyGherkinFile.feature` or `file:///C:/Users/myuserid/gherkin/MyGherkinFile.feature`.
 
-For more information about the Gherkin support currently available, see the [Galasa CLI Gherkin documentation](https://github.com/galasa-dev/cli/blob/main/gherkin-docs.md){target="_blank"}.
+For more information about the Gherkin support currently available, see the [Galasa CLI Gherkin documentation](https://github.com/galasa-dev/galasa/blob/main/modules/cli/gherkin-docs.md){target="_blank"}.
 
 
 ## Overriding the path to the default local Maven repository

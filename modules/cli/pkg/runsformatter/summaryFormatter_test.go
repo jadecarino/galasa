@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	EXAMPLE_URL = "https://my-api-server.com/"
+	RUN_ID      = "cdb-ba06e2a6-U123"
+	WEB_UI_URL  = EXAMPLE_URL + "test-runs/" + RUN_ID
+)
+
 func TestSummaryFormatterNoDataReturnsTotalCountAllZeros(t *testing.T) {
 
 	formatter := NewSummaryFormatter()
@@ -46,6 +52,7 @@ func createFormattableTestForSummary(
 		Group:         group,
 		Lost:          isLost,
 		Tags:          tags,
+		WebUiUrl:      WEB_UI_URL,
 	}
 	return formattableTest
 }
@@ -63,8 +70,8 @@ func TestSummaryFormatterLongResultStringReturnsExpectedFormat(t *testing.T) {
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result             test-name  group tags\n" +
-			"2023-05-04 10:55:29 U456 myUserId1 Finished MyLongResultString MyTestName none  \n" +
+		"submitted-time(UTC) name requestor status   result             test-name  group tags web-ui-url\n" +
+			"2023-05-04 10:55:29 U456 myUserId1 Finished MyLongResultString MyTestName none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
 			"Total:1\n"
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
@@ -83,8 +90,8 @@ func TestSummaryFormatterShortResultStringReturnsExpectedFormat(t *testing.T) {
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result test-name  group tags\n" +
-			"2023-05-04 10:55:29 U456 myUserId1 Finished Short  MyTestName none  \n" +
+		"submitted-time(UTC) name requestor status   result test-name  group tags web-ui-url\n" +
+			"2023-05-04 10:55:29 U456 myUserId1 Finished Short  MyTestName none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
 			"Total:1\n"
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
@@ -104,9 +111,9 @@ func TestSummaryFormatterShortAndLongStatusReturnsExpectedFormat(t *testing.T) {
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name        requestor status     result             test-name  group tags\n" +
-			"2023-05-04 10:45:29 LongRunName myUserId1 LongStatus Short              TestName   none  \n" +
-			"2023-05-04 10:55:29 U456        myUserId1 short      MyLongResultString MyTestName none  \n" +
+		"submitted-time(UTC) name        requestor status     result             test-name  group tags web-ui-url\n" +
+			"2023-05-04 10:45:29 LongRunName myUserId1 LongStatus Short              TestName   none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 U456        myUserId1 short      MyLongResultString MyTestName none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
 			"Total:2\n"
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
@@ -126,25 +133,27 @@ func TestSummaryFormatterWithMultipleRunsPrintsOnlyFinishedRuns(t *testing.T) {
 	formattableTest7 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C111", "MyTestName6", "Finished", "Failed", "myUserId1", false, "none", tags)
 	formattableTest8 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C222", "MyTestName7", "Finished", "UNKNOWN", "myUserId2", false, "none", tags)
 	formattableTest9 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C333", "MyTestName8", "Finished", "Ignored", "myUserId1", false, "none", tags)
-	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9)
+	formattableTest10 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C567", "MyTestName9", "Running", "", "myUserId1", false, "none", tags)
+	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9, formattableTest10)
 
 	// When...
 	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result              test-name   group tags\n" +
-			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none  \n" +
-			"2023-05-04 10:55:29 U456 myUserId2 Finished Failed              MyTestName1 none  \n" +
-			"2023-05-04 10:55:29 U789 myUserId1 Finished EnvFail             MyTestName2 none  \n" +
-			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none  \n" +
-			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none  \n" +
-			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none  \n" +
-			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none  \n" +
-			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none  \n" +
-			"2023-05-04 10:55:29 C333 myUserId1 Finished Ignored             MyTestName8 none  \n" +
+		"submitted-time(UTC) name requestor status   result              test-name   group tags web-ui-url\n" +
+			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 U456 myUserId2 Finished Failed              MyTestName1 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 U789 myUserId1 Finished EnvFail             MyTestName2 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C333 myUserId1 Finished Ignored             MyTestName8 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C567 myUserId1 Running                      MyTestName9 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
-			"Total:9 Passed:1 PassedWithDefects:1 Failed:2 EnvFail:2 UNKNOWN:1 Active:1 Ignored:1\n"
+			"Total:10 Passed:1 PassedWithDefects:1 Failed:2 EnvFail:2 UNKNOWN:2 Active:1 Ignored:1\n"
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
 }
 
@@ -162,23 +171,24 @@ func TestSummaryFormatterMultipleRunsWithLostRunsDoesNotDisplayLostRunsAndCounts
 	formattableTest7 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C111", "MyTestName6", "Finished", "Failed", "myUserId1", false, "none", tags)
 	formattableTest8 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C222", "MyTestName7", "Finished", "UNKNOWN", "myUserId2", false, "none", tags)
 	formattableTest9 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C333", "MyTestName8", "Finished", "Ignored", "myUserId1", true, "none", tags)
-	//formattableTest10 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "L321", "MyTestName9", "UNKNOWN", "", "myUserId2", true)
-	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9)
+	formattableTest10 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C567", "MyTestName9", "Running", "", "myUserId1", false, "none", tags)
+	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9, formattableTest10)
 
 	// When...
 	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result              test-name   group tags\n" +
-			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none  \n" +
-			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none  \n" +
-			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none  \n" +
-			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none  \n" +
-			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none  \n" +
-			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none  \n" +
+		"submitted-time(UTC) name requestor status   result              test-name   group tags web-ui-url\n" +
+			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C567 myUserId1 Running                      MyTestName9 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
-			"Total:9 Passed:1 PassedWithDefects:1 Failed:1 Lost:3 EnvFail:1 UNKNOWN:1 Active:1\n"
+			"Total:10 Passed:1 PassedWithDefects:1 Failed:1 Lost:3 EnvFail:1 UNKNOWN:2 Active:1\n"
 
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
 }
@@ -198,22 +208,24 @@ func TestSummaryFormatterMultipleRunsWithUnknownStatusOfLostRunsDoesNotDisplayLo
 	formattableTest8 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C222", "MyTestName7", "Finished", "UNKNOWN", "myUserId2", false, "none", tags)
 	formattableTest9 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "C333", "MyTestName8", "Finished", "Ignored", "myUserId1", true, "none", tags)
 	formattableTest10 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "L321", "MyTestName9", "UNKNOWN", "", "myUserId2", true, "none", tags)
-	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9, formattableTest10)
+	formattableTest11 := createFormattableTestForSummary("2023-05-04T10:55:29.545323Z", "L567", "MyTestNameX", "Running", "", "myUserId2", false, "none", tags)
+	formattableTest = append(formattableTest, formattableTest1, formattableTest2, formattableTest3, formattableTest4, formattableTest5, formattableTest6, formattableTest7, formattableTest8, formattableTest9, formattableTest10, formattableTest11)
 
 	// When...
 	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result              test-name   group tags\n" +
-			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none  \n" +
-			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none  \n" +
-			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none  \n" +
-			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none  \n" +
-			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none  \n" +
-			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none  \n" +
+		"submitted-time(UTC) name requestor status   result              test-name   group tags web-ui-url\n" +
+			"2023-05-04 10:45:29 U123 myUserId1 Finished Passed              TestName    none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L123 myUserId2 UNKNOWN                      MyTestName3 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L456 myUserId1 Building EnvFail             MyTestName4 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L789 myUserId2 Finished Passed With Defects MyTestName5 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C111 myUserId1 Finished Failed              MyTestName6 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 C222 myUserId2 Finished UNKNOWN             MyTestName7 none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"2023-05-04 10:55:29 L567 myUserId2 Running                      MyTestNameX none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
-			"Total:10 Passed:1 PassedWithDefects:1 Failed:1 Lost:4 EnvFail:1 UNKNOWN:1 Active:1\n"
+			"Total:11 Passed:1 PassedWithDefects:1 Failed:1 Lost:4 EnvFail:1 UNKNOWN:2 Active:1\n"
 
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
 }
@@ -223,6 +235,7 @@ func TestSummaryFormatterHasTestWithoutTimeStamps(t *testing.T) {
 
 	formattableTest := make([]FormattableTest, 0)
 	tags := []string{}
+
 	formattableTest1 := createFormattableTestForSummary("", "U123", "TestName", "Finished", "Passed", "myUserId1", false, "none", tags)
 	formattableTest = append(formattableTest, formattableTest1)
 
@@ -231,8 +244,8 @@ func TestSummaryFormatterHasTestWithoutTimeStamps(t *testing.T) {
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result test-name group tags\n" +
-			"                    U123 myUserId1 Finished Passed TestName  none  \n" +
+		"submitted-time(UTC) name requestor status   result test-name group tags web-ui-url\n" +
+			"                    U123 myUserId1 Finished Passed TestName  none       https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
 			"Total:1 Passed:1\n"
 
@@ -254,10 +267,143 @@ func TestSummaryFormatterHasTestWithTags(t *testing.T) {
 
 	assert.Nil(t, err)
 	expectedFormattedOutput :=
-		"submitted-time(UTC) name requestor status   result test-name group tags\n" +
-			"                    U123 myUserId1 Finished Passed TestName  none  a,b\n" +
+		"submitted-time(UTC) name requestor status   result test-name group tags web-ui-url\n" +
+			"                    U123 myUserId1 Finished Passed TestName  none  a,b  https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
 			"\n" +
 			"Total:1 Passed:1\n"
+
+	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
+}
+
+func TestSummaryFormatterLocalRunDoesNotShowWebUiUrl(t *testing.T) {
+	// Given...
+	formatter := NewSummaryFormatter()
+
+	formattableTest := make([]FormattableTest, 0)
+	tags := []string{"tag1", "tag2"}
+	
+	// Create a local test run (IsLocal = true, no WebUiUrl)
+	localTest := FormattableTest{
+		Name:          "L123",
+		TestName:      "LocalTestName",
+		Requestor:     "localUser",
+		Status:        "Finished",
+		Result:        "Passed",
+		QueuedTimeUTC: "2023-05-04T10:55:29.545323Z",
+		Group:         "local-group",
+		Lost:          false,
+		Tags:          tags,
+		IsLocal:       true,
+		WebUiUrl:      "", // Local runs don't have web UI URLs
+	}
+	formattableTest = append(formattableTest, localTest)
+
+	// When...
+	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
+
+	// Then...
+	assert.Nil(t, err)
+
+	// The web-ui-url header should NOT be present for local runs
+	expectedFormattedOutput :=
+		"submitted-time(UTC) name requestor status   result test-name     group       tags\n" +
+			"2023-05-04 10:55:29 L123 localUser Finished Passed LocalTestName local-group tag1,tag2\n" +
+			"\n" +
+			"Total:1 Passed:1\n"
+
+	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
+}
+
+func TestSummaryFormatterRemoteRunShowsWebUiUrl(t *testing.T) {
+	// Given...
+	formatter := NewSummaryFormatter()
+
+	formattableTest := make([]FormattableTest, 0)
+	tags := []string{"remote-tag"}
+	
+	// Create a remote test run (IsLocal = false, has WebUiUrl)
+	remoteTest := FormattableTest{
+		Name:          "R456",
+		TestName:      "RemoteTestName",
+		Requestor:     "remoteUser",
+		Status:        "Finished",
+		Result:        "Passed",
+		QueuedTimeUTC: "2023-05-04T11:30:00.000000Z",
+		Group:         "remote-group",
+		Lost:          false,
+		Tags:          tags,
+		IsLocal:       false,
+		WebUiUrl:      WEB_UI_URL,
+	}
+	formattableTest = append(formattableTest, remoteTest)
+
+	// When...
+	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
+
+	// Then...
+	assert.Nil(t, err)
+
+	// The web-ui-url header SHOULD be present for remote runs
+	expectedFormattedOutput :=
+		"submitted-time(UTC) name requestor  status   result test-name      group        tags       web-ui-url\n" +
+			"2023-05-04 11:30:00 R456 remoteUser Finished Passed RemoteTestName remote-group remote-tag https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"\n" +
+			"Total:1 Passed:1\n"
+
+	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
+}
+
+func TestSummaryFormatterMixedLocalAndRemoteRunsShowsWebUiUrl(t *testing.T) {
+	// Given...
+	formatter := NewSummaryFormatter()
+
+	formattableTest := make([]FormattableTest, 0)
+	
+	// Create a local test run
+	localTest := FormattableTest{
+		Name:          "L123",
+		TestName:      "LocalTest",
+		Requestor:     "localUser",
+		Status:        "Finished",
+		Result:        "Passed",
+		QueuedTimeUTC: "2023-05-04T10:55:29.545323Z",
+		Group:         "local-group",
+		Lost:          false,
+		Tags:          []string{"local"},
+		IsLocal:       true,
+		WebUiUrl:      "",
+	}
+	
+	// Create a remote test run
+	remoteTest := FormattableTest{
+		Name:          "R456",
+		TestName:      "RemoteTest",
+		Requestor:     "remoteUser",
+		Status:        "Finished",
+		Result:        "Failed",
+		QueuedTimeUTC: "2023-05-04T11:30:00.000000Z",
+		Group:         "remote-group",
+		Lost:          false,
+		Tags:          []string{"remote"},
+		IsLocal:       false,
+		WebUiUrl:      WEB_UI_URL,
+	}
+	
+	formattableTest = append(formattableTest, localTest, remoteTest)
+
+	// When...
+	actualFormattedOutput, err := formatter.FormatRuns(formattableTest)
+
+	// Then...
+	assert.Nil(t, err)
+
+	// When there's a mix, the web-ui-url header SHOULD be present
+	expectedFormattedOutput :=
+		"submitted-time(UTC) name requestor  status   result test-name  group        tags   web-ui-url\n" +
+			"2023-05-04 10:55:29 L123 localUser  Finished Passed LocalTest  local-group  local  \n" +
+			"2023-05-04 11:30:00 R456 remoteUser Finished Failed RemoteTest remote-group remote https://my-api-server.com/test-runs/cdb-ba06e2a6-U123\n" +
+			"\n" +
+			"Total:2 Passed:1 Failed:1\n"
 
 	assert.Equal(t, expectedFormattedOutput, actualFormattedOutput)
 }

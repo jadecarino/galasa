@@ -14,6 +14,7 @@ type TestRun struct {
 	Status         string            `yaml:"status" json:"status"`
 	QueuedTimeUTC  string            `yaml:"queued" json:"queued"`
 	Requestor      string            `yaml:"requestor" json:"requestor"`
+	User           string            `yaml:"user" json:"user"`
 	Result         string            `yaml:"result" json:"result"`
 	Overrides      map[string]string `yaml:"overrides" json:"overrides"`
 	Tests          []TestMethod      `yaml:"tests" json:"tests"`
@@ -23,6 +24,8 @@ type TestRun struct {
 	SubmissionId   string            `yaml:"submissionId" json:"submissionId"`
 	RunId          string            `yaml:"runId,omitempty" json:"runId,omitempty"`
 	Tags           []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
+	IsLocal        bool              `yaml:"isLocal,omitempty" json:"isLocal,omitempty"`
+	WebUiUrl       string            `yaml:"webUiUrl,omitempty" json:"webUiUrl,omitempty"`
 }
 
 type TestMethod struct {

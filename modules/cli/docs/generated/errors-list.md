@@ -247,6 +247,49 @@ The `galasactl` tool can generate the following errors:
 - GAL1245E: Failed to delete stream {}. Unexpected http status code {} received from the server. Error details from the server are: '{}'
 - GAL1246E: Failed to delete stream {}. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
 - GAL1247E: Error cancelling runs with group name '{}'. Reason: '{}'
+- GAL1248E: Unsupported glob pattern character provided. Only alphanumeric (A-Z, a-z, 0-9), '.', '?', and '*' characters can be provided in the '--includes-pattern' and '--excludes-pattern' flags.
+- GAL1249E: Failed to delete the tag with the given name from the Galasa service
+- GAL1250E: Failed to delete a tag named '{}'. Unexpected http status code {} received from the server.
+- GAL1251E: Failed to delete a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server could not be read. Cause: {}
+- GAL1252E: Failed to delete a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are not in a valid json format. Cause: '{}'
+- GAL1253E: Failed to delete a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are: '{}'
+- GAL1254E: Failed to delete a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
+- GAL1255E: Failed to delete a tag named '{}'. Failed to send a request to the Galasa service. Cause is {}
+- GAL1256E: Invalid tag name provided. The name provided with the --name flag cannot be empty and must only contain characters in the Latin-1 character set.
+- GAL1257E: No such tag named '{}' exists within the Galasa service.
+- GAL1258E: Failed to set the tag with the given name on the Galasa service
+- GAL1259E: Failed to set a tag named '{}'. Unexpected http status code {} received from the server.
+- GAL1260E: Failed to set a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server could not be read. Cause: {}
+- GAL1261E: Failed to set a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are not in a valid json format. Cause: '{}'
+- GAL1262E: Failed to set a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are: '{}'
+- GAL1263E: Failed to set a tag named '{}'. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
+- GAL1264E: Failed to set a tag named '{}'. Sending the put request to the Galasa service failed. Cause is {}
+- GAL1265E: Invalid tag description provided. The description provided with the --description flag cannot only contain spaces or tabs, and must only contain characters in the Latin-1 character set.
+- GAL1266E: Failed to get tags from the Galasa service
+- GAL1267E: Failed to get tags from the Galasa service. Unexpected http status code {} received from the server.
+- GAL1268E: Failed to get tags from the Galasa service. Unexpected http status code {} received from the server. Error details from the server could not be read. Cause: {}
+- GAL1269E: Failed to get tags from the Galasa service. Unexpected http status code {} received from the server. Error details from the server are not in a valid json format. Cause: '{}'
+- GAL1270E: Failed to get tags from the Galasa service. Unexpected http status code {} received from the server. Error details from the server are: '{}'
+- GAL1271E: Failed to get tags from the Galasa service. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
+- GAL1272E: Failed to get tags from the Galasa service. Sending the put request to the Galasa service failed. Cause is {}
+- GAL1273E: Invalid update request. The tag '{}' cannot be added and deleted in the same command.
+- GAL1274E: Invalid update request. The flag '{}' must be used when attempting to update a run.
+- GAL1275E: The run named '{}' could not be updated because it was not found by the Galasa service. Try listing runs using 'galasactl runs get' to identify the one you wish to update.
+- GAL1276E: Failed to update run. Did not recieve an HTTP response. Cause is {}
+- GAL1277E: An attempt to update a run named '{}' failed. Unexpected http status code {} received from the server.
+- GAL1278E: An attempt to update a run named '{}' failed. Unexpected http status code {} received from the server. Error details from the server could not be read. Cause: {}
+- GAL1279E: An attempt to update a run named '{}' failed. Unexpected http status code {} received from the server. Error details from the server are not in a valid json format. Cause: '{}'
+- GAL1280E: An attempt to update a run named '{}' failed. Unexpected http status code {} received from the server. Error details from the server are: '{}'
+- GAL1281E: An attempt to update a run named '{}' failed. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
+- GAL1282E: Invalid tag name '{}' provided. Tag names cannot be empty and must only contain characters in the Latin-1 character set.
+- GAL1283E: Invalid stream description provided. The description provided with the --description flag cannot be an empty string, and must only contain characters in the Latin-1 character set.
+- GAL1284E: Invalid URL provided. The URL '{}' is not a valid URL. Reason: '{}'
+- GAL1285E: An attempt to set stream '{}' failed. Sending the update request to the Galasa service failed. Cause is {}
+- GAL1286E: An attempt to set stream '{}' failed. Unexpected http status code {} received from the server.
+- GAL1287E: An attempt to set stream '{}' failed. Unexpected http status code {} received from the server. Error details from the server could not be read. Cause: {}
+- GAL1288E: An attempt to set stream '{}' failed. Unexpected http status code {} received from the server. Error details from the server are not in a valid json format. Cause: '{}'
+- GAL1289E: An attempt to set stream '{}' failed. Unexpected http status code {} received from the server. Error details from the server are: '{}'
+- GAL1290E: An attempt to set stream '{}' failed. Unexpected http status code {} received from the server. Error details from the server are not in the json format.
 - GAL2000W: Warning: Maven configuration file settings.xml should contain a reference to a Galasa repository so that the galasa OBR can be resolved. The official release repository is '{}', and 'pre-release' repository is '{}'
 - GAL2501I: Downloaded {} artifacts to folder '{}'
 

@@ -31,15 +31,15 @@ On Mac:
 3. Then you have a choice. Either install the latest version fo the `galasactl` tool, or install a specific version.
     1. To install the latest version of `galasactl`: 
     `brew install --no-quarantine galasactl`
-    2. To install a specific version of `galasactl` (version 0.43.0 for example): 
-    `brew install --no-quarantine galasactl@0.43.0`
+    2. To install a specific version of `galasactl` (version 0.48.0 for example): 
+    `brew install --no-quarantine galasactl@0.48.0`
     Note: You can check to see what versions are available using this:
     `brew tap-info galasa-dev/tap --json` and look in the `"cask_tokens"` part of the json file.
 
 On Mac or Unix:
 
 1. Find out the architecture of your machine by typing the command `uname -m` into your terminal.
-2. Download the appropriate binary of the Galasa CLI for your machine architecture from the [Galasa CLI repository](https://github.com/galasa-dev/cli/releases){target="_blank"} in GitHub and re-name it to `galasactl`.
+2. Download the appropriate binary of the Galasa CLI for your machine architecture from the [Galasa CLI repository](https://github.com/galasa-dev/galasa/releases){target="_blank"} in GitHub and re-name it to `galasactl`.
 3. Add the Galasa CLI to your PATH to enable you to run CLI commands from anywhere on your file system without having to specify the absolute path. To set the path permanently, you need add the Galasa CLI path to your shell's initialization file. For example, if you downloaded the galasactl executable to a folder called `~/tools` in your home directory, you need to add `~/tools` to the list of directories that your shell searches through when you enter a command. You can do this by adding the line ```export PATH=$PATH:$HOME/tools``` to your shell’s initialization file (for example `~/.bashrc` or `~/.zshrc`). 
 4. Set execute permission on the binary by running the `chmod +x galasactl` command in the directory containing `galasactl`.If you are using a Mac, you can set permission to open the Galasa CLI tool by running the `xattr -dr com.apple.quarantine galasactl` command in the directory containing `galasactl`. 
 

@@ -103,10 +103,13 @@ func tabulateCoreRunDetails(run FormattableTest) [][]string {
 		{HEADER_DURATION, ": " + duration},
 		{HEADER_TEST_NAME, ": " + run.TestName},
 		{HEADER_REQUESTOR, ": " + run.Requestor},
+		{HEADER_USER, ": " + run.User},
 		{HEADER_BUNDLE, ": " + run.Bundle},
 		{HEADER_GROUP, ": " + run.Group},
 		{HEADER_TAGS, ": " + strings.Join(run.Tags[:], ",")},
 		{HEADER_RUN_LOG, ": " + run.ApiServerUrl + RAS_RUNS_URL + run.RunId + "/runlog"},
+		{HEADER_WEBUI_URL, ": " + run.WebUiUrl},
+		{HEADER_REST_API_URL, ": " + run.RestApiUrl},
 	}
 	return table
 }

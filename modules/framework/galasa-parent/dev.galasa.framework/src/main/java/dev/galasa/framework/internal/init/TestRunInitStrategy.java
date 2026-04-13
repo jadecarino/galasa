@@ -5,6 +5,8 @@
  */
 package dev.galasa.framework.internal.init;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +18,8 @@ import dev.galasa.framework.Framework;
 import dev.galasa.framework.IFrameworkInitialisationStrategy;
 import dev.galasa.framework.beans.Property;
 import dev.galasa.framework.spi.AbstractManager;
+import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.IConfigurationPropertyStoreService;
@@ -55,15 +59,34 @@ public class TestRunInitStrategy implements IFrameworkInitialisationStrategy {
         if (runName == null) {
             String testName = AbstractManager.nulled(cps.getProperty("run", "testbundleclass"));
             String testLanguage  = "java";
+            List<String> requestedTestMethods = getRequestedTestMethods(cps);
+
             if (testName == null) {
                 testName = AbstractManager.nulled(cps.getProperty("run", "gherkintest"));
                 testLanguage = "gherkin";
             }
             logger.info("Submitting test "+testName);
-            runName = submitRun(framework, testName, testLanguage);
+            runName = submitRun(framework, testName, testLanguage, requestedTestMethods);
         }
         logger.info("Run name is "+runName);
         return runName;
+    }
+
+    private List<String> getRequestedTestMethods(IConfigurationPropertyStoreService cps) throws ConfigurationPropertyStoreException {
+        List<String> requestedTestMethods = new ArrayList<>();
+        String commaSeparatedRequestedTestMethods = AbstractManager.nulled(cps.getProperty("run", "testmethods"));
+
+        if (commaSeparatedRequestedTestMethods != null && !commaSeparatedRequestedTestMethods.isBlank()) {
+            String[] testMethods = commaSeparatedRequestedTestMethods.split(",");
+
+            for (String testMethod : testMethods) {
+                String trimmedMethod = testMethod.trim();
+                if (!trimmedMethod.isEmpty()) {
+                    requestedTestMethods.add(trimmedMethod);
+                }
+            }
+        }
+        return requestedTestMethods;
     }
 
     /**
@@ -74,7 +97,7 @@ public class TestRunInitStrategy implements IFrameworkInitialisationStrategy {
      * @return The name of the run created.
      * @throws FrameworkException
      */
-    protected String submitRun(IFramework framework, String runBundleClass, String language) throws FrameworkException {
+    protected String submitRun(IFramework framework, String runBundleClass, String language, List<String> requestedTestMethods) throws FrameworkException {
         IRun run = null;
         IFrameworkRuns frameworkRuns = framework.getFrameworkRuns();
         String submissionId = UUID.randomUUID().toString();
@@ -84,10 +107,10 @@ public class TestRunInitStrategy implements IFrameworkInitialisationStrategy {
                 String split[] = runBundleClass.split("/");
                 String bundle = split[0];
                 String test = split[1];
-                run = frameworkRuns.submitRun("local", null, bundle, test, null, null, null, null, true, false, NULL_TAGS, null, null, null, language, submissionId);
+                run = frameworkRuns.submitRun("local", null, null, bundle, test, null, null, null, null, true, false, NULL_TAGS, null, null, null, language, submissionId, requestedTestMethods);
                 break;
             case "gherkin":
-                run = frameworkRuns.submitRun("local", null, null, runBundleClass, null, null, null, null, true, false, NULL_TAGS, null, null, null, language, submissionId);
+                run = frameworkRuns.submitRun("local", null, null, null, runBundleClass, null, null, null, null, true, false, NULL_TAGS, null, null, null, language, submissionId, null);
                 break;
             default:
                 throw new FrameworkException("Unknown language to create run");
@@ -108,7 +131,7 @@ public class TestRunInitStrategy implements IFrameworkInitialisationStrategy {
     private Properties loadOverridePropertiesFromDss(IFramework framework, IDynamicStatusStoreService dss, Properties overrideProperties) throws DynamicStatusStoreException {
         // The overrides DSS property contains a JSON array of overrides in the form:
         // dss.framework.run.X.overrides=[{ "key1": "value1" }, { "key2", "value2" }]
-        String runOverridesProp = "run." + framework.getTestRunName() + ".overrides";
+        String runOverridesProp = "run." + framework.getTestRunName() + "." + DssPropertyKeyRunNameSuffix.OVERRIDES;
         String runOverrides = dss.get(runOverridesProp);
         if (runOverrides != null && !runOverrides.isBlank()) {
             Property[] properties = gson.fromJson(runOverrides, Property[].class);

@@ -7,8 +7,6 @@ package dev.galasa.framework.k8s.controller;
 
 import java.io.IOException;
 import java.util.Properties;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -19,10 +17,12 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.annotations.Component;
 
 import dev.galasa.framework.FrameworkInitialisation;
-import dev.galasa.framework.RunRasActionProcessor;
 import dev.galasa.framework.k8s.controller.api.IKubernetesApiClient;
 import dev.galasa.framework.k8s.controller.api.KubernetesApiClient;
 import dev.galasa.framework.k8s.controller.api.KubernetesEngineFacade;
+import dev.galasa.framework.k8s.controller.interruptedruns.RunInterruptHandler;
+import dev.galasa.framework.k8s.controller.scheduling.IPrioritySchedulingService;
+import dev.galasa.framework.k8s.controller.scheduling.PrioritySchedulingService;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.Environment;
 import dev.galasa.framework.spi.FrameworkException;
@@ -31,8 +31,9 @@ import dev.galasa.framework.spi.IDynamicStatusStoreService;
 import dev.galasa.framework.spi.IFramework;
 import dev.galasa.framework.spi.IFrameworkRuns;
 import dev.galasa.framework.spi.IResultArchiveStore;
-import dev.galasa.framework.spi.IRunRasActionProcessor;
 import dev.galasa.framework.spi.SystemEnvironment;
+import dev.galasa.framework.spi.rbac.RBACService;
+import dev.galasa.framework.spi.tags.ITagsService;
 import dev.galasa.framework.spi.utils.ITimeService;
 import dev.galasa.framework.spi.utils.SystemTimeService;
 import io.kubernetes.client.ProtoClient;
@@ -100,6 +101,7 @@ public class K8sController {
             FrameworkInitialisation frameworkInitialisation = null;
             try {
                 frameworkInitialisation = new FrameworkInitialisation(bootstrapProperties, overrideProperties);
+                frameworkInitialisation.initialiseAuthStore(logger, overrideProperties);
             } catch (Exception e) {
                 throw new FrameworkException("Unable to initialise the Framework Services", e);
             }
@@ -166,9 +168,7 @@ public class K8sController {
             this.healthServer = createHealthServer(healthPort);
 
             // *** Start the run polling
-            IFrameworkRuns frameworkRuns = framework.getFrameworkRuns();
-            IResultArchiveStore ras = framework.getResultArchiveStore();
-            startRunPollingThreads(frameworkRuns, cps, dss, ras, kubeEngineFacade, settings);
+            startRunPollingThreads(framework, cps, dss, kubeEngineFacade, settings);
             
             
             logger.info("Kubernetes controller has started");
@@ -211,27 +211,29 @@ public class K8sController {
     }
 
     private void startRunPollingThreads(
-        IFrameworkRuns frameworkRuns,
+        IFramework framework,
         IConfigurationPropertyStoreService cps,
         IDynamicStatusStoreService dss,
-        IResultArchiveStore ras,
         KubernetesEngineFacade kubeEngineFacade,
         Settings settings
     ) throws FrameworkException {
+        IFrameworkRuns frameworkRuns = framework.getFrameworkRuns();
+        IResultArchiveStore ras = framework.getResultArchiveStore();
+        RBACService rbacService = framework.getRBACService();
+        ITagsService tagsService = framework.getTagsService();
 
-        runCleanup = new RunPodCleanup(settings, kubeEngineFacade, frameworkRuns);
+        runCleanup = new RunPodCleanup(kubeEngineFacade, frameworkRuns);
         schedulePodCleanup();
 
-        podScheduler = new TestPodScheduler(env, dss, cps, settings, kubeEngineFacade, frameworkRuns, timeService);
+        IPrioritySchedulingService prioritySchedulingService = new PrioritySchedulingService(frameworkRuns, cps, rbacService, timeService, tagsService);
+
+        podScheduler = new TestPodScheduler(env, dss, settings, kubeEngineFacade, timeService, prioritySchedulingService);
         schedulePoll();
+     
+        RunInterruptHandler interruptedRunHandler = new RunInterruptHandler(kubeEngineFacade, frameworkRuns, settings, timeService, ras);
+        scheduledExecutorService.scheduleWithFixedDelay(interruptedRunHandler, 0, INTERRUPTED_RUN_WATCH_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-        Queue<RunInterruptEvent> interruptEventQueue = new LinkedBlockingQueue<RunInterruptEvent>();
-        RunInterruptMonitor runInterruptWatcher = new RunInterruptMonitor(kubeEngineFacade, frameworkRuns, interruptEventQueue, settings);
-        scheduledExecutorService.scheduleWithFixedDelay(runInterruptWatcher, 0, INTERRUPTED_RUN_WATCH_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
-        IRunRasActionProcessor rasActionProcessor = new RunRasActionProcessor(ras);
-        InterruptedRunEventProcessor interruptEventProcessor = new InterruptedRunEventProcessor(interruptEventQueue, frameworkRuns, rasActionProcessor, kubeEngineFacade);
-        scheduledExecutorService.scheduleWithFixedDelay(interruptEventProcessor, 0, INTERRUPTED_RUN_WATCH_POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     private void shutdownExecutorService() {

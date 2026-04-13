@@ -2,7 +2,7 @@
 title: "z/OS Manager"
 ---
 
-This Manager is at Beta level. You can view the [Javadoc documentation for the Manager](https://javadoc.galasa.dev/index.html?overview-summary.html){target="_blank"}.
+You can view the [Javadoc documentation for the Manager](../../reference/javadoc/dev/galasa/zos/package-summary.html){target="_blank"}.
 
 
 ## Overview
@@ -21,7 +21,7 @@ Additionally, the z/OS Manager provides tests with interfaces to the following z
 
 - `z/OS UNIX Command` which enables tests and Managers to issue and retrieve the responses from z/OS UNIX commands.
 
-You can view the [Javadoc documentation for the Manager](https://javadoc.galasa.dev/dev/galasa/zos/package-summary.html){target="_blank"}.
+You can view the [Javadoc documentation for the Manager](../../reference/javadoc/dev/galasa/zos/package-summary.html){target="_blank"}.
 
 
 ## Including the Manager in a test
@@ -211,6 +211,42 @@ The following properties are used to configure the z/OS Manager.
 | Default value: | None |
 | Valid values: | A valid IP Host ID |
 | Examples: | `zos.image.SYSA.iphostid=sysa.example.com`<br> |
+
+
+### Telnet port number of the z/OS Image
+
+| Property: | Telnet port number of the zOS Image |
+| --------------------------------------- | :------------------------------------- |
+| Name: | zos.image.[imageId].telnet.port |
+| Description: | The port number for telnet 3270 access to the z/OS Image for the supplied tag. |
+| Required:  | No |
+| Default value: | 23 |
+| Valid values: | A valid TCP/IP port number |
+| Examples: | `zos.image.SYSA.telnet.port=992`<br> |
+
+
+### TLS for telnet on the z/OS Image
+
+| Property: | TLS for telnet on the zOS Image |
+| --------------------------------------- | :------------------------------------- |
+| Name: | zos.image.[imageId].telnet.tls |
+| Description: | Set this to true if Transport Layer Security (TLS) is used on the telnet 3270 port of the z/OS Image for the supplied tag. |
+| Required:  | No |
+| Default value: | false |
+| Valid values: | `true` or `false` |
+| Examples: | `zos.image.SYSA.telnet.tls=true`<br> |
+
+
+### Server certificate verification for telnet on the z/OS Image
+
+| Property: | Server certificate verification for telnet on the zOS Image |
+| --------------------------------------- | :------------------------------------- |
+| Name: | zos.image.[imageId].telnet.verify |
+| Description: | Set this to true to request verification of the certificate provided by the z/OS Image for the supplied tag when connecting to the telnet 3270 port.<br> This property is ignored if Transport Layer Security (TLS) is not in use.<br> By default, the trust store containing certificate authorities used for verification is `$JAVA_HOME/lib/security/cacerts`. To use a different trust store, you can specify a different path on a `-Djavax.net.ssl.trustStore` option for the `galasactl.jvm.local.launch.options` property in bootstrap.properties. |
+| Required:  | No |
+| Default value: | false |
+| Valid values: | `true` or `false` |
+| Examples: | `zos.image.SYSA.telnet.verify=true`<br> |
 
 
 ### The z/OS Image
@@ -489,7 +525,7 @@ The following annotations are available with the z/OS Manager
 | Description: | The `@ZosBatch` annotation requests the z/OS Manager to provide a z/OS Batch instance associated with a z/OS image.  The test can request multiple z/OS Batch instances, with the default being associated with the **primary** z/OS image.<br> At test end, the Manager stores the job output with the test results archive and removes jobs from the JES queue. |
 | Attribute: `imageTag` |  The `imageTag` is used to identify the z/OS image. |
 | Syntax: | <pre lang="java">@ZosImage(imageTag="A")<br>public IZosImage zosImageA;<br><br>@ZosBatch(imageTag="A")<br>public IZosBatch zosBatchA;<br></pre> |
-| Notes: | The `IZosBatch` interface has a single method, {@link IZosBatch#submitJob(String, IZosBatchJobname)} to submit a JCL  as a `String` and returns a `IZosBatchJob` instance.<br><br> See [ZosBatch](https://javadoc.galasa.dev/dev/galasa/zosbatch/ZosBatch.html){target="_blank"}, [IZosBatch](https://javadoc.galasa.dev/dev/galasa/zosbatch/IZosBatch.html){target="_blank"} and [IZosBatchJob](https://javadoc.galasa.dev/dev/galasa/zosbatch/IZosBatchJob.html){target="_blank"} to find out more. |
+| Notes: | The `IZosBatch` interface has a single method, {@link IZosBatch#submitJob(String, IZosBatchJobname)} to submit a JCL  as a `String` and returns a `IZosBatchJob` instance.<br><br> See [ZosBatch](../../reference/javadoc/dev/galasa/zosbatch/ZosBatch.html){target="_blank"}, [IZosBatch](../../reference/javadoc/dev/galasa/zosbatch/IZosBatch.html){target="_blank"} and [IZosBatchJob](../../reference/javadoc/dev/galasa/zosbatch/IZosBatchJob.html){target="_blank"} to find out more. |
 
 
 ### z/OS Console
@@ -500,7 +536,7 @@ The following annotations are available with the z/OS Manager
 | Description: | The `@ZosConsole` annotation requests the z/OS Manager to provide a z/OS Console instance associated with a z/OS image.  The test can request multiple z/OS Console instances, with the default being associated with the **primary** z/OS image.<br> |
 | Attribute: `imageTag` |  The tag of the z/OS Image this variable is to be populated with |
 | Syntax: | <pre lang="java">@ZosImage(imageTag="A")<br>public IZosImage zosImageA;<br><br>@ZosConsole(imageTag="A")<br> public IZosConsole zosConsoleA;<br></pre> |
-| Notes: | The `IZosConsole` interface has two methods, {@link IZosConsole#issueCommand(String)} and {@link IZosConsole#issueCommand(String, String)} to issue a command to the z/OS console and returns a `IZosConsoleCommand` instance.<br><br> See [ZosConsole](https://javadoc.galasa.dev/dev/galasa/zosconsole/ZosConsole.html){target="_blank"}, [IZosConsole](https://javadoc.galasa.dev/dev/galasa/zosconsole/IZosConsole.html){target="_blank"} and [IZosConsoleCommand](https://javadoc.galasa.dev/dev/galasa/zosconsole/IZosConsoleCommand.html){target="_blank"} to find out more. |
+| Notes: | The `IZosConsole` interface has two methods, {@link IZosConsole#issueCommand(String)} and {@link IZosConsole#issueCommand(String, String)} to issue a command to the z/OS console and returns a `IZosConsoleCommand` instance.<br><br> See [ZosConsole](../../reference/javadoc/dev/galasa/zosconsole/ZosConsole.html){target="_blank"}, [IZosConsole](../../reference/javadoc/dev/galasa/zosconsole/IZosConsole.html){target="_blank"} and [IZosConsoleCommand](../../reference/javadoc/dev/galasa/zosconsole/IZosConsoleCommand.html){target="_blank"} to find out more. |
 
 
 ### z/OS File
@@ -510,7 +546,7 @@ The following annotations are available with the z/OS Manager
 | Name: | @ZosFileHandler |
 | Description: | The `@ZosFileHandler` annotation requests the z/OS Manager to provide a handler instance to manage data sets and UNIX files on a z/OS image.  A single z/OS File Handler instance can manage multiple z/OS data sets and UNIX files on multiple z/OS images.<br> |
 | Syntax: | <pre lang="java">@ZosFileHandler<br>public IZosFileHandler zosFileHandler;<br></pre> |
-| Notes: | The `IZosFileHandler` interface has three methods supplying file name and z/OS image:<br> {@link IZosFileHandler#newDataset(String, dev.galasa.zos.IZosImage)}<br>  {@link IZosFileHandler#newVSAMDataset(String, dev.galasa.zos.IZosImage)}<br> {@link IZosFileHandler#newUNIXFile(String, dev.galasa.zos.IZosImage)}<br> returning an object representing the type of file requested. This can be an existing file or can be created via a method on the file object.<br><br> See [ZosFileHandler](https://javadoc.galasa.dev/dev/galasa/zosfile/ZosFileHandler.html){target="_blank"}, [IZosFileHandler](https://javadoc.galasa.dev/dev/galasa/zosfile/IZosFileHandler.html){target="_blank"}, [IZosDataset](https://javadoc.galasa.dev/dev/galasa/zosfile/IZosDataset.html){target="_blank"}, [IZosVSAMDataset](https://javadoc.galasa.dev/dev/galasa/zosfile/IZosVSAMDataset.html){target="_blank"} and [IZosUNIXFile](https://javadoc.galasa.dev/dev/galasa/zosfile/IZosUNIXFile.html){target="_blank"} to find out more. |
+| Notes: | The `IZosFileHandler` interface has three methods supplying file name and z/OS image:<br> {@link IZosFileHandler#newDataset(String, dev.galasa.zos.IZosImage)}<br>  {@link IZosFileHandler#newVSAMDataset(String, dev.galasa.zos.IZosImage)}<br> {@link IZosFileHandler#newUNIXFile(String, dev.galasa.zos.IZosImage)}<br> returning an object representing the type of file requested. This can be an existing file or can be created via a method on the file object.<br><br> See [ZosFileHandler](../../reference/javadoc/dev/galasa/zosfile/ZosFileHandler.html){target="_blank"}, [IZosFileHandler](../../reference/javadoc/dev/galasa/zosfile/IZosFileHandler.html){target="_blank"}, [IZosDataset](../../reference/javadoc/dev/galasa/zosfile/IZosDataset.html){target="_blank"}, [IZosVSAMDataset](../../reference/javadoc/dev/galasa/zosfile/IZosVSAMDataset.html){target="_blank"} and [IZosUNIXFile](../../reference/javadoc/dev/galasa/zosfile/IZosUNIXFile.html){target="_blank"} to find out more. |
 
 
 ### z/OS TSO Command
@@ -521,7 +557,7 @@ The following annotations are available with the z/OS Manager
 | Description: | The `@ZosTSOCommand` annotation requests the z/OS Manager to provide a z/OS TSO Command instance associated with a z/OS image.  The test can request multiple z/OS TSO Command instances, with the default being associated with the **primary** z/OS image.<br> |
 | Attribute: `imageTag` |  The tag of the z/OS Image this variable is to be populated with |
 | Syntax: | <pre lang="java">@ZosImage(imageTag="A")<br>public IZosImage zosImageA;<br><br>@ZosTSOCommand(imageTag="A")<br> public IZosTSOCpmmand zosTSOA;<br></pre> |
-| Notes: | The `IZosTSOCommand` interface provides the methods {@link IZosTSOCommand#issueCommand(String)} and {@link IZosTSOCommand#issueCommand(String, long)} to issue a command to z/OS TSO Command and returns a `String`.<br><br> See [IZosTSOCommand](https://javadoc.galasa.dev/dev/galasa/zostsocommand/IZosTSOCommand.html){target="_blank"} to find out more. |
+| Notes: | The `IZosTSOCommand` interface provides the methods {@link IZosTSOCommand#issueCommand(String)} and {@link IZosTSOCommand#issueCommand(String, long)} to issue a command to z/OS TSO Command and returns a `String`.<br><br> See [IZosTSOCommand](../../reference/javadoc/dev/galasa/zostsocommand/IZosTSOCommand.html){target="_blank"} to find out more. |
 
 
 ### z/OS UNIX Command
@@ -532,7 +568,7 @@ The following annotations are available with the z/OS Manager
 | Description: | The `@ZosUNIXCommand` annotation requests the z/OS Manager to provide a z/OS UNIX instance associated with a z/OS image.  The test can request multiple z/OS UNIX Command instances, with the default being associated with the **primary** z/OS image.<br> |
 | Attribute: `imageTag` |  The tag of the z/OS Image this variable is to be populated with |
 | Syntax: | <pre lang="java">@ZosImage(imageTag="A")<br>public IZosImage zosImageA;<br><br>@ZosUNIXCommand(imageTag="A")<br> public IZosUNIXCommand zosUNIXCommandA;<br></pre> |
-| Notes: | The `IZosUNIXCommand` interface provides the methods {@link IZosUNIXCommand#issueCommand(String)} and {@link IZosUNIXCommand#issueCommand(String, long)} to issue a command to z/OS UNIX and returns a [String](https://javadoc.galasa.dev/dev/galasa/zosunixcommand/String.html){target="_blank"} response.<br><br> See [IZosUNIXCommand](https://javadoc.galasa.dev/dev/galasa/zosunixcommand/IZosUNIXCommand.html){target="_blank"} to find out more. |
+| Notes: | The `IZosUNIXCommand` interface provides the methods {@link IZosUNIXCommand#issueCommand(String)} and {@link IZosUNIXCommand#issueCommand(String, long)} to issue a command to z/OS UNIX and returns a String response.<br><br> See [IZosUNIXCommand](../../reference/javadoc/dev/galasa/zosunixcommand/IZosUNIXCommand.html){target="_blank"} to find out more. |
 
 
 ## Code snippets and examples

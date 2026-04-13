@@ -2,7 +2,7 @@
 title: "Zos3270Terminal Manager"
 ---
 
-This Manager is at Beta level. You can view the [Javadoc documentation for the Manager](https://javadoc.galasa.dev/dev/galasa/zos3270/package-summary.html){target="_blank"}.
+You can view the [Javadoc documentation for the Manager](../../reference/javadoc/dev/galasa/zos3270/package-summary.html){target="_blank"}.
 
 
 ## Overview
@@ -15,9 +15,9 @@ The `ConfidentialTextFiltering` service enables confidential information such as
 
 Examples of using colour support and screen sizing are available in the [Code snippets and examples](#code-snippets-and-examples) section.
 
-When running a Galasa test with the Galasa CLI, terminal images are logged to the run log and PNG representations of the terminal screens can also be saved to the Result Archive Store (RAS) as the outputs are now controlled by the `zos3270.terminal.output` CPS property.
+When running a Galasa test with the Galasa CLI, terminal images are logged to the run log and PNG representations of the terminal screens are saved to the Result Archive Store (RAS).
 
-The zos3270Terminal Manager supports [Gherkin keywords](https://github.com/galasa-dev/cli/blob/main/gherkin-docs.md#3270-terminal-manipulation-steps){target="_blank"}. 
+The zos3270Terminal Manager supports [Gherkin keywords](https://github.com/galasa-dev/galasa/blob/main/modules/cli/gherkin-docs.md#3270-terminal-manipulation-steps){target="_blank"}. 
 
 *Note:* The feature for saving PNG representations of the terminal screens to the RAS is available in the current release as experimental code only.
 
@@ -135,18 +135,6 @@ The following properties are used to configure the Zos3270Terminal Manager:
 | Examples: | `zos3270.image.IMAGE_A.device.name=IYCQTC57` |
 
 
-### Select 3270 terminal outputs
-
-| Property: | 3270TerminalOutput CPS Property |
-| --------------------------------------- | :------------------------------------- |
-| Name: | zos3270.terminal.output |
-| Description: | Experimental: Selects the representations of 3270 terminal screens to be saved to the RAS |
-| Required:  | No |
-| Default value: |  JSON  |
-| Valid values: | JSON, PNG  |
-| Examples: | `zos3270.terminal.output=json,png` |
-
-
 ## Annotations provided by the Manager
 
 The following annotations are provided by the Zos3270Terminal Manager:
@@ -161,7 +149,7 @@ The following annotations are provided by the Zos3270Terminal Manager:
 | Attribute: `imageTag` |  The `imageTag` is used to identify the z/OS image. Optional. The default value is "primary".|
 | Attribute: `autoConnect` |  Allows a user to choose if the terminal automatically connects in the provision start stage. Optional. The default value is true.|
 | Syntax: | <pre lang="java">@ZosImage(imageTag="A")<br>public IZosImage zosImageA;<br><br>@Zos3270Terminal(imageTag="A")<br>public ITerminal zosTerminalA;<br></pre> |
-| Notes: | The `ITerminal` interface has a number of methods to issue commands to the 3270 client. See [ITerminal](https://javadoc.galasa.dev/dev/galasa/zos3270/ITerminal.html){target="_blank"} to find out more. |
+| Notes: | The `ITerminal` interface has a number of methods to issue commands to the 3270 client. See [ITerminal](../../reference/javadoc/dev/galasa/zos3270/ITerminal.html){target="_blank"} to find out more. |
 
 
 ## Code snippets and examples

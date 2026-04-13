@@ -5,7 +5,7 @@
 
 	<groupId>dev.galasa</groupId>
 	<artifactId>dev.galasa.wrapping.parent</artifactId>
-	<version>0.43.0</version>
+	<version>0.48.0</version>
 	<packaging>pom</packaging>
 
 	<name>Galasa OSGi Wrapping</name>
@@ -28,7 +28,7 @@
 	<developers>
 		<developer>
 			<name>Galasa Contributors</name>
-			<email>galasadelivery@ibm.com</email>
+			<email>galasa-maintainers@lists.openmainframeproject.org</email>
 			<organization>Linux Foundation</organization>
 			<organizationUrl>https://github.com/galasa-dev</organizationUrl>
 		</developer>
@@ -36,9 +36,9 @@
 
 	<modules>
 		<module>dev.galasa.wrapping.com.auth0.jwt</module>
-		<module>dev.galasa.wrapping.com.jcraft.jsch</module>
 		<module>dev.galasa.wrapping.gson</module>
         <module>dev.galasa.wrapping.httpclient-osgi</module>
+        <module>dev.galasa.wrapping.httpclient5</module>
 		<module>dev.galasa.wrapping.io.grpc.java</module>
 		<module>dev.galasa.wrapping.io.kubernetes.client-java</module>
 		<module>dev.galasa.wrapping.protobuf-java</module>
@@ -63,7 +63,7 @@
 			<dependency>
 				<groupId>dev.galasa</groupId>
 				<artifactId>dev.galasa.platform</artifactId>
-				<version>0.43.0</version>
+				<version>0.48.0</version>
 				<type>pom</type>
           		<scope>import</scope>
 			</dependency>
@@ -114,8 +114,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<source>17</source>
+					<target>17</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -130,7 +130,7 @@
 							<goal>sign</goal>
 						</goals>
 						<configuration>
-						    <gpgArguments>
+							<gpgArguments>
 								<arg>--pinentry-mode</arg>
 								<arg>loopback</arg>
 							</gpgArguments>

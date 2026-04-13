@@ -12,6 +12,7 @@ import java.util.Set;
 import dev.galasa.api.run.Run;
 import dev.galasa.framework.spi.IRun;
 import dev.galasa.framework.spi.RunRasAction;
+import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class MockRun implements IRun {
 
@@ -54,6 +55,11 @@ public class MockRun implements IRun {
     @Override
     public String getRequestor() {
                throw new UnsupportedOperationException("Unimplemented method 'getRequestor'");
+    }
+
+    @Override
+    public String getUser() {
+                throw new UnsupportedOperationException("Unimplemented method 'getUser'");
     }
 
     @Override
@@ -148,5 +154,25 @@ public class MockRun implements IRun {
     
     public Set<String> getTags() {
         throw new UnsupportedOperationException("Unimplemented method 'getTags'");
+    }
+
+    @Override
+    public TestStructure toTestStructure() {
+        throw new UnsupportedOperationException("Unimplemented method 'toTestStructure'");
+    }
+
+    @Override
+    public Instant getInterruptedAt() {
+        throw new UnsupportedOperationException("Unimplemented method 'getInterruptedAt'");
+    }
+
+    @Override
+    public Instant getAllocatedTimeout() {
+        throw new UnsupportedOperationException("Unimplemented method 'getAllocatedTimeout'");
+    }
+
+    @Override
+    public List<String> getRequestedTestMethods() {
+        throw new UnsupportedOperationException("Unimplemented method 'getRequestedTestMethods'");
     }
 }

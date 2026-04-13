@@ -72,7 +72,7 @@ func ResetRun(
 
 func resetRun(runName string,
 	runId string,
-	runStatusUpdateRequest *galasaapi.UpdateRunStatusRequest,
+	runStatusUpdateRequest *galasaapi.UpdateRunRequest,
 	commsClient api.APICommsClient,
 ) error {
 	var err error
@@ -87,28 +87,28 @@ func resetRun(runName string,
 			var resp *http.Response
 			var context context.Context = nil
 
-			_, resp, err = apiClient.ResultArchiveStoreAPIApi.PutRasRunStatusById(context, runId).
-				UpdateRunStatusRequest(*runStatusUpdateRequest).
+			_, resp, err = apiClient.ResultArchiveStoreAPIApi.PutRasRunTagsOrStatusById(context, runId).
+				UpdateRunRequest(*runStatusUpdateRequest).
 				ClientApiVersion(restApiVersion).Execute()
-	
+
 			if resp != nil {
 				defer resp.Body.Close()
 				statusCode := resp.StatusCode
 				if statusCode != http.StatusAccepted {
-	
+
 					responseBody, err = io.ReadAll(resp.Body)
-					log.Printf("putRasRunStatusById Failed - HTTP Response - Status Code: '%v' Payload: '%v'\n", statusCode, string(responseBody))
-	
+					log.Printf("PutRasRunTagsOrStatusById Failed - HTTP Response - Status Code: '%v' Payload: '%v'\n", statusCode, string(responseBody))
+
 					if err == nil {
 						var errorFromServer *galasaErrors.GalasaAPIError
 						errorFromServer, err = galasaErrors.GetApiErrorFromResponse(statusCode, responseBody)
-	
+
 						if err == nil {
 							err = galasaErrors.NewGalasaErrorWithHttpStatusCode(statusCode, galasaErrors.GALASA_ERROR_RESET_RUN_FAILED, runName, errorFromServer.Message)
 						} else {
 							err = galasaErrors.NewGalasaErrorWithHttpStatusCode(statusCode, galasaErrors.GALASA_ERROR_RESET_RUN_RESPONSE_PARSING)
 						}
-	
+
 					} else {
 						err = galasaErrors.NewGalasaErrorWithHttpStatusCode(statusCode, galasaErrors.GALASA_ERROR_UNABLE_TO_READ_RESPONSE_BODY, err.Error())
 					}

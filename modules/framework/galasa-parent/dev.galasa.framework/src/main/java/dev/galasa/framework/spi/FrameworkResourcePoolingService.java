@@ -6,6 +6,7 @@
 package dev.galasa.framework.spi;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -468,6 +469,13 @@ public class FrameworkResourcePoolingService implements IResourcePoolingService 
         /**
          * Commenting as unused, but required from IDynamicStatusStore implementation.
          */
+        public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+            return new ArrayList<>();
+        }
+
+        /**
+         * Commenting as unused, but required from IDynamicStatusStore implementation.
+         */
         public String get(@NotNull String key) throws DynamicStatusStoreException {
             return null;
         }
@@ -533,6 +541,11 @@ public class FrameworkResourcePoolingService implements IResourcePoolingService 
         @Override
         public void performActions(IDssAction... actions) throws DynamicStatusStoreException {
             
+        }
+
+        @Override
+        public void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs)
+                throws DynamicStatusStoreException {
         }
 
     }

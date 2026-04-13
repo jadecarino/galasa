@@ -53,6 +53,7 @@ public class UserImpl implements IUser {
         this.userDocBean = new UserDoc( user.getLoginId() , trustedClients, user.getRoleId());
         this.userDocBean.setVersion( user.getVersion() );
         this.userDocBean.setUserNumber( user.getUserNumber() );
+        this.userDocBean.setPriority(user.getPriority());
     }
 
     public String toJson( GalasaGson gson) {
@@ -72,6 +73,16 @@ public class UserImpl implements IUser {
 
     public void setRoleId(String newRoleId) {
         this.userDocBean.setRoleId(newRoleId);
+    }
+
+    @Override
+    public @NotNull int getPriority() {
+        return this.userDocBean.getPriority();
+    }
+
+    @Override
+    public void setPriority(int newPriority) {
+        this.userDocBean.setPriority(newPriority);
     }
 
     @Override

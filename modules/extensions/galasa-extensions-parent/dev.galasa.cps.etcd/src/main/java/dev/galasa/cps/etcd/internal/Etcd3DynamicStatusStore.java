@@ -5,10 +5,12 @@
  */
 package dev.galasa.cps.etcd.internal;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +38,6 @@ import dev.galasa.framework.spi.IDynamicStatusStoreWatcher;
 import dev.galasa.framework.spi.IDynamicStatusStoreWatcher.Event;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
-import io.etcd.jetcd.KV;
 import io.etcd.jetcd.KeyValue;
 import io.etcd.jetcd.Lease;
 import io.etcd.jetcd.Txn;
@@ -66,14 +67,14 @@ import io.etcd.jetcd.watch.WatchResponse;
  * 
  * @author James Davies
  */
-public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
-    private final Client                            client;
-    private final KV                                kvClient;
+public class Etcd3DynamicStatusStore extends Etcd3Store implements IDynamicStatusStore {
     private final Watch                             watchClient;
     private final Lease                             leaseClient;
     private Log logger = LogFactory.getLog(Etcd3DynamicStatusStore.class);
 
     private final HashMap<UUID, PassthroughWatcher> watchers = new HashMap<>();
+
+    private final static boolean GET_KEYS_ONLY = true;
 
     /**
      * The constructure sets up a private KVClient that can be used by this class to
@@ -84,13 +85,14 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
      * 
      * @param dssUri - http:// uri for th etcd cluster.
      */
-    public Etcd3DynamicStatusStore(URI dssUri) {
-        this(Client.builder().endpoints(dssUri).build());
+    public Etcd3DynamicStatusStore(URI dssUri, int maxgRPCMessageSize) {
+        super(dssUri, maxgRPCMessageSize);
+        this.watchClient = client.getWatchClient();
+        this.leaseClient = client.getLeaseClient();
     }
 
     public Etcd3DynamicStatusStore(Client client) {
-        this.client = client;
-        this.kvClient = client.getKVClient();
+        super(client);
         this.watchClient = client.getWatchClient();
         this.leaseClient = client.getLeaseClient();
     }
@@ -124,14 +126,44 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
      */
     @Override
     public void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException {
-        Txn txn = kvClient.txn();
         PutOption options = PutOption.DEFAULT;
+        setPropertiesIntoDSS(keyValues, options);
+    }
+
+    /**
+     * Put multiple key-value pairs into the DSS that expire after a given amount of time in seconds
+     * 
+     * @param keyValues the key-value pairs to be stored
+     * @param timeToLiveSecs the amount of time in seconds for the key-value pairs to be available for before expiring
+     * @throws DynamicStatusStoreException if there was an error accessing etcd
+     */
+    @Override
+    public void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs)
+            throws DynamicStatusStoreException {
+
+        // Create a new lease with the given time-to-live (TTL)
+        CompletableFuture<LeaseGrantResponse> leaseResponse = leaseClient.grant(timeToLiveSecs);
+        try {
+            LeaseGrantResponse lease = leaseResponse.get();
+            PutOption putOption = PutOption.builder()
+                .withLeaseId(lease.getID())
+                .build();
+
+            setPropertiesIntoDSS(keyValues, putOption);
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            throw new DynamicStatusStoreException("Could not set key-value pair with time-to-live", e);
+        }
+    }
+
+    private void setPropertiesIntoDSS(@NotNull Map<String, String> keyValues, @NotNull PutOption putOption) throws DynamicStatusStoreException {
+        Txn txn = kvClient.txn();
 
         ArrayList<Op> ops = new ArrayList<>();
         for (String key : keyValues.keySet()) {
             ByteSequence obsKey = ByteSequence.from(key, UTF_8);
             ByteSequence obsValue = ByteSequence.from(keyValues.get(key), UTF_8);
-            ops.add(Op.put(obsKey, obsValue, options));
+            ops.add(Op.put(obsKey, obsValue, putOption));
         }
         Txn request = txn.Then(ops.toArray(new Op[ops.size()]));
         CompletableFuture<TxnResponse> response = request.commit();
@@ -139,9 +171,8 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
             response.get();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            throw new DynamicStatusStoreException("", e);
+            throw new DynamicStatusStoreException("Could not put key-value pairs into the DSS", e);
         }
-
     }
 
     /**
@@ -305,31 +336,89 @@ public class Etcd3DynamicStatusStore implements IDynamicStatusStore {
     @Override
     public @NotNull Map<String, String> getPrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException {
 
-        logger.debug("Etcd extension getting property with a prefix of "+keyPrefix);
-        ByteSequence bsPrefix = ByteSequence.from(keyPrefix, UTF_8);
-
-        ByteSequence prefixEnd = OptionsUtil.prefixEndOf(bsPrefix);
-        GetOption options = GetOption.builder().withRange(prefixEnd).build();
-
-        CompletableFuture<GetResponse> getFuture = kvClient.get(bsPrefix, options);
         Map<String, String> keyValues = new HashMap<>();
 
-        try {
-            GetResponse response = getFuture.get();
-            List<KeyValue> kvs = response.getKvs();
+        List<KeyValue> kvs = getPropertiesFromETCDWithPrefix(keyPrefix, !GET_KEYS_ONLY);
 
-            if (kvs.isEmpty()) {
-                return new HashMap<>();
-            }
-
+        if (!kvs.isEmpty()) {
             for (KeyValue kv : kvs) {
                 keyValues.put(kv.getKey().toString(UTF_8), kv.getValue().toString(UTF_8));
             }
-            return keyValues;
-        } catch (InterruptedException | ExecutionException e) {
-            Thread.currentThread().interrupt();
-            throw new DynamicStatusStoreException("Could not retrieve key.", e);
         }
+        return keyValues;
+    }
+
+    /**
+     * A get of all keys that start with a specified prefix. They are returned in a collection.
+     * 
+     * @param keyPrefix - the prefix for any key(s)
+     * @return A collection of keys
+     * @throws DynamicStatusStoreException A failure occurred.
+     */
+    @Override
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+
+        Collection<String> keysWithPrefix = new ArrayList<String>();
+
+        List<KeyValue> keyValues = getPropertiesFromETCDWithPrefix(keyPrefix, GET_KEYS_ONLY);
+
+        if (!keyValues.isEmpty()) {
+            for (KeyValue kv : keyValues) {
+                String key = kv.getKey().toString(UTF_8);
+                keysWithPrefix.add(key);
+            }
+        }
+        return keysWithPrefix;
+    }
+
+    private List<KeyValue> getPropertiesFromETCDWithPrefix(String keyPrefix, boolean keysOnly) throws DynamicStatusStoreException {
+
+        logger.debug("Etcd extension getting all keys with a prefix of " + keyPrefix);
+
+        List<KeyValue> allKvs = new ArrayList<>();
+        
+        ByteSequence bsPrefix = ByteSequence.from(keyPrefix, UTF_8);
+        ByteSequence prefixEnd = OptionsUtil.prefixEndOf(bsPrefix);
+
+        // Process 10,000 keys at a time to avoid hitting the gRPC maximum message size.
+        int pageSize = 10000;
+
+        GetOption options = GetOption.builder()
+            .withRange(prefixEnd)
+            .withKeysOnly(keysOnly)
+            .withLimit(pageSize)
+            .build();
+
+        ByteSequence startKey = bsPrefix;
+        while (true) {
+            CompletableFuture<GetResponse> getFuture = kvClient.get(startKey, options);
+
+            List<KeyValue> kvs = new ArrayList<>();
+            try {
+                GetResponse response = getFuture.get();
+                kvs = response.getKvs();
+            } catch (InterruptedException | ExecutionException e) {
+                Thread.currentThread().interrupt();
+                throw new DynamicStatusStoreException("Could not retrieve keys.", e);
+            }
+
+            allKvs.addAll(kvs);
+
+            if (kvs.size() < pageSize) {
+                break;
+            }
+
+            ByteSequence lastKeyProcessed = kvs.get(kvs.size() - 1).getKey();
+            byte[] lastKeyBytes = lastKeyProcessed.getBytes();
+            byte[] nextKeyBytes = Arrays.copyOf(lastKeyBytes, lastKeyBytes.length + 1);
+            // Append 0x00 to get the next lexographical key after the last processed key
+            nextKeyBytes[nextKeyBytes.length - 1] = 0x00;
+
+            // Update start key for next page
+            startKey = ByteSequence.from(nextKeyBytes);
+        }
+
+        return allKvs;
     }
 
     /**

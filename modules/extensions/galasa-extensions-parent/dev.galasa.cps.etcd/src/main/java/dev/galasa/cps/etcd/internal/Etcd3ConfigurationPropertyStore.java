@@ -5,7 +5,7 @@
  */
 package dev.galasa.cps.etcd.internal;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +22,7 @@ import javax.validation.constraints.Null;
 import dev.galasa.framework.spi.ConfigurationPropertyStoreException;
 import dev.galasa.framework.spi.IConfigurationPropertyStore;
 import io.etcd.jetcd.ByteSequence;
+import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KeyValue;
 import io.etcd.jetcd.kv.GetResponse;
 import io.etcd.jetcd.options.GetOption;
@@ -43,6 +44,10 @@ public class Etcd3ConfigurationPropertyStore extends Etcd3Store implements IConf
      */
     public Etcd3ConfigurationPropertyStore(URI cpsUri) {
         super(cpsUri);
+    }
+
+    public Etcd3ConfigurationPropertyStore(Client etcdClient) {
+        super(etcdClient);
     }
 
     /**
@@ -131,7 +136,7 @@ public class Etcd3ConfigurationPropertyStore extends Etcd3Store implements IConf
     public void deletePrefixedProperties(@NotNull String prefix) throws ConfigurationPropertyStoreException {
         
         try {
-            deletePrefix(prefix);
+            deletePropertiesWithPrefix(prefix);
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new ConfigurationPropertyStoreException("Failed to delete properties", e);
@@ -195,6 +200,13 @@ public class Etcd3ConfigurationPropertyStore extends Etcd3Store implements IConf
         return results;
     }
 
-
-
+    @Override
+    public void setProperties(Map<String, String> propertiesToSet) throws ConfigurationPropertyStoreException {
+        try {
+            putAll(propertiesToSet);
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            throw new ConfigurationPropertyStoreException("Failed to set properties", e);
+        }
+    }
 }

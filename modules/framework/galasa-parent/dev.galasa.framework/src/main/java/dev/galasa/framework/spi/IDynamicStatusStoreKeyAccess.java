@@ -5,6 +5,7 @@
  */
 package dev.galasa.framework.spi;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -52,6 +53,15 @@ public interface IDynamicStatusStoreKeyAccess {
      * @throws DynamicStatusStoreException
      */
     void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException;
+
+    /**
+     * Store multiple key/value pairs in the server with a given expiry time in the server
+     * 
+     * @param keyValues - map of key/value pairs
+     * @param timeToLiveSecs - the amount of time in seconds for the key-value pairs to remain available
+     * @throws DynamicStatusStoreException if there was an issue accessing the DSS
+     */
+    void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs) throws DynamicStatusStoreException;
 
     /**
      * Store a new key-value pair with a given expiry time in the server
@@ -111,6 +121,15 @@ public interface IDynamicStatusStoreKeyAccess {
      */
     @NotNull
     Map<String, String> getPrefix(@NotNull String keyPrefix) throws DynamicStatusStoreException;
+
+    /**
+     * Retrieve all keys with this key prefix
+     * 
+     * @param keyPrefix - the prefix of all the keys to use.
+     * @return A collection of keys that start with the specified prefix.
+     * @throws DynamicStatusStoreException
+     */
+    Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException;
 
     /**
      * Delete the key

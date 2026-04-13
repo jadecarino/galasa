@@ -28,6 +28,7 @@ import dev.galasa.framework.internal.runner.TagHarvester;
 import dev.galasa.framework.internal.runner.TestRunnerDataProvider;
 import dev.galasa.framework.maven.repository.spi.IMavenRepository;
 import dev.galasa.framework.spi.AbstractManager;
+import dev.galasa.framework.spi.DssPropertyKeyRunNameSuffix;
 import dev.galasa.framework.spi.DynamicStatusStoreException;
 import dev.galasa.framework.spi.FrameworkException;
 import dev.galasa.framework.spi.FrameworkResourceUnavailableException;
@@ -73,23 +74,27 @@ public class TestRunner extends BaseTestRunner {
 
         String testBundleName = run.getTestBundleName();
         String testClassName = run.getTestClassName();
-
-        this.testStructure = createNewTestStructure(run);
-        writeTestStructure();
             
         try {
+            clearRunHungInterruptIfSet();
 
-            String rasRunId = this.ras.calculateRasRunId();
-            storeRasRunIdInDss(dss, rasRunId);
+            this.testStructure = createNewTestStructure(run);
+
+            String rasRunId = run.getRasRunId();
+            if (rasRunId == null) {
+                writeTestStructure();
+
+                rasRunId = this.ras.calculateRasRunId();
+                storeRasRunIdInDss(dss, rasRunId);
+            }
 
             Class<?> testClass ;
 
             try {
-                
                 String streamName = AbstractManager.nulled(run.getStream());
                 new MavenRepositoryListBuilder(this.mavenRepository, this.cps)
                     .addMavenRepositories(streamName, run.getRepository());
-                new FelixRepoAdminOBRAdder(this.repositoryAdmin, this.cps)
+                new FelixRepoAdminOBRAdder(this.repositoryAdmin, this.cps, this.timeService)
                     .addOBRsToRepoAdmin(streamName, run.getOBR());
 
 
@@ -99,6 +104,7 @@ public class TestRunner extends BaseTestRunner {
 
 
             } catch (Exception ex) {
+                this.testStructure.setResult(Result.envfail(ex).getName());
                 updateStatus(TestRunLifecycleStatus.FINISHED, "finished");
                 throw new TestRunException(ex.getMessage(),ex);
             }
@@ -113,6 +119,7 @@ public class TestRunner extends BaseTestRunner {
             switch(this.runType) {
             case TEST:
                 heartbeat = createBeatingHeart(framework);
+                timeoutMonitor = createTimeoutMonitor(framework);
                 incrimentMetric(dss,run);
                 break;
             case SHARED_ENVIRONMENT_BUILD:
@@ -127,7 +134,6 @@ public class TestRunner extends BaseTestRunner {
                 logger.error("Logic error. A RunType has been added for which the cleanup logic has not been implemented!");
             }
 
-            logger.debug("state changing to started.");
             updateStatus(TestRunLifecycleStatus.STARTED, "started");
 
 
@@ -206,7 +212,7 @@ public class TestRunner extends BaseTestRunner {
             if (this.runType == RunType.SHARED_ENVIRONMENT_DISCARD) {
                 this.testStructure.setResult("Discarded");
                 try {
-                    this.dss.deletePrefix("run." + this.run.getName() + ".shared.environment");
+                    this.dss.deletePrefix("run." + this.run.getName() + "." + DssPropertyKeyRunNameSuffix.SHARED_ENVIRONMENT);
                 } catch (DynamicStatusStoreException e) {
                     logger.error("Problem cleaning shared environment properties", e);
                 }
@@ -216,6 +222,9 @@ public class TestRunner extends BaseTestRunner {
 
         logger.debug("Stopping heartbeat...");
         stopHeartbeat();
+        
+        logger.debug("Stopping timeout monitor...");
+        stopTimeoutMonitor();
 
         // Record all the CPS properties that were accessed
         saveUsedCPSPropertiesToArtifact(this.framework.getRecordProperties(), this.fileSystem, this.ras);
@@ -303,7 +312,10 @@ public class TestRunner extends BaseTestRunner {
             TestStructure testStructure) throws TestRunException {
         TestClassWrapper testClassWrapper;
         try {
-            testClassWrapper = new TestClassWrapper(this, testBundleName, testClass, testStructure);
+            testClassWrapper = new TestClassWrapper(
+                testBundleName, testClass, testStructure, this.getContinueOnTestFailureFromCPS(), 
+                this.getFramework().getResultArchiveStore(), getInterruptedMonitor()
+            );
         } catch (Exception e) {
             String msg = "Problem with the CPS when adding a wrapper";
             logger.error(msg + " " + e.getMessage());
@@ -491,7 +503,7 @@ public class TestRunner extends BaseTestRunner {
                 updateStatus(TestRunLifecycleStatus.RUNNING, null);
                 try {
                     logger.info("Running the test class");
-                    testClassWrapper.runMethods(managers, dss, runName);
+                    testClassWrapper.runMethods(managers, dss, runName, run.getRequestedTestMethods());
                 } finally {
                     updateStatus(TestRunLifecycleStatus.RUNDONE, null);
                 }

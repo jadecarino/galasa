@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.lang.annotation.Annotation;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 
 import javax.validation.constraints.NotNull;
@@ -26,6 +27,25 @@ import dev.galasa.framework.spi.language.GalasaTest;
 import dev.galasa.framework.spi.teststructure.TestStructure;
 
 public class TestTestRunner {
+
+    class MockAnnotationExtractor implements IAnnotationExtractor {
+
+        Map<String, Annotation> annotationToReturnMap = new HashMap<>();
+
+        public <A, B extends Annotation> void addAnnotation( Class<A> testClass, Class<B> annotationClass , B toReturn) {
+            String key = testClass.getName()+"-"+annotationClass.getName();
+            annotationToReturnMap.put( key, toReturn );
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <A, B extends Annotation> B getAnnotation(Class<A> testClass, Class<B> annotationClass) {
+            String key = testClass.getName()+"-"+annotationClass.getName();
+            // The following type-cast is unsafe, or would be were we not in full control of all the 
+            // inputs and outputs in a unit test setting...
+            return  (B) annotationToReturnMap.get(key);
+        }
+    }
 
     @Test 
     public void testCanCreateRunnerOK() throws Exception {
@@ -107,26 +127,6 @@ public class TestTestRunner {
         List<Bundle> bundles = List.of(myBundle1);
         MockBundleContext mockBundleContext = new MockBundleContext(servicesMap, bundles);
 
-
-        class MockAnnotationExtractor implements IAnnotationExtractor {
-
-            Map<String, Annotation> annotationToReturnMap = new HashMap<>();
-
-            public <A, B extends Annotation> void addAnnotation( Class<A> testClass, Class<B> annotationClass , B toReturn) {
-                String key = testClass.getName()+"-"+annotationClass.getName();
-                annotationToReturnMap.put( key, toReturn );
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <A, B extends Annotation> B getAnnotation(Class<A> testClass, Class<B> annotationClass) {
-                String key = testClass.getName()+"-"+annotationClass.getName();
-                // The following type-cast is unsafe, or would be were we not in full control of all the 
-                // inputs and outputs in a unit test setting...
-                return  (B) annotationToReturnMap.get(key);
-            }
-        }
-
         MockAnnotationExtractor mockAnnotationExtractor = new MockAnnotationExtractor();
         dev.galasa.Test annotationToReturn = MyActualTestClass.class.getAnnotation(dev.galasa.Test.class);
         assertThat(annotationToReturn).isNotNull();
@@ -176,14 +176,14 @@ public class TestTestRunner {
 
         // initial setup.
         assertThat(rasHistory.get(0)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
-            .containsExactly("myTestRun",null,null, null, "daffyduck", null,null);
+            .containsExactly("myTestRun","myTestBundle","dev.galasa.framework.MyActualTestClass", null, "daffyduck", null,null);
 
         // Check that the RAS structure is populated with tags from the outset.
         assertThat(rasHistory.get(0).getTags()).containsOnly("tag1","tag2");
 
         // status = started
         assertThat(rasHistory.get(1)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
-            .containsExactly("myTestRun",null,null, null, "daffyduck", "started",null);
+            .containsExactly("myTestRun", "myTestBundle", "dev.galasa.framework.MyActualTestClass", null, "daffyduck", "started",null);
 
         // status = generating
         assertThat(rasHistory.get(2)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
@@ -290,6 +290,11 @@ public class TestTestRunner {
         public void put(@NotNull String key, @NotNull String value) throws DynamicStatusStoreException {
             // Do nothing.
         }
+
+        @Override
+        public void put(@NotNull Map<String, String> keyValues) throws DynamicStatusStoreException {
+            // Do nothing.
+        }
     };
 
     @Test
@@ -357,26 +362,6 @@ public class TestTestRunner {
         List<Bundle> bundles = List.of(myBundle1);
         MockBundleContext mockBundleContext = new MockBundleContext(servicesMap, bundles);
 
-
-        class MockAnnotationExtractor implements IAnnotationExtractor {
-
-            Map<String, Annotation> annotationToReturnMap = new HashMap<>();
-
-            public <A, B extends Annotation> void addAnnotation( Class<A> testClass, Class<B> annotationClass , B toReturn) {
-                String key = testClass.getName()+"-"+annotationClass.getName();
-                annotationToReturnMap.put( key, toReturn );
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <A, B extends Annotation> B getAnnotation(Class<A> testClass, Class<B> annotationClass) {
-                String key = testClass.getName()+"-"+annotationClass.getName();
-                // The following type-cast is unsafe, or would be were we not in full control of all the 
-                // inputs and outputs in a unit test setting...
-                return  (B) annotationToReturnMap.get(key);
-            }
-        }
-
         MockAnnotationExtractor mockAnnotationExtractor = new MockAnnotationExtractor();
         dev.galasa.Test annotationToReturn = MyActualTestClass.class.getAnnotation(dev.galasa.Test.class);
         assertThat(annotationToReturn).isNotNull();
@@ -423,7 +408,7 @@ public class TestTestRunner {
         };
 
         // When...
-        TestRunException ex = catchThrowableOfType( ()->runner.runTest(testRunData), TestRunException.class);
+        TestRunException ex = catchThrowableOfType(TestRunException.class, ()->runner.runTest(testRunData));
 
         /// Then...
         assertThat(ex).isNotNull();      
@@ -435,15 +420,137 @@ public class TestTestRunner {
 
         // initial setup.
         assertThat(rasHistory.get(0)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
-            .containsExactly("myTestRun",null,null, null, "daffyduck", null,null);
+            .containsExactly("myTestRun", "myTestBundle", "dev.galasa.framework.MyActualTestClass", null, "daffyduck", null,null);
 
         // status = started
         assertThat(rasHistory.get(1)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
-            .containsExactly("myTestRun",null,null, null, "daffyduck", "started",null);
+            .containsExactly("myTestRun", "myTestBundle", "dev.galasa.framework.MyActualTestClass", null, "daffyduck", "started",null);
 
         // status = finished
         assertThat(rasHistory.get(2)).extracting("runName","bundle", "testName", "testShortName", "requestor", "status", "result")
             .containsExactly("myTestRun","myTestBundle","dev.galasa.framework.MyActualTestClass", "MyActualTestClass", "daffyduck", "finished","EnvFail");
 
+    }
+
+    @Test
+    public void testTestRunnerClearsHungInterruptWhenRunStarts() throws Exception {
+
+        String TEST_STREAM_REPO_URL = "http://myhost/myRepositoryForMyRun";
+        String TEST_BUNDLE_NAME = "myTestBundle";
+        String TEST_CLASS_NAME = MyActualTestClass.class.getName();
+        String TEST_RUN_NAME = "myTestRun";
+        String TEST_STREAM = "myStreamForMyRun";
+        String TEST_STREAM_OBR = "http://myhost/myObrForMyRun";
+        String TEST_REQUESTOR_NAME = "daffyduck";
+        boolean TEST_IS_LOCAL_RUN_TRUE = true;
+        boolean IGNORE_TEST_CLASS_FALSE = false;
+        String TEST_GHERKIN_URL = "http://my.gherkin.url";
+        String TEST_GROUP = "myGroup";
+        String TEST_SUBMISSION_ID = "mySubmissionId";
+        Set<String> testTagsInput = new HashSet<String>();
+        testTagsInput.add("tag1");
+        testTagsInput.add("tag2");
+
+        MockFileSystem mockFileSystem = new MockFileSystem();
+        Properties overrideProps = new Properties();
+        MockIResultArchiveStore ras = new MockIResultArchiveStore("myRunId", mockFileSystem ); 
+
+        MockIDynamicStatusStoreService dss = new MockDSSWhichDoesNothing();
+
+        MockRun run = new MockRun(
+            TEST_BUNDLE_NAME, 
+            TEST_CLASS_NAME , 
+            TEST_RUN_NAME, 
+            TEST_STREAM, 
+            TEST_STREAM_OBR , 
+            TEST_STREAM_REPO_URL,
+            TEST_REQUESTOR_NAME,
+            TEST_IS_LOCAL_RUN_TRUE,
+            TEST_GHERKIN_URL,
+            TEST_GROUP,
+            TEST_SUBMISSION_ID,
+            testTagsInput
+        );
+
+        // Mark this run as "Hung" - this interrupt should get cleared out when the run's status gets updated
+        run.setInterruptReason(Result.HUNG);
+        run.setInterruptedAt(Instant.now());
+
+        MockFrameworkRuns frameworkRuns = new MockFrameworkRuns( "myRunsGroup", List.of(run));
+
+        MockShutableFramework framework = new MockShutableFramework(ras,dss,TEST_RUN_NAME, run, frameworkRuns );
+        IConfigurationPropertyStoreService cps = new MockIConfigurationPropertyStoreService();
+
+        IMavenRepository mockMavenRepo = new MockMavenRepository();
+
+        Repository repo1 = new MockRepository(TEST_STREAM_REPO_URL);
+        List<Repository> repositories = List.of(repo1);
+
+        boolean IS_RESOLVER_GOING_TO_RESOLVE_TEST_BUNDLE = true;
+        Resolver resolver = new MockResolver( IS_RESOLVER_GOING_TO_RESOLVE_TEST_BUNDLE );
+        Resource mockResource = new MockResource(TEST_STREAM_OBR);
+
+        MockRepositoryAdmin mockRepoAdmin = new MockRepositoryAdmin(repositories, resolver) {
+            @Override
+            public Resource[] discoverResources(String filterExpr) throws InvalidSyntaxException {
+                Resource[] results = new Resource[1];
+                results[0] = mockResource ;
+                return results;
+            }
+        };
+
+        MockBundleManager mockBundleManager = new MockBundleManager();
+
+        Map<String,MockServiceReference<?>> servicesMap = new HashMap<>();
+
+        Map<String,Class<?>> loadedClasses = Map.of( TEST_CLASS_NAME , MyActualTestClass.class );
+        MockBundle myBundle1 = new MockBundle( loadedClasses , TEST_BUNDLE_NAME );
+        List<Bundle> bundles = List.of(myBundle1);
+        MockBundleContext mockBundleContext = new MockBundleContext(servicesMap, bundles);
+
+        MockAnnotationExtractor mockAnnotationExtractor = new MockAnnotationExtractor();
+        dev.galasa.Test annotationToReturn = MyActualTestClass.class.getAnnotation(dev.galasa.Test.class);
+        assertThat(annotationToReturn).isNotNull();
+
+        mockAnnotationExtractor.addAnnotation(
+            MyActualTestClass.class, 
+            dev.galasa.Test.class,
+            annotationToReturn
+        );
+
+        TestRunner runner = new TestRunner();
+        runner.mavenRepository = mockMavenRepo;
+        runner.repositoryAdmin = mockRepoAdmin;
+
+        // Inject the bundle context before we run the test.
+        runner.activate(mockBundleContext);
+
+        Result testResult = Result.passed();
+        
+        MockTestRunManagers mockTestRunManagers = new MockTestRunManagers(IGNORE_TEST_CLASS_FALSE, testResult );
+
+        MockTestRunnerEventsProducer mockEventsPublisher = new MockTestRunnerEventsProducer();
+        
+        MockTestRunnerDataProvider testRunData = new MockTestRunnerDataProvider(
+            cps,
+            dss,
+            ras,
+            run,
+            framework,
+            overrideProps,
+            mockAnnotationExtractor,
+            mockBundleManager,
+            mockTestRunManagers,
+            mockFileSystem,
+            mockEventsPublisher
+        );
+
+        // When...
+        runner.runTest(testRunData);
+
+        // Then...
+        // The interrupt-related run properties should have been cleared
+        assertThat(run.getInterruptReason()).isNull();
+        assertThat(run.getInterruptedAt()).isNull();
     }
 }

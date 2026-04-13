@@ -7,6 +7,7 @@ package dev.galasa.framework.internal.dss;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -77,6 +78,11 @@ public class FpfDynamicStatusStore implements IDynamicStatusStore {
             throw new DynamicStatusStoreException("Unable to put map of key/value pairs", e);
         }
 
+    }
+
+    @Override
+    public void put(@NotNull Map<String, String> keyValues, @NotNull long timeToLiveSecs) throws DynamicStatusStoreException {
+        throw new UnsupportedOperationException("Creating entries that expire for a file-based DSS is not supported");
     }
 
     @Override
@@ -155,6 +161,23 @@ public class FpfDynamicStatusStore implements IDynamicStatusStore {
             return fpf.getPrefix(keyPrefix);
         } catch (Exception e) {
             throw new DynamicStatusStoreException("Unable to get map of key/value pairs with given key prefix", e);
+        }
+    }
+
+    /**
+     * <p>
+     * This method gets all keys with a given key prefix from the DSS.
+     * </p>
+     * 
+     * @param keyPrefix
+     * @throws DynamicStatusStoreException
+     */
+    @Override
+    public Collection<String> getPrefixKeysOnly(@NotNull String keyPrefix) throws DynamicStatusStoreException {
+        try {
+            return fpf.getPrefixKeysOnly(keyPrefix);
+        } catch (Exception e) {
+            throw new DynamicStatusStoreException("Unable to get list of keys with given key prefix", e);
         }
     }
 
