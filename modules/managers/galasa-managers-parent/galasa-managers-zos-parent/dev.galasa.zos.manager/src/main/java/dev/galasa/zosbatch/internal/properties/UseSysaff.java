@@ -25,7 +25,7 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  * @galasa.valid_values true or false
  * 
  * @galasa.examples 
- * <code>zosbatch.batchjobe.MVSA.use.sysaff=true</code><br>
+ * <code>zosbatch.batchjob.MVSA.use.sysaff=true</code><br>
  * <code>zosbatch.batchjob.default.use.sysaff=false</code>
  *
  */

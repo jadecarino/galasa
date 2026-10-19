@@ -29,6 +29,7 @@ import dev.galasa.zosbatch.IZosBatchJobname;
 import dev.galasa.zosbatch.ZosBatchException;
 import dev.galasa.zosbatch.ZosBatchJobcard;
 import dev.galasa.zosbatch.ZosBatchManagerException;
+import dev.galasa.zosbatch.spi.ZosBatchSuppliedJobcard;
 import dev.galasa.zosmf.IZosmf.ZosmfRequestType;
 import dev.galasa.zosmf.IZosmfResponse;
 import dev.galasa.zosmf.IZosmfRestApiProcessor;
@@ -76,6 +77,16 @@ public class ZosmfZosBatchImpl implements IZosBatch {
         return zosBatchJob.submitJob();
     }
 
+    @Override
+    public @NotNull IZosBatchJob submitJobWithSuppliedJobcard(@NotNull String jcl) throws ZosBatchException {
+        ZosBatchSuppliedJobcard suppliedJobcard = ZosBatchSuppliedJobcard.parse(jcl);
+        IZosBatchJobname jobname = this.zosBatchManager.newZosBatchJobname(suppliedJobcard.getJobname());
+
+        ZosmfZosBatchJobImpl zosBatchJob = new ZosmfZosBatchJobImpl(this.zosBatchManager, this.image, jobname, jcl, null, true);
+        this.zosBatchJobs.add(zosBatchJob);
+
+        return zosBatchJob.submitJob();
+    }
 
     @Override
     public List<IZosBatchJob> getJobs(String jobname, String owner) throws ZosBatchException {

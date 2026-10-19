@@ -216,4 +216,71 @@ public class ZosManagerBatchIVT {
     		}
     	}
     }
+
+    /*
+     * Submits JCL that contains its own single record JOB statement.
+     * The job name must be taken from the supplied JOB statement and used to track the job
+     */
+    @Test
+    public void submitJCLWithSuppliedJobcard() throws TestBundleResourceException, IOException, ZosBatchException {
+        Map<String,Object> parameters = new HashMap<>();
+        parameters.put("JOBNAME", jobName.getName());
+        String jclInput = resources.retrieveSkeletonFileAsString("/jcl/suppliedJobcard.jcl", parameters);
+        assertThat(jclInput).startsWith("//" + jobName.getName() + " JOB");
+
+        IZosBatchJob job = batch.submitJobWithSuppliedJobcard(jclInput);
+        int returnCode = job.waitForJob();
+        assertThat(job.getJobname().getName()).isEqualTo(jobName.getName());
+        assertThat(returnCode).isEqualTo(0);
+        assertThat(job.retrieveOutputAsString()).contains(jobName.getName());
+    }
+
+    /*
+     * Submits JCL that contains its own JOB statement that is continued over several records
+     * and has comment records before and within the statement
+     */
+    @Test
+    public void submitJCLWithSuppliedMultiLineJobcard() throws TestBundleResourceException, IOException, ZosBatchException {
+        Map<String,Object> parameters = new HashMap<>();
+        parameters.put("JOBNAME", jobName.getName());
+        String jclInput = resources.retrieveSkeletonFileAsString("/jcl/suppliedJobcardMultiLine.jcl", parameters);
+
+        IZosBatchJob job = batch.submitJobWithSuppliedJobcard(jclInput);
+        int returnCode = job.waitForJob();
+        assertThat(job.getJobname().getName()).isEqualTo(jobName.getName());
+        assertThat(returnCode).isEqualTo(0);
+    }
+
+    /*
+     * Submitting JCL that does not start with a JOB statement using the supplied job card method
+     * must be rejected without a job being submitted
+     */
+    @Test
+    public void submitJCLWithSuppliedJobcardNoJobcard() throws TestBundleResourceException, IOException {
+        String jclInput = resources.retrieveFileAsString("/jcl/doNothing.jcl");
+        assertThatThrownBy(() -> batch.submitJobWithSuppliedJobcard(jclInput))
+            .isInstanceOf(ZosBatchException.class)
+            .hasMessageContaining("No valid JOB statement found");
+    }
+
+    /*
+     * Submits JCL that contains its own JOB statement and its own SYSAFF specification.
+     * The Manager must not add a second /*JOBPARM SYSAFF= record, regardless of the use sysaff property
+     */
+    @Test
+    public void submitJCLWithSuppliedJobcardAndSysaff() throws TestBundleResourceException, IOException, ZosBatchException {
+        Map<String,Object> parameters = new HashMap<>();
+        parameters.put("JOBNAME", jobName.getName());
+        parameters.put("SYSAFF", imagePrimary.getImageID());
+        String jclInput = resources.retrieveSkeletonFileAsString("/jcl/suppliedJobcardWithSysaff.jcl", parameters);
+        assertThat(jclInput).contains("/*JOBPARM SYSAFF=" + imagePrimary.getImageID());
+
+        IZosBatchJob job = batch.submitJobWithSuppliedJobcard(jclInput);
+        int returnCode = job.waitForJob();
+        assertThat(job.getJobname().getName()).isEqualTo(jobName.getName());
+        assertThat(returnCode).isEqualTo(0);
+
+        String jesJcl = job.getSpoolFile("JESJCL").getRecords();
+        assertThat(jesJcl.split("/\\*JOBPARM", -1).length - 1).as("number of JOBPARM records in the JCL as converted by JES").isEqualTo(1);
+    }
 }

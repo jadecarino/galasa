@@ -26,7 +26,7 @@ import dev.galasa.framework.spi.cps.CpsProperties;
  * @galasa.valid_values true or false
  * 
  * @galasa.examples 
- * <code>zosbatch.batchjobe.MVSA.truncate.jcl.records=true</code><br>
+ * <code>zosbatch.batchjob.MVSA.truncate.jcl.records=true</code><br>
  * <code>zosbatch.batchjob.default.truncate.jcl.records=false</code>
  *
  */

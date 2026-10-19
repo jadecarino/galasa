@@ -29,8 +29,9 @@ import dev.galasa.framework.spi.ValidAnnotatedFields;
  * public IZosBatch zosBatchA;<br></code>
  * 
  * @galasa.extra
- * The <code>IZosBatch</code> interface has a single method, {@link IZosBatch#submitJob(String, IZosBatchJobname)} to submit a JCL 
- * as a <code>String</code> and returns a <code>IZosBatchJob</code> instance.<br><br>
+ * The <code>IZosBatch</code> interface has the method {@link IZosBatch#submitJob(String, IZosBatchJobname)} to submit a JCL
+ * as a <code>String</code> and returns a <code>IZosBatchJob</code> instance. The Manager generates the JOB statement, so the JCL must not include one.<br>
+ * To submit JCL that already contains its own JOB statement, use {@link IZosBatch#submitJobWithSuppliedJobcard(String)}.<br><br>
  * See {@link ZosBatch}, {@link IZosBatch} and {@link IZosBatchJob} to find out more.
  * 
  */
