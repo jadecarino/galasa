@@ -33,6 +33,7 @@ import dev.galasa.zosbatch.ZosBatchException;
 import dev.galasa.zosbatch.ZosBatchJobcard;
 import dev.galasa.zosbatch.ZosBatchManagerException;
 import dev.galasa.zosbatch.spi.IZosBatchJobOutputSpi;
+import dev.galasa.zosbatch.spi.ZosBatchSuppliedJobcard;
 import dev.galasa.zosrseapi.IRseapi.RseapiRequestType;
 import dev.galasa.zosrseapi.IRseapiResponse;
 import dev.galasa.zosrseapi.IRseapiRestApiProcessor;
@@ -51,6 +52,7 @@ public class RseapiZosBatchJobImpl implements IZosBatchJob {
 	private IZosImage jobImage;
     private IZosBatchJobname jobname;
     private final ZosBatchJobcard jobcard;
+    private final boolean jclHasJobcard;
     private String jcl;
     private int jobWaitTimeout;
     
@@ -104,7 +106,15 @@ public class RseapiZosBatchJobImpl implements IZosBatchJob {
                                                                                           ));
 
     public RseapiZosBatchJobImpl(RseapiZosBatchManagerImpl zosBatchManager, IZosImage jobImage, IZosBatchJobname jobname, String jcl, ZosBatchJobcard jobcard) throws ZosBatchException {
+        this(zosBatchManager, jobImage, jobname, jcl, jobcard, false);
+    }
+
+    /**
+     * @param jclHasJobcard true if the supplied JCL contains its own JOB statement, in which case a JOB statement is not generated
+     */
+    public RseapiZosBatchJobImpl(RseapiZosBatchManagerImpl zosBatchManager, IZosImage jobImage, IZosBatchJobname jobname, String jcl, ZosBatchJobcard jobcard, boolean jclHasJobcard) throws ZosBatchException {
     	this.zosBatchManager = zosBatchManager;
+        this.jclHasJobcard = jclHasJobcard;
         this.jobImage = jobImage;
         this.jobname = jobname;
         if (jobcard != null) {
@@ -655,6 +665,9 @@ public class RseapiZosBatchJobImpl implements IZosBatchJob {
     }
 
     protected String jclWithJobcard() throws ZosBatchManagerException {
+        if (this.jclHasJobcard) {
+            return ZosBatchSuppliedJobcard.parse(this.jcl).build(this.useSysaff ? this.jobImage.getImageID() : null);
+        }
         StringBuilder jclWithJobcard = new StringBuilder();
         jclWithJobcard.append(this.jobcard.getJobcard(this.jobname.getName(), this.jobImage));
         

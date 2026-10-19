@@ -714,6 +714,29 @@ ZosBatchJobcard jobcard = new ZosBatchJobcard().
 IZosBatchJob batchJob = zosBatch.submitJob(jcl, null, jobcard);
 ```
 
+### Submit a z/OS Batch Job that contains its own JOB statement
+
+Submit JCL, for example a member of a JCL library, that already contains its own JOB statement. 
+The job name is taken from the JOB statement, so a Galasa allocated Job Name is not used:
+
+```java
+String jcl = "//MYJOB    JOB (ACCT),'PROGRAMMER',\n" +
+             "//         CLASS=A,\n" +
+             "//         MSGCLASS=X\n" +
+             "//STEP1    EXEC PGM=IEFBR14\n";
+IZosBatchJob batchJob = zosBatch.submitJobWithSuppliedJobcard(jcl);
+```
+
+The JCL is submitted as supplied and the Manager does not generate a JOB statement. This means:
+
+- The first record that is not blank and is not a comment (`//*`) must be the JOB statement, `//jobname JOB ...`. The JOB statement can be continued over several records. If a valid JOB statement is not found, a `ZosBatchException` is thrown and the JCL is not submitted.
+- `IZosBatchJob.getJobname()` returns the job name from the JOB statement in upper case. This job name is used to track the job, so `waitForJob()`, `getRetcode()` and the retrieval of the spool files work in the same way as for other jobs.
+- A `ZosBatchJobcard` cannot be used to override values in the JOB statement, and the default job class, message class and message level properties are not applied. Everything required must be specified in the JOB statement.
+- If the property `zosbatch.batchjob.[imageid].use.sysaff` is true, the Manager inserts a `/*JOBPARM SYSAFF=[imageid]` record immediately after the last record of the JOB statement. The record is not inserted if the JCL already contains a `/*JOBPARM` record that specifies `SYSAFF=`.
+- The supplied JCL is stored in the test results archive.
+
+The `submitJob` methods that take a job name must be used with JCL that does not include a JOB statement.
+
 
 ### Wait for z/OS Batch Job to complete
 
