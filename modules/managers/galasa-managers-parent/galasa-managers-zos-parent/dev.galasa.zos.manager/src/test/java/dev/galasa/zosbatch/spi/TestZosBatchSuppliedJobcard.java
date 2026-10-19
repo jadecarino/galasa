@@ -219,88 +219,88 @@ public class TestZosBatchSuppliedJobcard {
     @Test
     public void testBuildWithoutSysaffIsUnchanged() throws Exception {
         String jcl = MULTI_LINE_CARD + STEP;
-        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.build(jcl, null));
+        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.parse(jcl).build(null));
     }
 
     @Test
     public void testBuildAddsSysaffAfterSingleLineCard() throws Exception {
-        String result = ZosBatchSuppliedJobcard.build(SINGLE_LINE_CARD + STEP, "MVSA");
+        String result = ZosBatchSuppliedJobcard.parse(SINGLE_LINE_CARD + STEP).build("MVSA");
         Assert.assertEquals(SINGLE_LINE_CARD + SYSAFF_LINE + STEP, result);
     }
 
     @Test
     public void testBuildAddsSysaffAfterLastRecordOfMultiLineCard() throws Exception {
-        String result = ZosBatchSuppliedJobcard.build(MULTI_LINE_CARD + STEP, "MVSA");
+        String result = ZosBatchSuppliedJobcard.parse(MULTI_LINE_CARD + STEP).build("MVSA");
         Assert.assertEquals(MULTI_LINE_CARD + SYSAFF_LINE + STEP, result);
     }
 
     @Test
     public void testBuildAddsSysaffAfterLeadingComments() throws Exception {
         String prefix = "//* a comment\n";
-        String result = ZosBatchSuppliedJobcard.build(prefix + MULTI_LINE_CARD + STEP, "MVSA");
+        String result = ZosBatchSuppliedJobcard.parse(prefix + MULTI_LINE_CARD + STEP).build("MVSA");
         Assert.assertEquals(prefix + MULTI_LINE_CARD + SYSAFF_LINE + STEP, result);
     }
 
     @Test
     public void testBuildDoesNotAddSysaffWhenAlreadyPresent() throws Exception {
         String jcl = MULTI_LINE_CARD + "/*JOBPARM SYSAFF=MVSB\n" + STEP;
-        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.build(jcl, "MVSA"));
+        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.parse(jcl).build("MVSA"));
     }
 
     @Test
     public void testBuildDoesNotAddSysaffWhenAlreadyPresentAndSysaffOff() throws Exception {
         String jcl = MULTI_LINE_CARD + "/*JOBPARM SYSAFF=MVSB\n" + STEP;
-        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.build(jcl, null));
+        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.parse(jcl).build(null));
     }
 
     @Test
     public void testBuildDoesNotAddSysaffWhenAlreadyPresentWithOtherJobparmKeywords() throws Exception {
         String jcl = SINGLE_LINE_CARD + "/*jobparm L=10,sysaff=MVSB\n" + STEP;
-        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.build(jcl, "MVSA"));
+        Assert.assertEquals(jcl, ZosBatchSuppliedJobcard.parse(jcl).build("MVSA"));
     }
 
     @Test
     public void testBuildAddsSysaffWhenJobparmWithoutSysaffIsPresent() throws Exception {
         String jcl = SINGLE_LINE_CARD + "/*JOBPARM L=10\n" + STEP;
-        Assert.assertEquals(SINGLE_LINE_CARD + SYSAFF_LINE + "/*JOBPARM L=10\n" + STEP, ZosBatchSuppliedJobcard.build(jcl, "MVSA"));
+        Assert.assertEquals(SINGLE_LINE_CARD + SYSAFF_LINE + "/*JOBPARM L=10\n" + STEP, ZosBatchSuppliedJobcard.parse(jcl).build("MVSA"));
     }
 
     @Test
     public void testBuildIgnoresSysaffInOrdinaryRecord() throws Exception {
         String data = "SYSAFF=MVSB is in the data\n";
-        String result = ZosBatchSuppliedJobcard.build(SINGLE_LINE_CARD + STEP + data, "MVSA");
+        String result = ZosBatchSuppliedJobcard.parse(SINGLE_LINE_CARD + STEP + data).build("MVSA");
         Assert.assertEquals(SINGLE_LINE_CARD + SYSAFF_LINE + STEP + data, result);
     }
 
     @Test
     public void testBuildAddsTrailingNewline() throws Exception {
-        Assert.assertEquals(SINGLE_LINE_CARD + STEP, ZosBatchSuppliedJobcard.build(SINGLE_LINE_CARD + "//STEP1    EXEC PGM=IEFBR14", null));
+        Assert.assertEquals(SINGLE_LINE_CARD + STEP, ZosBatchSuppliedJobcard.parse(SINGLE_LINE_CARD + "//STEP1    EXEC PGM=IEFBR14").build(null));
     }
 
     @Test
     public void testBuildCardIsLastRecordWithNoNewline() throws Exception {
-        Assert.assertEquals("//MYJOB JOB\n" + SYSAFF_LINE, ZosBatchSuppliedJobcard.build("//MYJOB JOB", "MVSA"));
+        Assert.assertEquals("//MYJOB JOB\n" + SYSAFF_LINE, ZosBatchSuppliedJobcard.parse("//MYJOB JOB").build("MVSA"));
     }
 
     @Test
     public void testBuildPreservesWindowsLineEndings() throws Exception {
         String card = "//MYJOB    JOB (ACCT),\r\n//         CLASS=A\r\n";
         String step = "//STEP1 EXEC PGM=IEFBR14\r\n";
-        Assert.assertEquals(card + "/*JOBPARM SYSAFF=MVSA\r\n" + step, ZosBatchSuppliedJobcard.build(card + step, "MVSA"));
+        Assert.assertEquals(card + "/*JOBPARM SYSAFF=MVSA\r\n" + step, ZosBatchSuppliedJobcard.parse(card + step).build("MVSA"));
     }
 
     @Test
     public void testBuildDoesNotAddGeneratedJobcard() throws Exception {
         String jcl = SINGLE_LINE_CARD + STEP;
-        String result = ZosBatchSuppliedJobcard.build(jcl, "MVSA");
+        String result = ZosBatchSuppliedJobcard.parse(jcl).build("MVSA");
         Assert.assertTrue("Result should start with the supplied JOB statement", result.startsWith(SINGLE_LINE_CARD));
         Assert.assertEquals("There should be exactly one JOB statement", 1, result.split(" JOB ", -1).length - 1);
     }
 
     @Test
     public void testBuildWithInvalidJcl() {
-        Assert.assertThrows(ZosBatchException.class, () -> ZosBatchSuppliedJobcard.build(STEP, "MVSA"));
-        Assert.assertThrows(ZosBatchException.class, () -> ZosBatchSuppliedJobcard.build(null, "MVSA"));
+        Assert.assertThrows(ZosBatchException.class, () -> ZosBatchSuppliedJobcard.parse(STEP).build("MVSA"));
+        Assert.assertThrows(ZosBatchException.class, () -> ZosBatchSuppliedJobcard.parse(null).build("MVSA"));
     }
 
     private void assertParseFails(String jcl, String expectedMessageFragment) {

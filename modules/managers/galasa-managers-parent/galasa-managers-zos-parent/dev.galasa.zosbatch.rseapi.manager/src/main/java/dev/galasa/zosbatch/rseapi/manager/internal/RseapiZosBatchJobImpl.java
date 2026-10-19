@@ -666,7 +666,7 @@ public class RseapiZosBatchJobImpl implements IZosBatchJob {
 
     protected String jclWithJobcard() throws ZosBatchManagerException {
         if (this.jclHasJobcard) {
-            return ZosBatchSuppliedJobcard.build(this.jcl, this.useSysaff ? this.jobImage.getImageID() : null);
+            return ZosBatchSuppliedJobcard.parse(this.jcl).build(this.useSysaff ? this.jobImage.getImageID() : null);
         }
         StringBuilder jclWithJobcard = new StringBuilder();
         jclWithJobcard.append(this.jobcard.getJobcard(this.jobname.getName(), this.jobImage));

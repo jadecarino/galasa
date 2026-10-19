@@ -31,6 +31,16 @@ public final class ZosBatchSuppliedJobcard {
 
     private static final Log logger = LogFactory.getLog(ZosBatchSuppliedJobcard.class);
 
+    /*
+     * Matches the first record of a JOB statement, for example "//MYJOB    JOB (ACCT),'PROG',":
+     *   ^//                                 the record starts with //. A comment record, //*, does not match as * is not a valid name character
+     *   ([A-Za-z#$@][A-Za-z0-9#$@]{0,7})    capture group 1 is the job name: 1 to 8 characters, the first of which must be
+     *                                       a letter or one of # $ @, the rest may also be digits
+     *   [ \t]+                              one or more blanks separating the name field from the operation field
+     *   JOB                                 the JOB operation
+     *   (?=[ \t]|$)                         followed by a blank or the end of the record, so that JOBX does not match
+     * The match is case-insensitive and is not anchored to the end of the record, as the operands follow.
+     */
     private static final Pattern JOB_STATEMENT = Pattern.compile("^//([A-Za-z#$@][A-Za-z0-9#$@]{0,7})[ \\t]+JOB(?=[ \\t]|$)", Pattern.CASE_INSENSITIVE);
 
     private static final String COMMENT_PREFIX = "//*";
@@ -38,13 +48,13 @@ public final class ZosBatchSuppliedJobcard {
     private static final String SYSAFF_KEYWORD = "SYSAFF=";
     private static final String DEFAULT_EOL = "\n";
 
-    private static final int MAX_RECORD_LENGTH_IN_MESSAGE = 80;
-
+    private final String jcl;
     private final String jobname;
     private final int endOffset;
     private final String eol;
 
-    private ZosBatchSuppliedJobcard(String jobname, int endOffset, String eol) {
+    private ZosBatchSuppliedJobcard(String jcl, String jobname, int endOffset, String eol) {
+        this.jcl = jcl;
         this.jobname = jobname;
         this.endOffset = endOffset;
         this.eol = eol;
@@ -65,88 +75,88 @@ public final class ZosBatchSuppliedJobcard {
     }
 
     /**
-     * Parse the JOB statement from the supplied JCL
+     * Parse the JOB statement from the supplied JCL. The returned instance represents the supplied JCL, 
+     * and {@link #build(String)} builds the JCL to be submitted from it.
      * 
      * @param jcl the JCL, which must start with a JOB statement
      * @return the parsed JOB statement
      * @throws ZosBatchException if a valid JOB statement is not found
      */
     public static ZosBatchSuppliedJobcard parse(String jcl) throws ZosBatchException {
-        List<Record> records = splitRecords(jcl == null ? "" : jcl);
+        jcl = (jcl == null) ? "" : jcl;
+        List<Record> records = splitRecords(jcl);
 
-        int first = 0;
-        while (first < records.size() && (records.get(first).text.trim().isEmpty() || records.get(first).text.startsWith(COMMENT_PREFIX))) {
-            first++;
+        int firstRecordIndex = 0;
+        while (firstRecordIndex < records.size() && (records.get(firstRecordIndex).text.trim().isEmpty() || records.get(firstRecordIndex).text.startsWith(COMMENT_PREFIX))) {
+            firstRecordIndex++;
         }
-        if (first == records.size()) {
+        if (firstRecordIndex == records.size()) {
             throw new ZosBatchException("No JOB statement found in the supplied JCL. The first record that is not blank or a comment must be of the form //jobname JOB ...");
         }
 
-        String firstText = records.get(first).text;
-        Matcher matcher = JOB_STATEMENT.matcher(firstText);
+        String firstRecordText = records.get(firstRecordIndex).text;
+        Matcher matcher = JOB_STATEMENT.matcher(firstRecordText);
         if (!matcher.find()) {
-            throw new ZosBatchException("No valid JOB statement found in the supplied JCL. The first record that is not blank or a comment must be of the form //jobname JOB ... "
-                    + "where jobname is 1 to 8 characters. Found: " + abbreviate(firstText));
+            // The record is not included in the message as a JOB statement can contain sensitive data, for example PASSWORD=
+            throw new ZosBatchException("No valid JOB statement found in the supplied JCL. The first record that is not blank or a comment, at line " + (firstRecordIndex + 1)
+                    + ", must be of the form //jobname JOB ... where jobname is 1 to 8 characters");
         }
         String jobname = matcher.group(1).toUpperCase(Locale.ROOT);
 
-        QuoteState quoteState = new QuoteState();
-        boolean continued = scanOperands(firstText.substring(matcher.end()), quoteState);
-        int last = first;
-        while (continued) {
-            int next = last + 1;
-            while (next < records.size() && records.get(next).text.startsWith(COMMENT_PREFIX)) {
-                next++;
+        OperandsEnd operandsEnd = scanOperands(firstRecordText.substring(matcher.end()), false);
+        int lastRecordIndex = firstRecordIndex;
+        while (operandsEnd != OperandsEnd.COMPLETE) {
+            int nextRecordIndex = lastRecordIndex + 1;
+            while (nextRecordIndex < records.size() && records.get(nextRecordIndex).text.startsWith(COMMENT_PREFIX)) {
+                nextRecordIndex++;
             }
-            if (next >= records.size()) {
+            if (nextRecordIndex >= records.size()) {
                 throw new ZosBatchException("The JOB statement for job " + jobname + " is continued but the supplied JCL ends before the continuation record");
             }
-            String text = records.get(next).text;
-            if (!text.startsWith("//") || (text.length() > 2 && text.charAt(2) != ' ')) {
-                throw new ZosBatchException("The JOB statement for job " + jobname + " is continued but the next record is not a valid continuation record. Found: " + abbreviate(text));
+            String nextRecordText = records.get(nextRecordIndex).text;
+            if (!nextRecordText.startsWith("//") || (nextRecordText.length() > 2 && nextRecordText.charAt(2) != ' ')) {
+                throw new ZosBatchException("The JOB statement for job " + jobname + " is continued but the record at line " + (nextRecordIndex + 1)
+                        + " is not a valid continuation record. A continuation record must start with // followed by a blank");
             }
-            continued = scanOperands(text.substring(2), quoteState);
-            last = next;
+            operandsEnd = scanOperands(nextRecordText.substring(2), operandsEnd == OperandsEnd.INSIDE_QUOTE);
+            lastRecordIndex = nextRecordIndex;
         }
 
-        Record lastRecord = records.get(last);
-        return new ZosBatchSuppliedJobcard(jobname, lastRecord.end, lastRecord.eol.isEmpty() ? DEFAULT_EOL : lastRecord.eol);
+        Record lastRecord = records.get(lastRecordIndex);
+        return new ZosBatchSuppliedJobcard(jcl, jobname, lastRecord.end, lastRecord.eol.isEmpty() ? DEFAULT_EOL : lastRecord.eol);
     }
 
     /**
-     * Build the JCL to be submitted from JCL that contains its own JOB statement. The JCL is unchanged except that:
+     * Build the JCL to be submitted from the JCL that this instance was parsed from. The JCL is unchanged except that:
      * <ul>
      * <li>if a SYSAFF image is provided and the JCL does not already contain a <code>/*JOBPARM</code> record with 
      * <code>SYSAFF=</code>, a <code>/*JOBPARM SYSAFF=[image]</code> record is inserted immediately after the last record of the JOB statement</li>
      * <li>a line terminator is added to the end if there is not one</li>
      * </ul>
      * 
-     * @param jcl the JCL, which must start with a JOB statement
      * @param sysaffImageId the image ID to use for SYSAFF, or null to not add a SYSAFF record
      * @return the JCL to be submitted
-     * @throws ZosBatchException if a valid JOB statement is not found
      */
-    public static String build(String jcl, String sysaffImageId) throws ZosBatchException {
-        ZosBatchSuppliedJobcard jobcard = parse(jcl);
+    public String build(String sysaffImageId) {
         StringBuilder result = new StringBuilder();
         
-        boolean sysaffSupplied = sysaffImageId != null && containsSysaff(jcl.substring(jobcard.endOffset));
+        boolean sysaffSupplied = sysaffImageId != null && containsSysaff(jcl.substring(endOffset));
         if (sysaffSupplied) {
-            logger.info("The supplied JCL for job " + jobcard.jobname + " already specifies SYSAFF=, so /*JOBPARM SYSAFF=" + sysaffImageId + " has not been added");
+            logger.info("The supplied JCL for job " + jobname + " already specifies SYSAFF=, so /*JOBPARM SYSAFF=" + sysaffImageId + " has not been added");
         }
         if (sysaffImageId != null && !sysaffSupplied) {
-            result.append(jcl, 0, jobcard.endOffset);
+            result.append(jcl, 0, endOffset);
             if (!endsWithNewline(result)) {
-                result.append(jobcard.eol);
+                result.append(eol);
             }
-            result.append(JOBPARM_PREFIX).append(" ").append(SYSAFF_KEYWORD).append(sysaffImageId).append(jobcard.eol);
-            result.append(jcl, jobcard.endOffset, jcl.length());
+            result.append(JOBPARM_PREFIX).append(" ").append(SYSAFF_KEYWORD).append(sysaffImageId).append(eol);
+            result.append(jcl, endOffset, jcl.length());
         } else {
             result.append(jcl);
         }
         
         if (!endsWithNewline(result)) {
-            result.append(jobcard.eol);
+            result.append(eol);
         }
         return result.toString();
     }
@@ -169,9 +179,12 @@ public final class ZosBatchSuppliedJobcard {
      * Scan the operand field of a record (the text after the JOB keyword or after the // of a continuation record). 
      * The field ends at the first blank that is not within a quoted string.
      * 
-     * @return true if the statement is continued on the next record
+     * @param text the text of the record after the JOB keyword or after the // of a continuation record
+     * @param startsInsideQuote true if the previous record ended inside a quoted string
+     * @return how the operand field ended, which determines whether the statement is continued on the next record
      */
-    private static boolean scanOperands(String text, QuoteState quoteState) {
+    private static OperandsEnd scanOperands(String text, boolean startsInsideQuote) {
+        boolean inQuote = startsInsideQuote;
         int length = text.length();
         int i = 0;
         while (i < length && (text.charAt(i) == ' ' || text.charAt(i) == '\t')) {
@@ -181,24 +194,20 @@ public final class ZosBatchSuppliedJobcard {
         for (; i < length; i++) {
             char c = text.charAt(i);
             if (c == '\'') {
-                quoteState.inQuote = !quoteState.inQuote;
-            } else if (!quoteState.inQuote && (c == ' ' || c == '\t')) {
+                inQuote = !inQuote;
+            } else if (!inQuote && (c == ' ' || c == '\t')) {
                 break;
             }
             lastChar = c;
         }
-        return quoteState.inQuote || lastChar == ',';
+        if (inQuote) {
+            return OperandsEnd.INSIDE_QUOTE;
+        }
+        return (lastChar == ',') ? OperandsEnd.AFTER_COMMA : OperandsEnd.COMPLETE;
     }
 
     private static boolean endsWithNewline(CharSequence text) {
         return text.length() > 0 && text.charAt(text.length() - 1) == '\n';
-    }
-
-    private static String abbreviate(String text) {
-        if (text.length() > MAX_RECORD_LENGTH_IN_MESSAGE) {
-            return text.substring(0, MAX_RECORD_LENGTH_IN_MESSAGE) + "...";
-        }
-        return text;
     }
 
     private static List<Record> splitRecords(String jcl) {
@@ -218,8 +227,16 @@ public final class ZosBatchSuppliedJobcard {
         return records;
     }
 
-    private static final class QuoteState {
-        private boolean inQuote;
+    /**
+     * How the operand field of a record of the JOB statement ended
+     */
+    private enum OperandsEnd {
+        /** The operand field is complete, so the statement ends with this record */
+        COMPLETE,
+        /** The operand field ends with a comma, so the statement continues on the next record */
+        AFTER_COMMA,
+        /** A quoted string has not been closed, so the statement continues on the next record */
+        INSIDE_QUOTE
     }
 
     private static final class Record {
