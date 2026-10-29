@@ -25,6 +25,9 @@ public interface IZosBatch {
      *
      * @param jcl - The JCL to submit.   Must not include the JOB statement, unless submitted using {@link #submitJobWithSuppliedJobcard(String)}
      * @param jobname - {@link IZosBatchJobname} A provisioned jobname, if null, a new unique jobname will be provisioned.
+     * To submit the job with a jobname chosen by the test, use {@link ZosBatchJobnames#exact(String)}.
+     * An exact jobname is not made unique, so tests that run at the same time and use the same jobname can collide.
+     * See {@link ZosBatchJobnames} for details.
      * @return {@link IZosBatchJob} A representation of the zOS Batch Job
      * @throws ZosBatchException
      */
@@ -39,6 +42,9 @@ public interface IZosBatch {
      *
      * @param jcl - The JCL to submit.   Must not include the JOB statement, unless submitted using {@link #submitJobWithSuppliedJobcard(String)}
      * @param jobname - {@link IZosBatchJobname} A provisioned jobname, if null, a new unique jobname will be provisioned.
+     * To submit the job with a jobname chosen by the test, use {@link ZosBatchJobnames#exact(String)}.
+     * An exact jobname is not made unique, so tests that run at the same time and use the same jobname can collide.
+     * See {@link ZosBatchJobnames} for details.
      * @Param jobcard - {@link IZosBatchJobcard} Overrides for the job card values
      * @return {@link IZosBatchJob} A representation of the zOS Batch Job
      * @throws ZosBatchException
