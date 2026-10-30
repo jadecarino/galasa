@@ -699,8 +699,10 @@ Submit a z/OS Batch Job using the supplied JCL and a Galasa allocated Job Name:
 
 ```java
 String jcl = "//STEP1    EXEC PGM=IEFBR14";
-IZosBatchJob batchJob = zosBatch.submitJob(jcl, null);
+IZosBatchJob batchJob = zosBatch.submitJob(jcl);
 ```
+
+Passing `null` as the job name, `zosBatch.submitJob(jcl, null)`, has the same effect.
 
 ### Submit a z/OS Batch Job with job card parameters
 
@@ -726,16 +728,16 @@ IZosBatchJob batchJob = zosBatch.submitJob(jcl, ZosBatchJobnames.exact("PAYROLL"
 `ZosBatchJobnames.exact` converts the name to upper case. A name must be 1 to 8 characters. The first character must be a letter or one of `#`, `$` or `@`, and the remaining characters must be letters, digits, `#`, `$` or `@`. A `ZosBatchException` is thrown if the name is not valid.
 
 !!! warning "Parallel runs and exact job names"
-    Galasa does not make an exact job name unique. If tests that run at the same time on the same z/OS system submit jobs with the same name, a search by job name, such as `IZosBatch.getJobs`, returns the jobs of all of those tests. Each job still has its own job ID, which Galasa uses to track it. Use an exact job name only when the test needs it, and use one of the following if tests can run in parallel.
+    Galasa does not make an exact job name unique. If tests that run at the same time on the same z/OS system submit jobs with the same name, a search by job name, such as `IZosBatch.getJobs`, returns the jobs of all of those tests. Each job still has its own job ID, which Galasa uses to track it. Use an exact job name only when the test needs it, and let the Manager provision the job name, or use `randomWithPrefix`, if tests can run in parallel.
 
-To keep a name of your choosing as the start of the job name but avoid collisions, use `uniqueWithPrefix`. The prefix can be 1 to 7 characters, and the Manager adds random characters to make the job name 8 characters long:
+To keep a name of your choosing as the start of the job name and make a collision less likely, use `randomWithPrefix`. The prefix can be 1 to 7 characters, and the Manager adds random characters to make the job name 8 characters long. The job name is random but is not guaranteed to be unique, and the longer the prefix, the fewer random characters there are. For example, a 7 character prefix leaves only one random character:
 
 ```java
-IZosBatchJob batchJob = zosBatch.submitJob(jcl, ZosBatchJobnames.uniqueWithPrefix("PAY"));
+IZosBatchJob batchJob = zosBatch.submitJob(jcl, ZosBatchJobnames.randomWithPrefix("PAY"));
 // The job name is, for example, PAYK3Z9X
 ```
 
-To let the Manager provision the job name, pass `null`, or use a `@ZosBatchJobname` field. The prefix of those job names is set by the `zosbatch.jobname.[imageid].prefix` property.
+To let the Manager provision the job name, use `zosBatch.submitJob(jcl)`, or use a `@ZosBatchJobname` field. The prefix of those job names is set by the `zosbatch.jobname.[imageid].prefix` property.
 
 The job output is stored in the test results archive, and the job is purged at the end of the test (after being cancelled first if it is still running), in the same way as for a job with a generated name.
 
