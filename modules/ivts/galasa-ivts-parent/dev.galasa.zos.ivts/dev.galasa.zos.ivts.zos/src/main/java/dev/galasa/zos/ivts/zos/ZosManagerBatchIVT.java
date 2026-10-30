@@ -318,8 +318,8 @@ public class ZosManagerBatchIVT {
      * Submits a job with a job name that starts with a prefix chosen by the test
      */
     @Test
-    public void submitJCLWithUniquePrefixJobname() throws TestBundleResourceException, IOException, ZosBatchException {
-        IZosBatchJobname prefixedJobname = ZosBatchJobnames.uniqueWithPrefix("giv");
+    public void submitJCLWithRandomPrefixJobname() throws TestBundleResourceException, IOException, ZosBatchException {
+        IZosBatchJobname prefixedJobname = ZosBatchJobnames.randomWithPrefix("giv");
         assertThat(prefixedJobname.getName()).hasSize(8).startsWith("GIV");
 
         String jclInput = resources.retrieveFileAsString("/jcl/doNothing.jcl");
@@ -339,6 +339,6 @@ public class ZosManagerBatchIVT {
         assertThatThrownBy(() -> ZosBatchJobnames.exact("TOOLONGNAME")).isInstanceOf(ZosBatchException.class);
         assertThatThrownBy(() -> ZosBatchJobnames.exact("MY-JOB")).isInstanceOf(ZosBatchException.class);
         assertThatThrownBy(() -> ZosBatchJobnames.exact("1JOB")).isInstanceOf(ZosBatchException.class);
-        assertThatThrownBy(() -> ZosBatchJobnames.uniqueWithPrefix("EIGHTCHR")).isInstanceOf(ZosBatchException.class);
+        assertThatThrownBy(() -> ZosBatchJobnames.randomWithPrefix("EIGHTCHR")).isInstanceOf(ZosBatchException.class);
     }
 }

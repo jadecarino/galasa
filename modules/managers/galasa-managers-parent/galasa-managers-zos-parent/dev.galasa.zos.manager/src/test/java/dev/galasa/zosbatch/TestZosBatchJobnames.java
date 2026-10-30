@@ -102,11 +102,11 @@ public class TestZosBatchJobnames {
         Assert.assertTrue("message should contain the rule, was: " + e.getMessage(), e.getMessage().contains("between 1 and 8"));
     }
 
-    // ---- uniqueWithPrefix: valid prefixes
+    // ---- randomWithPrefix: valid prefixes
 
     @Test
-    public void testUniqueWithPrefixIsEightCharactersStartingWithPrefix() throws Exception {
-        IZosBatchJobname jobname = ZosBatchJobnames.uniqueWithPrefix("pay");
+    public void testRandomWithPrefixIsEightCharactersStartingWithPrefix() throws Exception {
+        IZosBatchJobname jobname = ZosBatchJobnames.randomWithPrefix("pay");
         Assert.assertEquals(8, jobname.getName().length());
         Assert.assertTrue("should start with the upper cased prefix, was: " + jobname.getName(), jobname.getName().startsWith("PAY"));
         // PAY, then exactly 5 upper case letters or digits to make 8 characters
@@ -114,66 +114,66 @@ public class TestZosBatchJobnames {
     }
 
     @Test
-    public void testUniqueWithPrefixAcceptsOneCharacterPrefix() throws Exception {
+    public void testRandomWithPrefixAcceptsOneCharacterPrefix() throws Exception {
         // A, then exactly 7 upper case letters or digits to make 8 characters
-        Assert.assertTrue(ZosBatchJobnames.uniqueWithPrefix("A").getName().matches("^A[A-Z0-9]{7}$"));
+        Assert.assertTrue(ZosBatchJobnames.randomWithPrefix("A").getName().matches("^A[A-Z0-9]{7}$"));
     }
 
     @Test
-    public void testUniqueWithPrefixAcceptsSevenCharacterPrefix() throws Exception {
+    public void testRandomWithPrefixAcceptsSevenCharacterPrefix() throws Exception {
         // ABCDEFG, then exactly 1 upper case letter or digit to make 8 characters
-        Assert.assertTrue(ZosBatchJobnames.uniqueWithPrefix("ABCDEFG").getName().matches("^ABCDEFG[A-Z0-9]$"));
+        Assert.assertTrue(ZosBatchJobnames.randomWithPrefix("ABCDEFG").getName().matches("^ABCDEFG[A-Z0-9]$"));
     }
 
     @Test
-    public void testUniqueWithPrefixAcceptsNationalCharacters() throws Exception {
+    public void testRandomWithPrefixAcceptsNationalCharacters() throws Exception {
         // #$@ then exactly 5 upper case letters or digits. The $ in the prefix is escaped as it is a regex metacharacter
-        Assert.assertTrue(ZosBatchJobnames.uniqueWithPrefix("#$@").getName().matches("^#\\$@[A-Z0-9]{5}$"));
+        Assert.assertTrue(ZosBatchJobnames.randomWithPrefix("#$@").getName().matches("^#\\$@[A-Z0-9]{5}$"));
     }
 
     @Test
-    public void testUniqueWithPrefixGeneratesDifferentNames() throws Exception {
+    public void testRandomWithPrefixGeneratesDifferentNames() throws Exception {
         Set<String> names = new HashSet<>();
         for (int i = 0; i < 50; i++) {
-            names.add(ZosBatchJobnames.uniqueWithPrefix("GAL").getName());
+            names.add(ZosBatchJobnames.randomWithPrefix("GAL").getName());
         }
         // 36^5 combinations, so 50 samples being all different is overwhelmingly likely. Allow one collision to avoid flakiness
         Assert.assertTrue("names should be random, were: " + names, names.size() >= 49);
     }
 
-    // ---- uniqueWithPrefix: invalid prefixes
+    // ---- randomWithPrefix: invalid prefixes
 
     @Test
-    public void testUniqueWithPrefixRejectsNull() {
-        assertUniqueRejected(null);
+    public void testRandomWithPrefixRejectsNull() {
+        assertRandomRejected(null);
     }
 
     @Test
-    public void testUniqueWithPrefixRejectsEmpty() {
-        assertUniqueRejected("");
+    public void testRandomWithPrefixRejectsEmpty() {
+        assertRandomRejected("");
     }
 
     @Test
-    public void testUniqueWithPrefixRejectsEightCharacters() {
-        assertUniqueRejected("ABCDEFGH");
+    public void testRandomWithPrefixRejectsEightCharacters() {
+        assertRandomRejected("ABCDEFGH");
     }
 
     @Test
-    public void testUniqueWithPrefixRejectsLeadingDigit() {
-        assertUniqueRejected("1AB");
+    public void testRandomWithPrefixRejectsLeadingDigit() {
+        assertRandomRejected("1AB");
     }
 
     @Test
-    public void testUniqueWithPrefixRejectsInvalidCharacters() {
-        assertUniqueRejected("MY-");
-        assertUniqueRejected("MY ");
+    public void testRandomWithPrefixRejectsInvalidCharacters() {
+        assertRandomRejected("MY-");
+        assertRandomRejected("MY ");
     }
 
     private void assertExactRejected(String name) {
         Assert.assertThrows("name should be rejected: " + name, ZosBatchException.class, () -> ZosBatchJobnames.exact(name));
     }
 
-    private void assertUniqueRejected(String prefix) {
-        Assert.assertThrows("prefix should be rejected: " + prefix, ZosBatchException.class, () -> ZosBatchJobnames.uniqueWithPrefix(prefix));
+    private void assertRandomRejected(String prefix) {
+        Assert.assertThrows("prefix should be rejected: " + prefix, ZosBatchException.class, () -> ZosBatchJobnames.randomWithPrefix(prefix));
     }
 }

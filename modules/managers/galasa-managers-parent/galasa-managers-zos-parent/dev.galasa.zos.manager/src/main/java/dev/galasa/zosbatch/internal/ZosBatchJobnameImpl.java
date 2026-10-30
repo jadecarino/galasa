@@ -50,7 +50,7 @@ public class ZosBatchJobnameImpl implements IZosBatchJobname {
         } catch (ZosBatchManagerException e) {
             throw new ZosBatchException("Problem getting batch jobname prefix", e);
         }
-        this.name = jobNamePrefix + RandomStringUtils.insecure().nextAlphanumeric(8-jobNamePrefix.length()).toUpperCase(Locale.ROOT);
+        this.name = jobNamePrefix + RandomStringUtils.insecure().nextAlphanumeric(MAX_JOBNAME_LENGTH - jobNamePrefix.length()).toUpperCase(Locale.ROOT);
     }
     
     @Override
@@ -82,12 +82,13 @@ public class ZosBatchJobnameImpl implements IZosBatchJobname {
     /**
      * Create a jobname that starts with the supplied prefix, converted to upper case,
      * followed by random alphanumeric characters up to the maximum jobname length.
+     * The jobname is random, so it is not guaranteed to be unique.
      *
      * @param prefix the jobname prefix, 1 to 7 valid JES characters
      * @return the jobname
      * @throws ZosBatchException if the prefix is not valid
      */
-    public static ZosBatchJobnameImpl uniqueWithPrefix(String prefix) throws ZosBatchException {
+    public static ZosBatchJobnameImpl randomWithPrefix(String prefix) throws ZosBatchException {
         validate("Jobname prefix", prefix, MAX_JOBNAME_LENGTH - 1);
         String suffix = RandomStringUtils.insecure().nextAlphanumeric(MAX_JOBNAME_LENGTH - prefix.length());
         return new ZosBatchJobnameImpl(prefix + suffix);

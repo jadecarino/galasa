@@ -10,8 +10,9 @@ import dev.galasa.zosbatch.internal.ZosBatchJobnameImpl;
 /**
  * Creates {@link IZosBatchJobname} instances for jobnames chosen by the test.
  * <p>
- * By default the Manager provisions a unique jobname, either when a <code>null</code> jobname is passed to
- * {@link IZosBatch#submitJob(String, IZosBatchJobname)} or by using the {@link ZosBatchJobname} annotation.
+ * By default the Manager provisions a unique jobname, either when {@link IZosBatch#submitJob(String)} is used
+ * (or a <code>null</code> jobname is passed to {@link IZosBatch#submitJob(String, IZosBatchJobname)})
+ * or by using the {@link ZosBatchJobname} annotation.
  * Use this class when the job must run under a particular jobname, for example to run a library member
  * under its documented name.
  * <p>
@@ -32,8 +33,8 @@ public final class ZosBatchJobnames {
      * <p>
      * <b>Parallel runs:</b> Galasa does not make this name unique. If tests that run at the same time on the same
      * z/OS system submit jobs with the same name, a search by name, such as {@link IZosBatch#getJobs(String, String)},
-     * returns the jobs of all of those tests. Each job still has its own job ID, which Galasa uses to track it. To avoid collisions, use
-     * {@link #uniqueWithPrefix(String)} or let the Manager provision the jobname.
+     * returns the jobs of all of those tests. Each job still has its own job ID, which Galasa uses to track it. To avoid collisions,
+     * let the Manager provision the jobname, or use {@link #randomWithPrefix(String)} to make a collision less likely.
      * 
      * @param name the jobname, 1 to 8 characters
      * @return the {@link IZosBatchJobname}
@@ -44,19 +45,21 @@ public final class ZosBatchJobnames {
     }
 
     /**
-     * Create a jobname that starts with the supplied prefix, converted to upper case, followed by random alphanumeric 
-     * characters that make the jobname 8 characters long. For example, the prefix <code>PAY</code> produces a jobname 
+     * Create a jobname that starts with the supplied prefix, converted to upper case, followed by random alphanumeric
+     * characters that make the jobname 8 characters long. For example, the prefix <code>PAY</code> produces a jobname
      * such as <code>PAYK3Z9X</code>. A new random suffix is generated on every call.
      * <p>
-     * This is the same as the jobname provisioned by the Manager, except that the prefix is chosen by the test 
-     * rather than from the <code>zosbatch.jobname.[imageid].prefix</code> property. The longer the prefix, the shorter the 
-     * random suffix and the greater the chance of a collision.
+     * This is the same as the jobname provisioned by the Manager, except that the prefix is chosen by the test
+     * rather than from the <code>zosbatch.jobname.[imageid].prefix</code> property.
+     * <p>
+     * The jobname is random, not guaranteed to be unique. The longer the prefix, the fewer the random characters
+     * and the greater the chance of a collision with another job. A 7 character prefix leaves only one random character.
      * 
      * @param prefix the start of the jobname, 1 to 7 characters
      * @return the {@link IZosBatchJobname}
      * @throws ZosBatchException if the prefix is <code>null</code>, empty, longer than 7 characters or contains invalid characters
      */
-    public static IZosBatchJobname uniqueWithPrefix(String prefix) throws ZosBatchException {
-        return ZosBatchJobnameImpl.uniqueWithPrefix(prefix);
+    public static IZosBatchJobname randomWithPrefix(String prefix) throws ZosBatchException {
+        return ZosBatchJobnameImpl.randomWithPrefix(prefix);
     }
 }
